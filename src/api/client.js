@@ -1,6 +1,17 @@
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api`;
+const apiUrl = import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = apiUrl ? `${apiUrl.replace(/\/+$/, '')}/api` : null;
+const isBackendConfigured = Boolean(
+  API_BASE_URL &&
+  !apiUrl.includes('your-backend-url') &&
+  !apiUrl.includes('your-backend.railway.app') &&
+  !apiUrl.includes('your-frontend.vercel.app')
+);
 
 async function request(path, { method = 'GET', body, token } = {}) {
+  if (!API_BASE_URL) {
+    throw new Error('Backend API is not configured. Set VITE_API_URL to your deployed backend URL.');
+  }
+
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -27,5 +38,6 @@ async function request(path, { method = 'GET', body, token } = {}) {
   return data;
 }
 
+export { isBackendConfigured };
 export default { request };
 

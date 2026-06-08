@@ -41,7 +41,11 @@ export default function Login() {
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const token = await cred.user.getIdToken();
-      await authApi.syncUser(token);
+      try {
+        await authApi.syncUser(token);
+      } catch (syncError) {
+        console.warn('Backend sync failed, continuing with login:', syncError);
+      }
       navigate('/dashboard', { replace: true });
 
     } catch (err) {
