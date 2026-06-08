@@ -6,6 +6,25 @@ import { useNavigate, Link } from 'react-router-dom';
 import authApi from '../api/authApi';
 import './Auth.css';
 
+const getAdminStatus = async (token) => {
+  try {
+    const syncResult = await authApi.syncUser(token);
+    if (typeof syncResult?.isAdmin === 'boolean') {
+      return syncResult.isAdmin;
+    }
+  } catch (err) {
+    console.warn('syncUser failed, falling back to status check:', err);
+  }
+
+  try {
+    const statusResult = await authApi.getStatus(token);
+    return Boolean(statusResult?.isAdmin);
+  } catch (err) {
+    console.error('Admin status check failed:', err);
+    return false;
+  }
+};
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,8 +40,7 @@ export default function Login() {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const token = await user.getIdToken();
-        const syncResult = await authApi.syncUser(token);
-        const isAdmin = Boolean(syncResult?.isAdmin);
+        const isAdmin = await getAdminStatus(token);
         if (isAdmin) {
           navigate('/admin/dashboard', { replace: true });
         } else {
@@ -46,14 +64,7 @@ export default function Login() {
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const token = await cred.user.getIdToken();
-      let syncResult = null;
-      try {
-        syncResult = await authApi.syncUser(token);
-      } catch (syncError) {
-        console.warn('Backend sync failed, continuing with login:', syncError);
-      }
-      
-      const isAdmin = Boolean(syncResult?.isAdmin);
+      const isAdmin = await getAdminStatus(token);
       if (isAdmin) {
         navigate('/admin/dashboard', { replace: true });
       } else {
