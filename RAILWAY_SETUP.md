@@ -13,6 +13,11 @@ Options
    - Paste the entire JSON contents of your `serviceAccountKey.json` as the value (including newlines)
    - Save and redeploy
 
+   If your CLI or UI strips newlines, you can instead store a base64-encoded JSON value or escaped JSON. The backend now supports:
+   - raw JSON
+   - JSON with escaped `\n`
+   - base64-encoded JSON
+
 2) Railway CLI (if installed)
    - Install Railway CLI: https://docs.railway.app/cli
    - From your repo root run (bash/powershell):

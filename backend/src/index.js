@@ -65,6 +65,6 @@ const port = Number(process.env.PORT) || 4000;
 app.listen(port, () => {
   console.log(`Backend listening on http://localhost:${port}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
+  console.log(`Allowed CORS origins: ${allowedOrigins.join(', ')}`);
 });
 
