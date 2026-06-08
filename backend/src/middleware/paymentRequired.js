@@ -7,8 +7,13 @@ export default async function paymentRequired(req, res, next) {
     const snap = await rdb.ref(`users/${uid}`).get();
 
     const data = snap.exists() ? snap.val() : null;
-    const isPaid = Boolean(data?.isPaid);
 
+    // Admin users should not be blocked by payment requirements.
+    if (data?.isAdmin) {
+      return next();
+    }
+
+    const isPaid = Boolean(data?.isPaid);
     if (!isPaid) {
       return res.status(403).json({ ok: false, error: 'PAYMENT_REQUIRED' });
     }
