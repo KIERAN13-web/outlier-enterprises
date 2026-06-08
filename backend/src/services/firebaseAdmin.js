@@ -12,16 +12,25 @@ async function initFirebaseAdmin() {
   const databaseURL = process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL;
   const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
 
-  if (!serviceAccountPath) {
-    throw new Error('Missing required FIREBASE_SERVICE_ACCOUNT_PATH environment variable for Firebase Admin initialization.');
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+  if (!serviceAccountJson && !serviceAccountPath) {
+    throw new Error('Missing Firebase credentials: provide either FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH.');
   }
 
-  const resolved = path.isAbsolute(serviceAccountPath)
-    ? serviceAccountPath
-    : path.resolve(process.cwd(), serviceAccountPath);
+  const resolved = serviceAccountPath
+    ? (path.isAbsolute(serviceAccountPath)
+        ? serviceAccountPath
+        : path.resolve(process.cwd(), serviceAccountPath))
+    : path.join('/tmp', 'firebase-service-account.json');
+
+  if (serviceAccountJson) {
+    fs.mkdirSync(path.dirname(resolved), { recursive: true });
+    fs.writeFileSync(resolved, serviceAccountJson, 'utf8');
+  }
 
   if (!fs.existsSync(resolved)) {
-    throw new Error(`Firebase service account not found at ${resolved}. Please provide a valid service account JSON file.`);
+    throw new Error(`Firebase service account not found at ${resolved}. Provide FIREBASE_SERVICE_ACCOUNT_JSON or a valid file at FIREBASE_SERVICE_ACCOUNT_PATH.`);
   }
 
   const raw = fs.readFileSync(resolved, 'utf8');
