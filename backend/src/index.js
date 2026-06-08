@@ -13,9 +13,30 @@ dotenv.config();
 
 const app = express();
 
+// Build allowed origins list from env. Support comma-separated list and
+// tolerate values that include a path (e.g. https://host/path) by extracting
+// the origin portion so comparisons match the browser `Origin` header.
+const rawCors = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = rawCors
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean)
+  .map(v => {
+    try {
+      return new URL(v).origin;
+    } catch {
+      return v;
+    }
+  });
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // allow non-browser requests (curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error('CORS not allowed'));
+    },
     credentials: true,
   })
 );
