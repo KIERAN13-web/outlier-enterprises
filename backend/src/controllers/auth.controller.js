@@ -50,6 +50,7 @@ async function syncUser(req, res) {
       ok: true,
       isPaid: Boolean(data?.isPaid),
       paidAt: data?.paidAt || null,
+      isAdmin: Boolean(data?.isAdmin),
     });
   } catch (err) {
     console.error('syncUser error', err);
@@ -69,6 +70,7 @@ async function getStatus(req, res) {
       ok: true,
       isPaid: Boolean(data?.isPaid),
       paidAt: data?.paidAt || null,
+      isAdmin: Boolean(data?.isAdmin),
     });
   } catch (err) {
     console.error('getStatus error', err);

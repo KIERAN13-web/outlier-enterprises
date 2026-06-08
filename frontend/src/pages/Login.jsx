@@ -4,19 +4,7 @@ import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import authApi from '../api/authApi';
-import adminApi from '../api/adminApi';
 import './Auth.css';
-
-// Helper function to check if user is admin
-const checkIfUserIsAdmin = async (idToken) => {
-  try {
-    await adminApi.getDashboardStats(idToken);
-    return true;
-  } catch (err) {
-    console.error('Admin check failed:', err);
-    return false;
-  }
-};
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -33,11 +21,8 @@ export default function Login() {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const token = await user.getIdToken();
-        await authApi.syncUser(token);
-        
-        // Check if user is admin
-        const isAdmin = await checkIfUserIsAdmin(token);
-        
+        const syncResult = await authApi.syncUser(token);
+        const isAdmin = Boolean(syncResult?.isAdmin);
         if (isAdmin) {
           navigate('/admin/dashboard', { replace: true });
         } else {
@@ -61,15 +46,14 @@ export default function Login() {
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const token = await cred.user.getIdToken();
+      let syncResult = null;
       try {
-        await authApi.syncUser(token);
+        syncResult = await authApi.syncUser(token);
       } catch (syncError) {
         console.warn('Backend sync failed, continuing with login:', syncError);
       }
       
-      // Check if user is admin
-      const isAdmin = await checkIfUserIsAdmin(token);
-      
+      const isAdmin = Boolean(syncResult?.isAdmin);
       if (isAdmin) {
         navigate('/admin/dashboard', { replace: true });
       } else {
