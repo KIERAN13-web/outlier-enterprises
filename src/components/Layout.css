@@ -1,0 +1,17 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+.main-content {
+  flex: 1;
+  padding: var(--spacing-2xl) 0;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: var(--spacing-xl) 0;
+  }
+}

@@ -1,0 +1,243 @@
+.payment-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.payment-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.payment-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: var(--spacing-md);
+}
+
+.payment-header p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--spacing-2xl);
+}
+
+.pricing-card {
+  padding: var(--spacing-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.pricing-header {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pricing-header h3 {
+  margin: 0 0 var(--spacing-md) 0;
+  font-size: 1.5rem;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.currency {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.amount {
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.period {
+  font-size: 0.9rem;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+
+.features-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.features-list li {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.features-list li:before {
+  content: '✓';
+  color: var(--success);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.form-group label {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.form-group input {
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-group input:disabled {
+  background-color: var(--bg-secondary);
+  cursor: not-allowed;
+}
+
+.form-group small {
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+}
+
+.error-message {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.success-message {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid var(--success);
+  color: var(--success);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.payment-note {
+  background-color: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.payment-note p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.benefits-card {
+  padding: var(--spacing-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.benefits-card h3 {
+  font-size: 1.5rem;
+  margin: 0;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.benefits-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.benefit-item {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.benefit-icon {
+  font-size: 1.5rem;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.benefit-item h4 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.benefit-item p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .payment-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .amount {
+    font-size: 2.5rem;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
