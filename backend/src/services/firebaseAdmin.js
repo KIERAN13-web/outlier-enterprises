@@ -12,8 +12,21 @@ async function initFirebaseAdmin() {
   const databaseURL = process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL;
   const projectId = process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
 
-  if (!serviceAccountPath) {
-    throw new Error('Missing required FIREBASE_SERVICE_ACCOUNT_PATH environment variable for Firebase Admin initialization.');
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+
+  if (!serviceAccountJson && !serviceAccountPath) {
+    throw new Error('Missing required Firebase credentials. Set either FIREBASE_SERVICE_ACCOUNT_JSON (JSON string) or FIREBASE_SERVICE_ACCOUNT_PATH (path to JSON file).');
+  }
+
+  if (serviceAccountJson) {
+    if (!serviceAccountPath) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON is set but FIREBASE_SERVICE_ACCOUNT_PATH is missing. Set FIREBASE_SERVICE_ACCOUNT_PATH to specify where the credentials file should be written.');
+    }
+    const resolved = path.isAbsolute(serviceAccountPath)
+      ? serviceAccountPath
+      : path.resolve(process.cwd(), serviceAccountPath);
+    fs.mkdirSync(path.dirname(resolved), { recursive: true });
+    fs.writeFileSync(resolved, serviceAccountJson, 'utf8');
   }
 
   const resolved = path.isAbsolute(serviceAccountPath)
