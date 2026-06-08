@@ -4,7 +4,18 @@ import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import authApi from '../api/authApi';
+import adminApi from '../api/adminApi';
 import './Auth.css';
+
+const checkIfUserIsAdmin = async (idToken) => {
+  try {
+    await adminApi.getDashboardStats(idToken);
+    return true;
+  } catch (err) {
+    console.error('Admin check failed:', err);
+    return false;
+  }
+};
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -15,14 +26,18 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If Firebase env vars are missing/misconfigured, `auth` can be null.
     if (!auth) return;
 
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const token = await user.getIdToken();
         await authApi.syncUser(token);
-        navigate('/dashboard', { replace: true });
+        const isAdmin = await checkIfUserIsAdmin(token);
+        if (isAdmin) {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       }
     });
     return () => unsub();
@@ -46,7 +61,13 @@ export default function Login() {
       } catch (syncError) {
         console.warn('Backend sync failed, continuing with login:', syncError);
       }
-      navigate('/dashboard', { replace: true });
+
+      const isAdmin = await checkIfUserIsAdmin(token);
+      if (isAdmin) {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
 
     } catch (err) {
       console.error(err);

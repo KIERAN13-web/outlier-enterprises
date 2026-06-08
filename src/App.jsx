@@ -9,6 +9,8 @@ import PaymentStatus from './pages/PaymentStatus.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Task from './pages/Task.jsx';
 import OutlierBook from './pages/OutlierBook.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import AdminGate from './components/AdminGate.jsx';
 
 export default function App() {
   return (
@@ -20,6 +22,14 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/payment-status/:pendingId" element={<PaymentStatus />} />
 
+      <Route
+        path="/admin/dashboard"
+        element={
+          <AdminGate>
+            <AdminDashboard />
+          </AdminGate>
+        }
+      />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/task/:orderId" element={<Task />} />
       <Route path="/outlier-book" element={<OutlierBook />} />
