@@ -40,6 +40,7 @@ const africanCountries = [
 export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [country, setCountry] = useState('Kenya');
   const [idNumber, setIdNumber] = useState('');
@@ -63,8 +64,14 @@ export default function Register() {
     setError('');
     setShowLoginLink(false);
 
-    if (!fullName || !country || !idNumber || !email || !password) {
-      setError('Name, country, ID number, email, and password are all required');
+    if (!fullName || !country || !idNumber || !email || !password || !confirmPassword) {
+      setError('Name, country, ID number, email, password, and confirm password are required');
+      setBusy(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Password and confirm password do not match');
       setBusy(false);
       return;
     }
@@ -149,7 +156,7 @@ export default function Register() {
               <input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder=""
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -204,6 +211,18 @@ export default function Register() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
             </div>
