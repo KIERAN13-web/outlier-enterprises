@@ -10,14 +10,37 @@ async function syncUser(req, res) {
     const now = new Date().toISOString();
 
     const snap = await userRef.get();
+    const updates = {};
+
     if (!snap.exists()) {
-      await userRef.set({
-        email: email || null,
-        isPaid: false,
-        paidAt: null,
-        createdAt: now,
-        updatedAt: now,
-      });
+      updates.email = email || null;
+      updates.isPaid = false;
+      updates.paidAt = null;
+      updates.createdAt = now;
+      updates.updatedAt = now;
+      updates.isAdmin = false;
+    } else {
+      const existing = snap.val();
+      if (existing.email !== email) {
+        updates.email = email || existing.email || null;
+      }
+      if (existing.isPaid === undefined) {
+        updates.isPaid = false;
+      }
+      if (existing.paidAt === undefined) {
+        updates.paidAt = null;
+      }
+      if (!existing.createdAt) {
+        updates.createdAt = now;
+      }
+      if (existing.isAdmin === undefined) {
+        updates.isAdmin = false;
+      }
+      updates.updatedAt = now;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await userRef.update(updates);
     }
 
     const updatedSnap = await userRef.get();

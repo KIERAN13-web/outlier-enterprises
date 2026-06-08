@@ -52,3 +52,4 @@ try {
 }
 
 export { app, auth, database, analytics };
+export default app;
