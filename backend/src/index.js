@@ -8,6 +8,7 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import outlierRoutes from './routes/outlier.routes.js';
 import taskRoutes from './routes/task.routes.js';
 import walletRoutes from './routes/wallet.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 dotenv.config();
 
@@ -54,6 +55,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/outliers', outlierRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err, _req, res, _next) => {

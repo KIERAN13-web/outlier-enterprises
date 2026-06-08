@@ -10,21 +10,40 @@ import Dashboard from './pages/Dashboard.jsx';
 import Task from './pages/Task.jsx';
 import OutlierBook from './pages/OutlierBook.jsx';
 
+import AdminLogin from './pages/AdminLogin.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import AdminGate from './components/AdminGate.jsx';
+
 export default function App() {
   return (
-    <Layout>
+    <>
       <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/payment" element={<Payment />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/payment-status/:pendingId" element={<PaymentStatus />} />
-
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/task/:orderId" element={<Task />} />
-      <Route path="/outlier-book" element={<OutlierBook />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Admin routes (no layout) */}
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminGate>
+              <AdminDashboard />
+            </AdminGate>
+          }
+        />
       </Routes>
-    </Layout>
+      
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/payment-status/:pendingId" element={<PaymentStatus />} />
+
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/task/:orderId" element={<Task />} />
+          <Route path="/outlier-book" element={<OutlierBook />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </>
   );
 }
