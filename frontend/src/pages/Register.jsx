@@ -1,18 +1,51 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { ref, set } from 'firebase/database';
 import { auth, database } from '../firebase/client';
 import authApi from '../api/authApi';
 import paymentApi from '../api/paymentApi';
 import './Auth.css';
 
+const africanCountries = [
+  'Kenya',
+  'Nigeria',
+  'South Africa',
+  'Egypt',
+  'Ghana',
+  'Tanzania',
+  'Uganda',
+  'Rwanda',
+  'Ethiopia',
+  'Morocco',
+  'Algeria',
+  'Senegal',
+  'Cameroon',
+  'Zimbabwe',
+  'Zambia',
+  'Botswana',
+  'Namibia',
+  'Mauritius',
+  'Madagascar',
+  'Mozambique',
+  'Sudan',
+  'Tunisia',
+  'Angola',
+  'Ivory Coast',
+  'Sierra Leone',
+  'Burundi',
+  'Lesotho',
+  'Libya',
+];
+
 export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [country, setCountry] = useState('Kenya');
+  const [idNumber, setIdNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
-  const [step, setStep] = useState(1); // 1=email+password, 2=phone+payment
+  const [step, setStep] = useState(1); // 1=profile, 2=payment
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [showLoginLink, setShowLoginLink] = useState(false);
@@ -29,10 +62,9 @@ export default function Register() {
     setBusy(true);
     setError('');
     setShowLoginLink(false);
-    // Defer actual Firebase account creation until after payment completes.
-    // Validate inputs, then move to payment card where we'll initiate payment.
-    if (!email || !password) {
-      setError('Email and password are required');
+
+    if (!fullName || !country || !idNumber || !email || !password) {
+      setError('Name, country, ID number, email, and password are all required');
       setBusy(false);
       return;
     }
@@ -47,9 +79,16 @@ export default function Register() {
     setError('');
     setSimulationMessage('');
     try {
-      // Initiate guest STK push that includes email + password so the backend
+      // Initiate guest STK push that includes profile data so the backend
       // can create the user after successful payment via webhook.
-      const result = await paymentApi.createStkPushGuest({ email, password, phoneNumber });
+      const result = await paymentApi.createStkPushGuest({
+        email,
+        password,
+        phoneNumber,
+        name: fullName,
+        country,
+        idNumber,
+      });
 
       setSuccess(true);
       setPendingId(result.pendingId);
@@ -106,6 +145,46 @@ export default function Register() {
         {step === 1 && (
           <form onSubmit={onCreateAccount} className="auth-form">
             <div className="form-group">
+              <label htmlFor="name">Full Name</label>
+              <input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="country">Country</label>
+              <select
+                id="country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                required
+              >
+                {africanCountries.map((countryName) => (
+                  <option key={countryName} value={countryName}>
+                    {countryName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="idNumber">ID Number</label>
+              <input
+                id="idNumber"
+                type="text"
+                placeholder="12345678"
+                value={idNumber}
+                onChange={(e) => setIdNumber(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-group">
               <label htmlFor="email">Email Address</label>
               <input
                 id="email"
@@ -130,7 +209,7 @@ export default function Register() {
             </div>
 
             <button disabled={busy} type="submit" className="btn btn-primary btn-full">
-              {busy ? 'Creating account...' : 'Continue to payment'}
+              {busy ? 'Saving details...' : 'Continue to payment'}
             </button>
           </form>
         )}

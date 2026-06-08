@@ -255,6 +255,10 @@ async function processPendingPayment({ pendingKey, data, status }) {
         const newUid = userRecord.uid;
         await rdb.ref(`users/${newUid}`).set({
           email: data.email || null,
+          fullName: data.name || null,
+          country: data.country || null,
+          idNumber: data.idNumber || null,
+          phoneNumber: data.phoneNumber || null,
           isPaid: true,
           paidAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
@@ -267,6 +271,10 @@ async function processPendingPayment({ pendingKey, data, status }) {
         const existing = await firebaseAdmin.auth().getUserByEmail(data.email);
         const existingUid = existing.uid;
         await rdb.ref(`users/${existingUid}`).update({
+          fullName: data.name || null,
+          country: data.country || null,
+          idNumber: data.idNumber || null,
+          phoneNumber: data.phoneNumber || null,
           isPaid: true,
           paidAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -356,9 +364,9 @@ async function bypassGuestPayment(req, res) {
       return res.status(403).json({ ok: false, error: 'BYPASS_DISABLED' });
     }
 
-    const { email, password, phoneNumber } = req.body;
-    if (!email || !password || !phoneNumber) {
-      return res.status(400).json({ ok: false, error: 'email_password_phone_required' });
+    const { email, password, phoneNumber, name, country, idNumber } = req.body;
+    if (!email || !password || !phoneNumber || !name || !country || !idNumber) {
+      return res.status(400).json({ ok: false, error: 'missing_guest_registration_fields' });
     }
 
     const rdb = firebaseAdmin.database();
@@ -377,6 +385,9 @@ async function bypassGuestPayment(req, res) {
     const uid = userRecord.uid;
     await rdb.ref(`users/${uid}`).set({
       email,
+      fullName: name,
+      country,
+      idNumber,
       phoneNumber,
       isPaid: true,
       paidAt: new Date().toISOString(),
@@ -405,7 +416,19 @@ async function getPaymentStatus(req, res) {
     }
 
     const data = snap.val();
-    return res.json({ ok: true, status: data.status, email: data.email, phoneNumber: data.phoneNumber, checkoutRequestId: data.checkoutRequestId || null, uid: data.uid || null, createdAt: data.createdAt, updatedAt: data.updatedAt });
+    return res.json({
+      ok: true,
+      status: data.status,
+      email: data.email,
+      phoneNumber: data.phoneNumber,
+      name: data.name || null,
+      country: data.country || null,
+      idNumber: data.idNumber || null,
+      checkoutRequestId: data.checkoutRequestId || null,
+      uid: data.uid || null,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    });
   } catch (err) {
     console.error('getPaymentStatus error', err);
     return res.status(500).json({ ok: false, error: 'STATUS_CHECK_FAILED' });

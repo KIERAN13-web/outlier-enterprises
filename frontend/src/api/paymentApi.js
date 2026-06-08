@@ -7,10 +7,10 @@ const createStkPush = (token, phoneNumber) =>
     body: { phoneNumber },
   });
 
-const createStkPushGuest = ({ email, password, phoneNumber }) =>
+const createStkPushGuest = ({ email, password, phoneNumber, name, country, idNumber }) =>
   client.request('/payments/mpesa/stk-push/guest', {
     method: 'POST',
-    body: { email, password, phoneNumber },
+    body: { email, password, phoneNumber, name, country, idNumber },
   });
 
 const getPaymentStatus = (pendingId) =>
@@ -24,10 +24,10 @@ const simulateWebhook = (pendingId, status = 'SUCCESS') =>
     body: { pendingId, status },
   });
 
-const bypassPayment = ({ email, password, phoneNumber }) =>
+const bypassPayment = ({ email, password, phoneNumber, name, country, idNumber }) =>
   client.request('/payments/mpesa/bypass', {
     method: 'POST',
-    body: { email, password, phoneNumber },
+    body: { email, password, phoneNumber, name, country, idNumber },
   });
 
 const placeOrder = (token, { accountId, accountName, amount }) =>
