@@ -1,18 +1,16 @@
 {
-  "name": "chat-app",
+  "name": "chat-app-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "npm --prefix frontend run dev",
-    "clean": "npm --prefix frontend run clean",
-    "build": "npm --prefix frontend run build",
+    "dev": "vite",
+    "clean": "node -e \"const fs = require('fs'); if (fs.existsSync('dist')) fs.rmSync('dist', { recursive: true, force: true });\"",
+    "build": "vite build",
     "lint": "eslint .",
-    "preview": "npm --prefix frontend run preview",
-    "predeploy": "npm --prefix frontend run predeploy",
-    "deploy": "npm --prefix frontend run deploy",
-    "backend:dev": "npm --prefix backend run dev",
-    "backend:start": "npm --prefix backend run start"
+    "preview": "vite preview",
+    "predeploy": "npm run clean && npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "firebase": "^12.14.0",
