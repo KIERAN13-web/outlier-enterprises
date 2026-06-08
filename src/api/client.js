@@ -7,13 +7,19 @@ const isBackendConfigured = Boolean(
   !apiUrl.includes('your-frontend.vercel.app')
 );
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, headers: customHeaders = {} } = {}) {
   if (!API_BASE_URL) {
     throw new Error('Backend API is not configured. Set VITE_API_URL to your deployed backend URL.');
   }
 
-  const headers = { 'Content-Type': 'application/json' };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    ...customHeaders,
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
