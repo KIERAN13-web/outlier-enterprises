@@ -4,15 +4,14 @@ import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/client';
 import { useNavigate, Link } from 'react-router-dom';
 import authApi from '../api/authApi';
+import adminApi from '../api/adminApi';
 import './Auth.css';
 
 // Helper function to check if user is admin
 const checkIfUserIsAdmin = async (idToken) => {
   try {
-    const response = await fetch('/api/admin/stats', {
-      headers: { Authorization: `Bearer ${idToken}` },
-    });
-    return response.ok;
+    await adminApi.getDashboardStats(idToken);
+    return true;
   } catch (err) {
     console.error('Admin check failed:', err);
     return false;
