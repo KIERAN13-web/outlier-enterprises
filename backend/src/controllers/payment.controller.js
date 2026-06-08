@@ -75,7 +75,7 @@ async function placeOrder(req, res) {
 }
 
 // Helper function to create orders with custom amounts
-async function createOrder(uid, accountInfo, email, customAmount = null) {
+async function createOrder(uid, accountInfo, email, customAmount = null, options = {}) {
   const rdb = firebaseAdmin.database();
   const ordersRef = rdb.ref(`users/${uid}/orders`).push();
   const orderId = ordersRef.key;
@@ -89,24 +89,26 @@ async function createOrder(uid, accountInfo, email, customAmount = null) {
     email,
     amount,
     status: 'pending',
+    checkoutRequestId: options.checkoutRequestId || null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
   await ordersRef.set(orderData);
 
-  // Schedule auto-verification after 2 minutes
-  setTimeout(async () => {
-    try {
-      await rdb.ref(`users/${uid}/orders/${orderId}`).update({
-        status: 'verified',
-        verifiedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-    } catch (err) {
-      console.error('Auto-verification failed for order:', orderId, err);
-    }
-  }, VERIFICATION_TIME);
+  if (options.autoVerify !== false) {
+    setTimeout(async () => {
+      try {
+        await rdb.ref(`users/${uid}/orders/${orderId}`).update({
+          status: 'verified',
+          verifiedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error('Auto-verification failed for order:', orderId, err);
+      }
+    }, VERIFICATION_TIME);
+  }
 
   return { orderId, ...orderData };
 }
@@ -126,8 +128,6 @@ async function createStkPush(req, res) {
       return res.status(400).json({ ok: false, error: limitCheck.error, message: limitCheck.message });
     }
 
-    // Placeholder: in a real implementation you would create a provider transaction record,
-    // then call M-Pesa API to initiate STK push.
     const result = await paymentProvider.createStkPush({
       uid,
       email,
@@ -135,10 +135,29 @@ async function createStkPush(req, res) {
       amount: PAID_AMOUNT,
     });
 
-    // Create an order record
-    const order = await createOrder(uid, phoneNumber, email, PAID_AMOUNT);
+    const order = await createOrder(uid, phoneNumber, email, PAID_AMOUNT, {
+      autoVerify: false,
+      checkoutRequestId: result.checkoutRequestId,
+    });
 
-    return res.json({ ok: true, payment: result, order });
+    const rdb = firebaseAdmin.database();
+    const pendingRef = rdb.ref('pendingPayments').push();
+    const pendingId = pendingRef.key;
+
+    await pendingRef.set({
+      uid,
+      email,
+      phoneNumber: result.phoneNumber,
+      amount: PAID_AMOUNT,
+      status: 'PENDING',
+      checkoutRequestId: result.checkoutRequestId,
+      orderId: order.orderId,
+      type: 'USER',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    return res.json({ ok: true, payment: result, order, pendingId });
   } catch (err) {
     console.error('createStkPush error', err);
     return res.status(500).json({ ok: false, error: 'STK_PUSH_FAILED' });
@@ -162,16 +181,17 @@ async function createStkPushGuest(req, res) {
     await pendingRef.set({
       email,
       password,
-      phoneNumber,
+      phoneNumber: result.phoneNumber,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
+      type: 'GUEST',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
 
     await rdb.ref(`pendingUsers/${pendingId}`).set({
       email,
-      phoneNumber,
+      phoneNumber: result.phoneNumber,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
       createdAt: new Date().toISOString(),
@@ -207,37 +227,61 @@ async function findPendingPaymentByPendingId(pendingId) {
 async function processPendingPayment({ pendingKey, data, status }) {
   const rdb = firebaseAdmin.database();
   const docRef = rdb.ref(`pendingPayments/${pendingKey}`);
-  const pendingUserRef = rdb.ref(`pendingUsers/${pendingKey}`);
+  const pendingUserRef = data.type === 'GUEST' ? rdb.ref(`pendingUsers/${pendingKey}`) : null;
 
   if (status === 'SUCCESS') {
-    try {
-      const userRecord = await firebaseAdmin.auth().createUser({ email: data.email, password: data.password });
-      const newUid = userRecord.uid;
-      await rdb.ref(`users/${newUid}`).set({
-        email: data.email || null,
-        isPaid: true,
-        paidAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-      await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), password: null, uid: newUid });
-      await pendingUserRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), uid: newUid });
-    } catch (e) {
-      console.warn('createUser during webhook failed, trying to update existing user', e?.message || e);
-      const existing = await firebaseAdmin.auth().getUserByEmail(data.email);
-      const existingUid = existing.uid;
-      await rdb.ref(`users/${existingUid}`).update({
+    if (data.type === 'USER' && data.uid) {
+      await rdb.ref(`users/${data.uid}`).update({
         isPaid: true,
         paidAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
-      await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), password: null, uid: existingUid });
-      await pendingUserRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), uid: existingUid });
+
+      if (data.orderId) {
+        await rdb.ref(`users/${data.uid}/orders/${data.orderId}`).update({
+          status: 'verified',
+          verifiedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
+      await docRef.remove();
+      return;
     }
 
-    await docRef.remove();
-  } else {
-    await docRef.update({ status: 'FAILED', updatedAt: new Date().toISOString(), password: null });
+    if (data.type === 'GUEST') {
+      try {
+        const userRecord = await firebaseAdmin.auth().createUser({ email: data.email, password: data.password });
+        const newUid = userRecord.uid;
+        await rdb.ref(`users/${newUid}`).set({
+          email: data.email || null,
+          isPaid: true,
+          paidAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), password: null, uid: newUid });
+        await pendingUserRef?.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), uid: newUid });
+      } catch (e) {
+        console.warn('createUser during webhook failed, trying to update existing user', e?.message || e);
+        const existing = await firebaseAdmin.auth().getUserByEmail(data.email);
+        const existingUid = existing.uid;
+        await rdb.ref(`users/${existingUid}`).update({
+          isPaid: true,
+          paidAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), password: null, uid: existingUid });
+        await pendingUserRef?.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), uid: existingUid });
+      }
+
+      await docRef.remove();
+      return;
+    }
+  }
+
+  await docRef.update({ status: 'FAILED', updatedAt: new Date().toISOString(), password: null });
+  if (pendingUserRef) {
     await pendingUserRef.update({ status: 'FAILED', updatedAt: new Date().toISOString() });
   }
 }
