@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "clean": "node -e \"const fs = require('fs'); if (fs.existsSync('dist')) fs.rmSync('dist', { recursive: true, force: true });\"",
-    "build": "vite build --base=/chat-app/",
+    "build": "vite build --base=/",
     "lint": "eslint .",
-    "preview": "vite preview --base=/chat-app/",
+    "preview": "vite preview --base=/",
     "predeploy": "npm run clean && npm run build",
     "deploy": "gh-pages -d dist"
   },
