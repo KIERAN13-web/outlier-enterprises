@@ -15,6 +15,9 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // If Firebase env vars are missing/misconfigured, `auth` can be null.
+    if (!auth) return;
+
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const token = await user.getIdToken();
@@ -27,6 +30,12 @@ export default function Login() {
 
   async function onSubmit(e) {
     e.preventDefault();
+
+    if (!auth) {
+      setError('Firebase is not configured. Please set VITE_FIREBASE_* env vars and redeploy.');
+      return;
+    }
+
     setBusy(true);
     setError('');
     try {
