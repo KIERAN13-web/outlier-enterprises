@@ -4,8 +4,8 @@ import adminRequired from '../middleware/adminRequired.js';
 
 const router = Router();
 
-// Admin login (no token required)
-router.post('/login', adminController.login);
+// Toggle admin role (requires admin auth)
+router.post('/toggle-role', adminRequired, adminController.toggleAdminRole);
 
 // All other routes require admin token
 router.get('/users/search', adminRequired, adminController.searchUsers);

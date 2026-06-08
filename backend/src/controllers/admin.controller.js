@@ -1,30 +1,36 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
 
-// Admin login
-async function login(req, res) {
+// Toggle admin role for a user
+async function toggleAdminRole(req, res) {
   try {
-    const { adminKey } = req.body;
+    const { uid, makeAdmin } = req.body;
 
-    if (!adminKey) {
-      return res.status(400).json({ ok: false, error: 'adminKey_required' });
+    if (!uid || makeAdmin === undefined) {
+      return res.status(400).json({ ok: false, error: 'uid_and_makeAdmin_required' });
     }
 
-    const validAdminKey = process.env.ADMIN_KEY || 'admin123';
-    if (adminKey !== validAdminKey) {
-      return res.status(401).json({ ok: false, error: 'invalid_admin_key' });
+    const rdb = firebaseAdmin.database();
+
+    // Verify user exists
+    const userSnap = await rdb.ref(`users/${uid}`).get();
+    if (!userSnap.exists()) {
+      return res.status(404).json({ ok: false, error: 'user_not_found' });
     }
 
-    // Generate a simple admin token (in production, use JWT)
-    const adminToken = Buffer.from(adminKey).toString('base64');
+    // Update admin role
+    await rdb.ref(`users/${uid}`).update({
+      isAdmin: makeAdmin === true,
+      updatedAt: new Date().toISOString(),
+    });
 
     return res.json({
       ok: true,
-      adminToken,
-      message: 'Admin login successful',
+      message: `User ${makeAdmin ? 'promoted to' : 'removed from'} admin role`,
+      isAdmin: makeAdmin,
     });
   } catch (err) {
-    console.error('admin login error', err);
-    return res.status(500).json({ ok: false, error: 'LOGIN_FAILED' });
+    console.error('toggleAdminRole error', err);
+    return res.status(500).json({ ok: false, error: 'TOGGLE_FAILED' });
   }
 }
 
@@ -316,7 +322,7 @@ async function getDashboardStats(req, res) {
 }
 
 export default {
-  login,
+  toggleAdminRole,
   searchUsers,
   getUserDetails,
   updateWithdrawal,

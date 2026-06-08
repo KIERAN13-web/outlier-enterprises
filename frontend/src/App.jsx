@@ -10,7 +10,6 @@ import Dashboard from './pages/Dashboard.jsx';
 import Task from './pages/Task.jsx';
 import OutlierBook from './pages/OutlierBook.jsx';
 
-import AdminLogin from './pages/AdminLogin.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import AdminGate from './components/AdminGate.jsx';
 
@@ -18,8 +17,7 @@ export default function App() {
   return (
     <>
       <Routes>
-        {/* Admin routes (no layout) */}
-        <Route path="/admin" element={<AdminLogin />} />
+        {/* Admin dashboard route (no layout) */}
         <Route
           path="/admin/dashboard"
           element={

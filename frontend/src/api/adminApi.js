@@ -1,51 +1,52 @@
 import client from './client';
 
-const login = (adminKey) =>
-  client.request('/admin/login', {
+const toggleAdminRole = (idToken, uid, makeAdmin) =>
+  client.request('/admin/toggle-role', {
     method: 'POST',
-    body: { adminKey },
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: { uid, makeAdmin },
   });
 
-const searchUsers = (adminToken, query) =>
+const searchUsers = (idToken, query) =>
   client.request(`/admin/users/search?query=${encodeURIComponent(query)}`, {
     method: 'GET',
-    headers: { 'X-Admin-Token': adminToken },
+    headers: { Authorization: `Bearer ${idToken}` },
   });
 
-const getUserDetails = (adminToken, uid) =>
+const getUserDetails = (idToken, uid) =>
   client.request(`/admin/users/${uid}`, {
     method: 'GET',
-    headers: { 'X-Admin-Token': adminToken },
+    headers: { Authorization: `Bearer ${idToken}` },
   });
 
-const updateWithdrawal = (adminToken, uid, withdrawalId, status) =>
+const updateWithdrawal = (idToken, uid, withdrawalId, status) =>
   client.request('/admin/withdrawals/update', {
     method: 'POST',
-    headers: { 'X-Admin-Token': adminToken },
+    headers: { Authorization: `Bearer ${idToken}` },
     body: { uid, withdrawalId, status },
   });
 
-const fundUser = (adminToken, uid, amount, reason) =>
+const fundUser = (idToken, uid, amount, reason) =>
   client.request('/admin/users/fund', {
     method: 'POST',
-    headers: { 'X-Admin-Token': adminToken },
+    headers: { Authorization: `Bearer ${idToken}` },
     body: { uid, amount, reason },
   });
 
-const getPendingWithdrawals = (adminToken) =>
+const getPendingWithdrawals = (idToken) =>
   client.request('/admin/withdrawals/pending', {
     method: 'GET',
-    headers: { 'X-Admin-Token': adminToken },
+    headers: { Authorization: `Bearer ${idToken}` },
   });
 
-const getDashboardStats = (adminToken) =>
+const getDashboardStats = (idToken) =>
   client.request('/admin/stats', {
     method: 'GET',
-    headers: { 'X-Admin-Token': adminToken },
+    headers: { Authorization: `Bearer ${idToken}` },
   });
 
 export default {
-  login,
+  toggleAdminRole,
   searchUsers,
   getUserDetails,
   updateWithdrawal,

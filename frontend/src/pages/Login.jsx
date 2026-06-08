@@ -6,6 +6,19 @@ import { useNavigate, Link } from 'react-router-dom';
 import authApi from '../api/authApi';
 import './Auth.css';
 
+// Helper function to check if user is admin
+const checkIfUserIsAdmin = async (idToken) => {
+  try {
+    const response = await fetch('/api/admin/stats', {
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    return response.ok;
+  } catch (err) {
+    console.error('Admin check failed:', err);
+    return false;
+  }
+};
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +35,15 @@ export default function Login() {
       if (user) {
         const token = await user.getIdToken();
         await authApi.syncUser(token);
-        navigate('/dashboard', { replace: true });
+        
+        // Check if user is admin
+        const isAdmin = await checkIfUserIsAdmin(token);
+        
+        if (isAdmin) {
+          navigate('/admin/dashboard', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       }
     });
     return () => unsub();
@@ -46,7 +67,15 @@ export default function Login() {
       } catch (syncError) {
         console.warn('Backend sync failed, continuing with login:', syncError);
       }
-      navigate('/dashboard', { replace: true });
+      
+      // Check if user is admin
+      const isAdmin = await checkIfUserIsAdmin(token);
+      
+      if (isAdmin) {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
 
     } catch (err) {
       console.error(err);

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAuth } from 'firebase/auth';
+import { app } from '../firebase/client';
 import adminApi from '../api/adminApi';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
-  const [adminToken] = useState(() => localStorage.getItem('adminToken'));
+  const [idToken, setIdToken] = useState(null);
   const [stats, setStats] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -17,19 +19,32 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
   const navigate = useNavigate();
+  const auth = getAuth(app);
 
   useEffect(() => {
-    if (!adminToken) {
-      navigate('/admin', { replace: true });
-      return;
-    }
-    fetchStats();
-    fetchPendingWithdrawals();
-  }, [adminToken, navigate]);
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        navigate('/login', { replace: true });
+        return;
+      }
 
-  const fetchStats = async () => {
+      try {
+        const token = await user.getIdToken();
+        setIdToken(token);
+        fetchStats(token);
+        fetchPendingWithdrawals(token);
+      } catch (err) {
+        console.error('Failed to get token:', err);
+        navigate('/login', { replace: true });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate, auth]);
+
+  const fetchStats = async (token) => {
     try {
-      const result = await adminApi.getDashboardStats(adminToken);
+      const result = await adminApi.getDashboardStats(token);
       setStats(result.stats);
     } catch (err) {
       console.error(err);
@@ -37,9 +52,9 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchPendingWithdrawals = async () => {
+  const fetchPendingWithdrawals = async (token) => {
     try {
-      const result = await adminApi.getPendingWithdrawals(adminToken);
+      const result = await adminApi.getPendingWithdrawals(token);
       setPendingWithdrawals(result.pendingWithdrawals || []);
     } catch (err) {
       console.error(err);
@@ -48,12 +63,12 @@ export default function AdminDashboard() {
 
   const onSearch = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || !idToken) return;
 
     setBusy(true);
     setError('');
     try {
-      const result = await adminApi.searchUsers(adminToken, searchQuery);
+      const result = await adminApi.searchUsers(idToken, searchQuery);
       setSearchResults(result.users || []);
     } catch (err) {
       console.error(err);
@@ -64,10 +79,11 @@ export default function AdminDashboard() {
   };
 
   const onSelectUser = async (uid) => {
+    if (!idToken) return;
     setBusy(true);
     setError('');
     try {
-      const result = await adminApi.getUserDetails(adminToken, uid);
+      const result = await adminApi.getUserDetails(idToken, uid);
       setUserDetails(result.user);
       setSelectedUser(uid);
     } catch (err) {
@@ -79,7 +95,7 @@ export default function AdminDashboard() {
   };
 
   const onFundUser = async () => {
-    if (!fundAmount || parseInt(fundAmount) <= 0) {
+    if (!fundAmount || parseInt(fundAmount) <= 0 || !idToken) {
       setError('Invalid amount');
       return;
     }
@@ -87,15 +103,15 @@ export default function AdminDashboard() {
     setBusy(true);
     setError('');
     try {
-      await adminApi.fundUser(adminToken, selectedUser, parseInt(fundAmount), fundReason);
+      await adminApi.fundUser(idToken, selectedUser, parseInt(fundAmount), fundReason);
       setError('');
       setFundAmount('');
       setFundReason('');
       // Refresh user details
-      const result = await adminApi.getUserDetails(adminToken, selectedUser);
+      const result = await adminApi.getUserDetails(idToken, selectedUser);
       setUserDetails(result.user);
       // Refresh stats
-      fetchStats();
+      fetchStats(idToken);
       alert('User funded successfully');
     } catch (err) {
       console.error(err);
@@ -106,13 +122,13 @@ export default function AdminDashboard() {
   };
 
   const onApproveWithdrawal = async (uid, withdrawalId) => {
-    if (!window.confirm('Approve this withdrawal?')) return;
+    if (!window.confirm('Approve this withdrawal?') || !idToken) return;
 
     setBusy(true);
     try {
-      await adminApi.updateWithdrawal(adminToken, uid, withdrawalId, 'approved');
+      await adminApi.updateWithdrawal(idToken, uid, withdrawalId, 'approved');
       setPendingWithdrawals(prev => prev.filter(w => w.withdrawalId !== withdrawalId));
-      fetchStats();
+      fetchStats(idToken);
     } catch (err) {
       console.error(err);
       setError(err.message || 'Approval failed');
@@ -122,13 +138,13 @@ export default function AdminDashboard() {
   };
 
   const onRejectWithdrawal = async (uid, withdrawalId) => {
-    if (!window.confirm('Reject this withdrawal?')) return;
+    if (!window.confirm('Reject this withdrawal?') || !idToken) return;
 
     setBusy(true);
     try {
-      await adminApi.updateWithdrawal(adminToken, uid, withdrawalId, 'rejected');
+      await adminApi.updateWithdrawal(idToken, uid, withdrawalId, 'rejected');
       setPendingWithdrawals(prev => prev.filter(w => w.withdrawalId !== withdrawalId));
-      fetchStats();
+      fetchStats(idToken);
     } catch (err) {
       console.error(err);
       setError(err.message || 'Rejection failed');
@@ -137,9 +153,13 @@ export default function AdminDashboard() {
     }
   };
 
-  const onLogout = () => {
-    localStorage.removeItem('adminToken');
-    navigate('/admin', { replace: true });
+  const onLogout = async () => {
+    try {
+      await auth.signOut();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   return (
