@@ -42,22 +42,22 @@ export default function Home() {
 
   const features = [
     {
-      icon: '🔍',
+      icon: 'ti-search',
       title: 'Detect Outliers',
       description: 'Advanced algorithms to identify unusual patterns and anomalies in your financial data.',
     },
     {
-      icon: '📊',
+      icon: 'ti-chart-dots',
       title: 'Visualize Data',
       description: 'Beautiful charts and graphs to understand your data at a glance.',
     },
     {
-      icon: '⚡',
+      icon: 'ti-zap',
       title: 'Real-time Analysis',
       description: 'Get instant insights with our powerful real-time processing engine.',
     },
     {
-      icon: '🔒',
+      icon: 'ti-shield-check',
       title: 'Secure & Private',
       description: 'Enterprise-grade security ensures your data stays safe and private.',
     },
@@ -89,51 +89,54 @@ export default function Home() {
   return (
     <div className="home">
       {/* Hero Section */}
-      <section className="hero">
+      <section className="hero container">
         <div className="hero-content">
-          <h1 className="hero-title">Detect Financial Outliers Instantly</h1>
+          <div className="hero-tagline">Elite Financial Intelligence</div>
+          <h1 className="hero-title">Precision Outlier <span className="text-accent">Detection</span></h1>
           <p className="hero-subtitle">
-            Powerful outlier detection for your financial accounts. Identify anomalies, understand patterns, and make data-driven decisions.
+            Uncover the unburnished truth in your financial accounts. Our enterprise-grade engine identifies anomalies and patterns with 99.9% accuracy.
           </p>
           <div className="hero-buttons">
             <Link to="/login" className="btn btn-primary">
-              Get Started
+              Begin Exploration <i className="ti ti-chevron-right"></i>
             </Link>
             <a href="#features" className="btn btn-outline">
-              Learn More
+              The Technology
             </a>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="stats">
+      <section className="stats container">
         <div className="stat-card">
-          <div className="stat-number">10K+</div>
-          <div className="stat-label">Users Served</div>
+          <span className="stat-number">10K+</span>
+          <span className="stat-label">Active Deployments</span>
         </div>
         <div className="stat-card">
-          <div className="stat-number">500M+</div>
-          <div className="stat-label">Transactions Analyzed</div>
+          <span className="stat-number">500M+</span>
+          <span className="stat-label">Transactions Audited</span>
         </div>
         <div className="stat-card">
-          <div className="stat-number">99.9%</div>
-          <div className="stat-label">Uptime</div>
+          <span className="stat-number">24/7</span>
+          <span className="stat-label">Real-time Monitoring</span>
         </div>
         <div className="stat-card">
-          <div className="stat-number">24/7</div>
-          <div className="stat-label">Support</div>
+          <span className="stat-number">99.9%</span>
+          <span className="stat-label">System Uptime</span>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="features">
-        <h2 className="section-title">Powerful Features</h2>
-        <p className="section-subtitle">Everything you need to analyze your financial data</p>
+      <section id="features" className="features container">
+        <div className="section-header">
+          <p className="section-subtitle">Core Capabilities</p>
+          <h2 className="section-title">Engineered for Scale</h2>
+        </div>
         <div className="features-grid">
           {features.map((feature, idx) => (
             <div key={idx} className="feature-card card">
-              <div className="feature-icon">{feature.icon}</div>
+              <div className="feature-icon"><i className={`ti ${feature.icon}`}></i></div>
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
             </div>
@@ -142,32 +145,33 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="how-it-works">
-        <h2 className="section-title">How It Works</h2>
-        <p className="section-subtitle">Get started in just 4 easy steps</p>
+      <section className="how-it-works container">
+        <div className="section-header">
+          <p className="section-subtitle">Integration Path</p>
+          <h2 className="section-title">Seamless Onboarding</h2>
+        </div>
         <div className="steps-grid">
           {steps.map((step, idx) => (
-            <div key={idx} className="step-card card">
+            <div key={idx} className="step-card">
               <div className="step-number">{step.number}</div>
               <h3>{step.title}</h3>
               <p>{step.description}</p>
-              {idx < steps.length - 1 && <div className="step-arrow">→</div>}
             </div>
           ))}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="cta">
+      <section className="cta container">
         <div className="cta-content">
-          <h2>Ready to Get Started?</h2>
-          <p>Join thousands of users analyzing their financial data with Outlier Auditor.</p>
+          <h2>Deploy to Your Workflow</h2>
+          <p>Experience the next generation of financial auditing. Start your analysis today.</p>
           <div className="cta-buttons">
-            <Link to="/login" className="btn btn-primary btn-lg">
-              Start Free Trial
+            <Link to="/login" className="btn btn-primary">
+              Initialize Account
             </Link>
-            <Link to="/payment" className="btn btn-secondary btn-lg">
-              View Pricing
+            <Link to="/payment" className="btn btn-outline">
+              Pricing Structure
             </Link>
           </div>
         </div>

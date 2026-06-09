@@ -66,14 +66,14 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container container">
       <div className="dashboard-header">
         <div>
           <h1>Dashboard</h1>
-          <p>Manage your accounts and run outlier analysis</p>
+          <p>Enterprise audit environment initialized</p>
         </div>
         <Link to="/outlier-book" className="btn btn-primary">
-          📊 Create Outlier Book
+          <i className="ti ti-book"></i> Create Outlier Book
         </Link>
       </div>
 
@@ -81,17 +81,17 @@ export default function Dashboard() {
       <EarningsCard />
 
       <div className="dashboard-stats">
-        <div className="stat-card card">
+        <div className="stat-card">
+          <div className="stat-label">Accounts in Pool</div>
           <div className="stat-value">{accounts.length}</div>
-          <div className="stat-label">Accounts Available</div>
         </div>
-        <div className="stat-card card">
+        <div className="stat-card">
+          <div className="stat-label">Active Orders</div>
           <div className="stat-value">{orders.length}</div>
-          <div className="stat-label">Orders</div>
         </div>
-        <div className="stat-card card">
-          <div className="stat-value">✓</div>
-          <div className="stat-label">Account Active</div>
+        <div className="stat-card">
+          <div className="stat-label">Verification Status</div>
+          <div className="stat-value text-accent"><i className="ti ti-shield-check"></i></div>
         </div>
       </div>
 
@@ -99,16 +99,19 @@ export default function Dashboard() {
 
       <div className="dashboard-content card">
         <div className="content-header">
-          <h2>Your Accounts</h2>
-          {busy && <span className="loading">Loading accounts...</span>}
+          <h2>Monitored Accounts</h2>
+          {busy && <span className="loading">Syncing secure data...</span>}
         </div>
 
         {accounts.length > 0 || orders.length > 0 ? (
-          <AccountTable accounts={accounts} orders={orders} />
+          <div className="table-container">
+            <AccountTable accounts={accounts} orders={orders} />
+          </div>
         ) : (
           <div className="empty-state">
-            <p>No accounts or orders yet</p>
-            <small>Your accounts and orders will appear here</small>
+            <i className="ti ti-database-off" style={{fontSize: '3rem', marginBottom: '1rem', display: 'block'}}></i>
+            <p>No telemetry data available</p>
+            <small>Initialize your first account pool to begin auditing</small>
           </div>
         )}
       </div>
