@@ -4,6 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import paymentApi from '../api/paymentApi';
 import './OutlierBook.css';
 
+const MIN_ORDER_AMOUNT = 250;
+const MAX_ORDER_AMOUNT = 400;
+
 const names = [
   'Ava Parker',
   'Noah Brooks',
@@ -28,7 +31,7 @@ const names = [
 ];
 
 function randomAmount() {
-  return Math.floor(Math.random() * 151) + 250; // 250 - 400
+  return Math.floor(Math.random() * (MAX_ORDER_AMOUNT - MIN_ORDER_AMOUNT + 1)) + MIN_ORDER_AMOUNT;
 }
 
 function getAvatar(index) {
@@ -114,7 +117,7 @@ export default function OutlierBook() {
       <div className="outlier-header">
         <div>
           <h1>Create Outlier Book</h1>
-          <p>Choose an account and place an order for testing.</p>
+          <p>Choose an account and place an order for testing. Order amounts are between KES {MIN_ORDER_AMOUNT} and KES {MAX_ORDER_AMOUNT}.</p>
         </div>
         <Link to="/dashboard" className="btn btn-secondary">
           ← Back to Dashboard

@@ -1,6 +1,8 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import paymentProvider from '../services/paymentProvider.js';
 
+const MIN_ORDER_AMOUNT = 250;
+const MAX_ORDER_AMOUNT = 400;
 const PAID_AMOUNT = 200;
 const VERIFICATION_TIME = 2 * 60 * 1000; // 2 minutes in milliseconds
 const MAX_ORDERS_PER_WEEK = 5;
@@ -54,9 +56,18 @@ async function placeOrder(req, res) {
   try {
     const { uid, email } = req.user;
     const { accountId, accountName, amount } = req.body;
+    const parsedAmount = Number(amount);
 
-    if (!accountId || !amount) {
+    if (!accountId || Number.isNaN(parsedAmount)) {
       return res.status(400).json({ ok: false, error: 'accountId_and_amount_required' });
+    }
+
+    if (parsedAmount < MIN_ORDER_AMOUNT || parsedAmount > MAX_ORDER_AMOUNT) {
+      return res.status(400).json({
+        ok: false,
+        error: 'invalid_order_amount',
+        message: `Order amount must be between KES ${MIN_ORDER_AMOUNT} and KES ${MAX_ORDER_AMOUNT}`,
+      });
     }
 
     // Check order limits
@@ -65,7 +76,7 @@ async function placeOrder(req, res) {
       return res.status(400).json({ ok: false, error: limitCheck.error, message: limitCheck.message });
     }
 
-    const order = await createOrder(uid, accountName || accountId, email, amount);
+    const order = await createOrder(uid, accountName || accountId, email, parsedAmount);
 
     return res.json({ ok: true, order });
   } catch (err) {
