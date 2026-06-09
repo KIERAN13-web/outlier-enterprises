@@ -1,12 +1,11 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import paymentProvider from '../services/paymentProvider.js';
+import { parseAmount, validateOrderAmount } from '../utils/orderValidation.js';
 
-const MIN_ORDER_AMOUNT = 250;
-const MAX_ORDER_AMOUNT = 400;
 const PAID_AMOUNT = 200;
 const VERIFICATION_TIME = 2 * 60 * 1000; // 2 minutes in milliseconds
-const MAX_ORDERS_PER_WEEK = 5;
-const MAX_ORDERS_PER_DAY = 1;
+const MAX_ORDERS_PER_WEEK = Number(process.env.MAX_ORDERS_PER_WEEK) || 5;
+const MAX_ORDERS_PER_DAY = Number(process.env.MAX_ORDERS_PER_DAY) || 1;
 
 // Helper function to check order limits (7-day rolling window)
 async function checkOrderLimits(uid) {
@@ -21,7 +20,6 @@ async function checkOrderLimits(uid) {
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const sevenDaysAgoDate = sevenDaysAgo.toISOString();
 
   let ordersToday = 0;
   let ordersInLast7Days = 0;
@@ -56,18 +54,19 @@ async function placeOrder(req, res) {
   try {
     const { uid, email } = req.user;
     const { accountId, accountName, amount } = req.body;
-    const parsedAmount = Number(amount);
 
-    if (!accountId || Number.isNaN(parsedAmount)) {
-      return res.status(400).json({ ok: false, error: 'accountId_and_amount_required' });
-    }
-
-    if (parsedAmount < MIN_ORDER_AMOUNT || parsedAmount > MAX_ORDER_AMOUNT) {
+    const parsedResult = parseAmount(amount);
+    if (!accountId || !parsedResult.ok) {
       return res.status(400).json({
         ok: false,
-        error: 'invalid_order_amount',
-        message: `Order amount must be between KES ${MIN_ORDER_AMOUNT} and KES ${MAX_ORDER_AMOUNT}`,
+        error: parsedResult.error || 'accountId_and_amount_required',
+        message: parsedResult.message || 'accountId and amount are required.',
       });
+    }
+
+    const validationResult = validateOrderAmount(parsedResult.value);
+    if (!validationResult.ok) {
+      return res.status(400).json(validationResult);
     }
 
     // Check order limits
@@ -76,7 +75,7 @@ async function placeOrder(req, res) {
       return res.status(400).json({ ok: false, error: limitCheck.error, message: limitCheck.message });
     }
 
-    const order = await createOrder(uid, accountName || accountId, email, parsedAmount);
+    const order = await createOrder(uid, accountName || accountId, email, parsedResult.value);
 
     return res.json({ ok: true, order });
   } catch (err) {

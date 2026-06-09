@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
+import { validateStartupEnv } from './utils/env.js';
 import authRoutes from './routes/auth.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
@@ -11,6 +12,7 @@ import walletRoutes from './routes/wallet.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 
 dotenv.config();
+validateStartupEnv();
 
 const app = express();
 

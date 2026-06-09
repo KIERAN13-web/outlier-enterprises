@@ -28,14 +28,15 @@ async function request(path, { method = 'GET', body, token, headers: customHeade
   });
 
   let data = null;
+  const text = await res.text();
   try {
-    data = await res.json();
+    data = JSON.parse(text);
   } catch {
-    // ignore
+    data = text || null;
   }
 
   if (!res.ok) {
-    const err = new Error(data?.error || `HTTP_${res.status}`);
+    const err = new Error((data && data.error) || (typeof data === 'string' ? data : `HTTP_${res.status}`));
     err.status = res.status;
     err.data = data;
     throw err;

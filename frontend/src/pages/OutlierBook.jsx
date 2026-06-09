@@ -4,8 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import paymentApi from '../api/paymentApi';
 import './OutlierBook.css';
 
-const MIN_ORDER_AMOUNT = 250;
-const MAX_ORDER_AMOUNT = 400;
+const MIN_ORDER_AMOUNT = Number(import.meta.env.VITE_MIN_ORDER_AMOUNT || 250);
+const MAX_ORDER_AMOUNT = Number(import.meta.env.VITE_MAX_ORDER_AMOUNT || 400);
 
 const names = [
   'Ava Parker',

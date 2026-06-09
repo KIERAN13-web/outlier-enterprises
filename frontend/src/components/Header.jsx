@@ -10,12 +10,16 @@ export default function Header() {
   const location = useLocation();
   const user = auth?.currentUser;
   const [isPaid, setIsPaid] = useState(null);
+  const [statusChecked, setStatusChecked] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
 
   useEffect(() => {
     (async () => {
-      if (!user) return;
+      if (!user) {
+        setStatusChecked(true);
+        return;
+      }
       try {
         const token = await user.getIdToken();
         const resp = await authApi.getStatus(token);
@@ -24,8 +28,11 @@ export default function Header() {
           const w = await walletApi.getWallet(token);
           setNotifications(w.user?.notifications || []);
         } catch (e) {}
-      } catch {
+      } catch (err) {
+        console.error('Header status fetch failed', err);
         setIsPaid(null);
+      } finally {
+        setStatusChecked(true);
       }
     })();
   }, [user]);
@@ -64,7 +71,9 @@ export default function Header() {
               </>
             ) : (
               <>
-                {isPaid ? (
+{!statusChecked ? (
+              <span className="nav-loading">Checking account status...</span>
+            ) : isPaid ? (
                   <>
                     <Link to="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
                       Dashboard
