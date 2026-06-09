@@ -20,8 +20,13 @@ export default function Dashboard() {
         dashboardApi.getAccountPool(token),
         dashboardApi.getOrders(token),
       ]);
-      setAccounts(accountsData.accounts || []);
-      setOrders(ordersData.orders || []);
+      
+      const newAccounts = accountsData.accounts || [];
+      const newOrders = ordersData.orders || [];
+
+      // Only update if data changed to prevent unnecessary re-renders
+      setAccounts(prev => JSON.stringify(prev) === JSON.stringify(newAccounts) ? prev : newAccounts);
+      setOrders(prev => JSON.stringify(prev) === JSON.stringify(newOrders) ? prev : newOrders);
     } catch (err) {
       console.error(err);
       setError(err.message || 'Failed to load data');
@@ -48,21 +53,41 @@ export default function Dashboard() {
     })();
   }, [navigate]);
 
-  // Poll for order updates every 5 seconds to check for verification status changes
+  // Poll for order updates only when tab is visible
   useEffect(() => {
-    const interval = setInterval(async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const token = await user.getIdToken();
-          await fetchData(token);
+    let interval;
+    
+    const startPolling = () => {
+      interval = setInterval(async () => {
+        if (document.hidden) return; // Don't fetch if tab is backgrounded
+        
+        try {
+          const user = auth.currentUser;
+          if (user) {
+            const token = await user.getIdToken();
+            await fetchData(token);
+          }
+        } catch (err) {
+          console.error('Error polling for updates:', err);
         }
-      } catch (err) {
-        console.error('Error polling for updates:', err);
-      }
-    }, 5000); // Poll every 5 seconds
+      }, 8000); // Increased interval to 8s for better balance
+    };
 
-    return () => clearInterval(interval);
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        startPolling();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    startPolling();
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   return (

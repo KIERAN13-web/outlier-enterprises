@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function AccountTable({ accounts, orders = [] }) {
+const AccountTable = memo(({ accounts, orders = [] }) => {
   const [localOrders, setLocalOrders] = useState(orders);
   const navigate = useNavigate();
 
@@ -130,6 +130,8 @@ export default function AccountTable({ accounts, orders = [] }) {
       )}
     </div>
   );
-}
+});
+
+export default AccountTable;
 
 /* Styling is in index.css under .table-wrapper and .modern-table */
