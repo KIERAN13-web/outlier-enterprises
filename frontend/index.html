@@ -7,6 +7,12 @@
     <title>chat-app</title>
   </head>
   <body>
+    <style>
+      /* Inline override to ensure footer and card spacing updates load immediately on deployed site */
+      .footer { padding: 1.75rem 0 !important; }
+      .footer-grid { gap: 1.5rem !important; }
+      .footer-bottom { gap: 1rem !important; }
+    </style>
     <div id="root"></div>
     <script type="module" src="src/main.jsx"></script>
   </body>
