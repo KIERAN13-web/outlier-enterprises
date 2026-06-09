@@ -12,7 +12,6 @@ import OutlierBook from './pages/OutlierBook.jsx';
 
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import AdminGate from './components/AdminGate.jsx';
-import AdminRegister from './pages/AdminRegister.jsx';
 
 export default function App() {
   return (
@@ -34,7 +33,6 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/payment" element={<Payment />} />
-          <Route path="/admin-register" element={<AdminRegister />} />
           <Route path="/register" element={<Register />} />
           <Route path="/payment-status/:pendingId" element={<PaymentStatus />} />
 

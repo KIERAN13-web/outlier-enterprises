@@ -17,6 +17,17 @@ async function toggleAdminRole(req, res) {
       return res.status(404).json({ ok: false, error: 'user_not_found' });
     }
 
+    const userData = userSnap.val();
+    const currentlyAdmin = Boolean(userData.isAdmin);
+
+    if (makeAdmin === true && !currentlyAdmin) {
+      const adminsSnap = await rdb.ref('users').orderByChild('isAdmin').equalTo(true).get();
+      const adminCount = adminsSnap.exists() ? Object.keys(adminsSnap.val()).length : 0;
+      if (adminCount >= 2) {
+        return res.status(400).json({ ok: false, error: 'admin_limit_reached', message: 'Maximum of two admins allowed' });
+      }
+    }
+
     // Update admin role
     await rdb.ref(`users/${uid}`).update({
       isAdmin: makeAdmin === true,
