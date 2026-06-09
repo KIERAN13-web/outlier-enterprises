@@ -28,7 +28,7 @@ const names = [
 ];
 
 function randomAmount() {
-  return Math.floor(Math.random() * 1001) + 1500; // 1500 - 2500
+  return Math.floor(Math.random() * 151) + 250; // 250 - 400
 }
 
 function getAvatar(index) {
