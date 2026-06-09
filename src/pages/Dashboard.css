@@ -10,18 +10,21 @@
   align-items: center;
   gap: var(--spacing-lg);
   padding: var(--spacing-lg);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  background: linear-gradient(135deg, #0EA5E9 0%, #06B6D4 100%);
   border-radius: var(--radius-lg);
   flex-wrap: wrap;
+  color: white;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.2);
 }
 
 .dashboard-header h1 {
   margin: 0;
+  color: white;
 }
 
 .dashboard-header p {
   margin: 0;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .dashboard-stats {
@@ -36,27 +39,30 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-  transition: var(--transition);
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+  border: 1px solid #BAE6FD;
+  border-radius: var(--radius-lg);
+  transition: all 0.3s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(14, 165, 233, 0.15);
 }
 
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  background: linear-gradient(135deg, #0EA5E9 0%, #06B6D4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .stat-label {
-  color: var(--text-secondary);
+  color: #475569;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .error-message {

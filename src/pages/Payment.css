@@ -14,6 +14,10 @@
 .payment-header h1 {
   font-size: 2.5rem;
   margin-bottom: var(--spacing-md);
+  background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .payment-header p {
@@ -32,17 +36,28 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 2px solid #F3E8FF;
+  transition: all 0.3s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(236, 72, 153, 0.15);
+  border-color: #E9D5FF;
 }
 
 .pricing-header {
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-lg);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid #F3E8FF;
 }
 
 .pricing-header h3 {
   margin: 0 0 var(--spacing-md) 0;
   font-size: 1.5rem;
+  color: #EC4899;
 }
 
 .price {
@@ -50,6 +65,9 @@
   align-items: baseline;
   gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #DB2777;
 }
 
 .currency {
