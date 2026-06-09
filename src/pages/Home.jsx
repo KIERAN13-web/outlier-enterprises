@@ -1,7 +1,45 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase/client';
+import authApi from '../api/authApi';
 import './Home.css';
 
 export default function Home() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!auth) return;
+
+    const getAdminStatus = async (token) => {
+      try {
+        const syncResult = await authApi.syncUser(token);
+        if (typeof syncResult?.isAdmin === 'boolean') {
+          return syncResult.isAdmin;
+        }
+      } catch {
+        // ignore sync failure
+      }
+
+      try {
+        const statusResult = await authApi.getStatus(token);
+        return Boolean(statusResult?.isAdmin);
+      } catch {
+        return false;
+      }
+    };
+
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const token = await user.getIdToken();
+        const isAdmin = await getAdminStatus(token);
+        navigate(isAdmin ? '/admin/dashboard' : '/dashboard', { replace: true });
+      }
+    });
+
+    return () => unsub();
+  }, [navigate]);
+
   const features = [
     {
       icon: '🔍',
