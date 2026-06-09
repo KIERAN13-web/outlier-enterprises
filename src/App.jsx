@@ -6,6 +6,7 @@ import Login from './pages/Login.jsx';
 import Payment from './pages/Payment.jsx';
 import Register from './pages/Register.jsx';
 import PaymentStatus from './pages/PaymentStatus.jsx';
+import AdminRegister from './pages/AdminRegister.jsx';
 
 import Dashboard from './pages/Dashboard.jsx';
 import Task from './pages/Task.jsx';
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/admin-register" element={<AdminRegister />} />
         <Route path="/payment-status/:pendingId" element={<PaymentStatus />} />
       </Route>
 
