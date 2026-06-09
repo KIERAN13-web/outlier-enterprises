@@ -150,11 +150,18 @@ async function updateWithdrawal(req, res) {
         approvedAt: null,
       });
 
+      // Restore funds to the appropriate balance based on earning type
       const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
-      const wallet = walletSnap.exists() ? walletSnap.val() : { availableBalance: 0 };
-      await rdb.ref(`users/${uid}/wallet`).update({
-        availableBalance: (wallet.availableBalance || 0) + (withdrawal.amount || 0),
-      });
+      const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0 };
+      
+      const balanceField = withdrawal.earningType === 'task' ? 'taskBalance' : 'referralBalance';
+      const currentBalance = wallet[balanceField] || 0;
+      
+      const updateObj = {
+        [balanceField]: currentBalance + (withdrawal.amount || 0),
+      };
+      
+      await rdb.ref(`users/${uid}/wallet`).update(updateObj);
       await updateWithdrawalTransactionStatus(uid, withdrawalId, 'rejected');
     }
 
@@ -266,34 +273,30 @@ async function fundUser(req, res) {
     // Get current wallet
     const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
     const wallet = walletSnap.exists() ? walletSnap.val() : {
+      taskBalance: 0,
+      referralBalance: 0,
       totalEarnings: 0,
-      availableBalance: 0,
-      referralEarnings: 0,
       withdrawals: [],
       transactions: [],
     };
 
-    // Initialize referral earnings if not exists
-    if (!wallet.referralEarnings) {
-      wallet.referralEarnings = 0;
-    }
-
-    const newReferralEarnings = (wallet.referralEarnings || 0) + amount;
-    const newAvailableBalance = (wallet.availableBalance || 0) + amount;
+    const newReferralBalance = (wallet.referralBalance || 0) + amount;
+    const newTotalEarnings = (wallet.totalEarnings || 0) + amount;
 
     await rdb.ref(`users/${uid}/wallet`).update({
-      referralEarnings: newReferralEarnings,
-      availableBalance: newAvailableBalance,
-      totalEarnings: (wallet.totalEarnings || 0) + amount,
+      referralBalance: newReferralBalance,
+      totalEarnings: newTotalEarnings,
       updatedAt: new Date().toISOString(),
     });
 
     // Add transaction record
     const transactionRef = rdb.ref(`users/${uid}/wallet/transactions`).push();
     await transactionRef.set({
-      type: 'referral_credit',
+      type: 'admin_fund',
       amount,
-      reason: reason || 'Admin fund',
+      description: reason || 'Admin funding',
+      earningType: 'referral',
+      status: 'completed',
       fundedAt: new Date().toISOString(),
       fundedBy: 'admin',
     });
@@ -301,8 +304,8 @@ async function fundUser(req, res) {
     return res.json({
       ok: true,
       message: 'User account funded successfully',
-      newReferralEarnings,
-      newAvailableBalance,
+      newReferralBalance,
+      newTotalEarnings,
     });
   } catch (err) {
     console.error('fundUser error', err);

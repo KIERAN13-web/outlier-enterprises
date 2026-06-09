@@ -308,12 +308,12 @@ export default function AdminDashboard() {
                 <h4>Wallet Info</h4>
                 <div className="wallet-grid">
                   <div className="wallet-item">
-                    <label>Available Balance</label>
-                    <span>KES {(userDetails.wallet?.availableBalance || 0).toLocaleString()}</span>
+                    <label>💼 Task Balance</label>
+                    <span>KES {(userDetails.wallet?.taskBalance || 0).toLocaleString()}</span>
                   </div>
                   <div className="wallet-item">
-                    <label>Referral Earnings</label>
-                    <span>KES {(userDetails.wallet?.referralEarnings || 0).toLocaleString()}</span>
+                    <label>👥 Referral Balance</label>
+                    <span>KES {(userDetails.wallet?.referralBalance || 0).toLocaleString()}</span>
                   </div>
                   <div className="wallet-item">
                     <label>Total Earnings</label>
@@ -370,6 +370,7 @@ export default function AdminDashboard() {
                     <strong>{w.userName}</strong>
                     <small>{w.phoneNumber}</small>
                     <div className="amount">KES {w.amount.toLocaleString()}</div>
+                    <div className="earning-type">Type: {w.earningType === 'task' ? '📋 Task' : '👥 Referral'}</div>
                     <div className="status">Status: {w.status}</div>
                     <small className="date">{new Date(w.requestedAt).toLocaleString()}</small>
                   </div>
