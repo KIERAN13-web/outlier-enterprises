@@ -66,28 +66,23 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="footer-contact">
-          <h3>📧 Contact Info</h3>
-          <a href="mailto:outlierenterprises254@gmail.com" className="contact-email">
-            ✉️ outlierenterprises254@gmail.com
-          </a>
-        </div>
-
         <div className="footer-bottom">
-          <div className="footer-social">
-            <a href="#twitter" className="social-link" title="Twitter">
-              𝕏
-            </a>
-            <a href="#github" className="social-link" title="GitHub">
-              ⚙️
-            </a>
-            <a href="#linkedin" className="social-link" title="LinkedIn">
-              💼
-            </a>
+          <div className="footer-left">
+            <div className="footer-copyright">
+              <p>&copy; {currentYear} Outlier Auditor. All rights reserved.</p>
+            </div>
           </div>
 
-          <div className="footer-copyright">
-            <p>&copy; {currentYear} Outlier Auditor. All rights reserved.</p>
+          <div className="footer-center">
+            <div className="footer-social">
+              <a href="#twitter" className="social-link" title="Twitter">𝕏</a>
+              <a href="#github" className="social-link" title="GitHub">⚙️</a>
+              <a href="#linkedin" className="social-link" title="LinkedIn">💼</a>
+            </div>
+          </div>
+
+          <div className="footer-right">
+            <a href="mailto:outlierenterprises254@gmail.com" className="contact-email">✉️ outlierenterprises254@gmail.com</a>
           </div>
         </div>
       </div>
