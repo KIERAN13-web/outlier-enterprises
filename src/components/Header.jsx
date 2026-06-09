@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/client';
 import authApi from '../api/authApi';
 import walletApi from '../api/walletApi';
@@ -8,10 +9,20 @@ import './Header.css';
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = auth?.currentUser;
+  const [user, setUser] = useState(auth?.currentUser || null);
   const [isPaid, setIsPaid] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
+
+  useEffect(() => {
+    if (!auth) return;
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     (async () => {

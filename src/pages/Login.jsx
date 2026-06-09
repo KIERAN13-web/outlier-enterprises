@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 import { auth } from '../firebase/client';
 import { useNavigate, Link } from 'react-router-dom';
@@ -61,6 +61,7 @@ export default function Login() {
     setBusy(true);
     setError('');
     try {
+      await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const token = await cred.user.getIdToken();
       const isAdmin = await getAdminStatus(token);

@@ -10,7 +10,7 @@
 // VITE_FIREBASE_APP_ID
 
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
 import { getDatabase } from 'firebase/database';
 
@@ -41,6 +41,9 @@ let analytics = null;
 try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.warn('Failed to set Firebase auth persistence:', err.message || err);
+  });
   database = getDatabase(app);
 
   if (import.meta.env.VITE_FIREBASE_MEASUREMENT_ID) {
