@@ -29,7 +29,6 @@ async function generateUniqueReferralCode(rdb, length = 6, maxAttempts = 8) {
 async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = undefined) {
   if (!referralCode) return null;
   const configured = Number(process.env.REFERRAL_BONUS) || 50;
-  const dailyLimit = Number(process.env.REFERRAL_DAILY_LIMIT) || 100;
   const reward = typeof bonus === 'number' ? bonus : configured;
 
   try {
@@ -50,24 +49,6 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
         // already credited for this referred email
         return null;
       }
-    }
-
-    // Rate-limit: count referral txs in last 24 hours
-    const now = Date.now();
-    const dayAgo = now - 24 * 60 * 60 * 1000;
-    let recentCount = 0;
-    for (const t of Object.values(txs || {})) {
-      if (t?.type === 'referral' && t.createdAt) {
-        const tTime = new Date(t.createdAt).getTime();
-        if (tTime >= dayAgo) recentCount++;
-      }
-    }
-    if (recentCount >= dailyLimit) {
-      // optionally record a notification about limit reached
-      const notifRef = rdb.ref(`users/${refUid}/notifications`).push();
-      const notifId = notifRef.key;
-      await notifRef.set({ id: notifId, type: 'referral_limit', message: `Referral credit limit reached for today.`, read: false, createdAt: new Date().toISOString() });
-      return null;
     }
 
     const walletRef = rdb.ref(`users/${refUid}/wallet`);
