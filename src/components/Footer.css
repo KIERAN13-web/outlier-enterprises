@@ -44,6 +44,104 @@
   color: var(--primary);
 }
 
+.footer-locations {
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-2xl);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.footer-locations h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+
+.locations-container {
+  display: flex;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.location-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+  border: 1px solid #BAE6FD;
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+}
+
+.location-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(14, 165, 233, 0.15);
+  border-color: #06B6D4;
+}
+
+.location-flag {
+  font-size: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.location-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.location-name {
+  font-weight: 600;
+  color: #0EA5E9;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.location-city {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.footer-contact {
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-2xl);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.footer-contact h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-primary);
+}
+
+.contact-email {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, #FEE2B6 0%, #FECACA 100%);
+  border: 1px solid #FDBA74;
+  border-radius: var(--radius-md);
+  color: #EA580C;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.contact-email:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(244, 63, 94, 0.15);
+  border-color: #F97316;
+  color: #C2410C;
+}
+
 .footer-bottom {
   display: flex;
   justify-content: space-between;
@@ -96,12 +194,26 @@
     padding-bottom: var(--spacing-lg);
   }
 
+  .locations-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .location-card {
+    width: 100%;
+  }
+
   .footer-bottom {
     flex-direction: column;
     text-align: center;
   }
 
   .footer-social {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .contact-email {
     width: 100%;
     justify-content: center;
   }

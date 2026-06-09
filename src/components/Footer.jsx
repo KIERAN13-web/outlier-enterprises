@@ -3,6 +3,12 @@ import './Footer.css';
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const locations = [
+    { name: 'Kenya', flag: '🇰🇪', city: 'Nairobi' },
+    { name: 'USA', flag: '🇺🇸', city: 'New York' },
+    { name: 'Belgium', flag: '🇧🇪', city: 'Brussels' },
+  ];
+
   return (
     <footer className="footer">
       <div className="container">
@@ -43,6 +49,28 @@ export default function Footer() {
               <li><a href="#cookies">Cookies</a></li>
             </ul>
           </div>
+        </div>
+
+        <div className="footer-locations">
+          <h3>🌍 Our Locations</h3>
+          <div className="locations-container">
+            {locations.map((location, index) => (
+              <div key={index} className="location-card">
+                <div className="location-flag">{location.flag}</div>
+                <div className="location-info">
+                  <p className="location-name">{location.name}</p>
+                  <p className="location-city">{location.city}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="footer-contact">
+          <h3>📧 Contact Info</h3>
+          <a href="mailto:outlierenterprises254@gmail.com" className="contact-email">
+            ✉️ outlierenterprises254@gmail.com
+          </a>
         </div>
 
         <div className="footer-bottom">
