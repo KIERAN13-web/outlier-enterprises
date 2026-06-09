@@ -44,7 +44,7 @@ async function getWallet(req, res) {
           totalWithdrawn,
         },
         user: {
-          name: userProfile.name || 'User',
+          name: userProfile.fullName || userProfile.name || 'User',
           email: userProfile.email || '',
           phoneNumber: userProfile.phoneNumber || '',
           referralCode: userProfile.referralCode || null,

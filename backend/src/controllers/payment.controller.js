@@ -176,7 +176,7 @@ async function createStkPush(req, res) {
 
 async function createStkPushGuest(req, res) {
   try {
-    const { email, password, phoneNumber, referralCode } = req.body;
+    const { email, password, phoneNumber, referralCode, name, country, idNumber } = req.body;
 
     if (!email || !password || !phoneNumber) {
       return res.status(400).json({ ok: false, error: 'email_password_phone_required' });
@@ -192,6 +192,9 @@ async function createStkPushGuest(req, res) {
       email,
       password,
       phoneNumber: result.phoneNumber,
+      name: name || null,
+      country: country || null,
+      idNumber: idNumber || null,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
       type: 'GUEST',
@@ -203,6 +206,9 @@ async function createStkPushGuest(req, res) {
     await rdb.ref(`pendingUsers/${pendingId}`).set({
       email,
       phoneNumber: result.phoneNumber,
+      name: name || null,
+      country: country || null,
+      idNumber: idNumber || null,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
       referralCode: referralCode || null,
@@ -263,7 +269,11 @@ async function processPendingPayment({ pendingKey, data, status }) {
 
     if (data.type === 'GUEST') {
       try {
-        const userRecord = await firebaseAdmin.auth().createUser({ email: data.email, password: data.password });
+        const userRecord = await firebaseAdmin.auth().createUser({ 
+          email: data.email, 
+          password: data.password,
+          displayName: data.name || null,
+        });
         const newUid = userRecord.uid;
         const referralCodeForNewUser = data.referralCode || await (async () => {
           try {
@@ -418,7 +428,7 @@ async function bypassGuestPayment(req, res) {
     let userRecord;
 
     try {
-      userRecord = await firebaseAdmin.auth().createUser({ email, password });
+      userRecord = await firebaseAdmin.auth().createUser({ email, password, displayName: name || null });
     } catch (err) {
       if (err.code === 'auth/email-already-exists') {
         userRecord = await firebaseAdmin.auth().getUserByEmail(email);

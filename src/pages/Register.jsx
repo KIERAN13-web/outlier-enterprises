@@ -8,6 +8,7 @@ import paymentApi from '../api/paymentApi';
 import './Auth.css';
 
 export default function Register() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -61,7 +62,7 @@ export default function Register() {
     try {
       // Initiate guest STK push that includes email + password so the backend
       // can create the user after successful payment via webhook.
-      const result = await paymentApi.createStkPushGuest({ email, password, phoneNumber, referralCode: initialReferral });
+      const result = await paymentApi.createStkPushGuest({ name, email, password, phoneNumber, referralCode: initialReferral });
 
       setSuccess(true);
       setPendingId(result.pendingId);
@@ -117,6 +118,18 @@ export default function Register() {
 
         {step === 1 && (
           <form onSubmit={onCreateAccount} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="name">Full Name</label>
+              <input
+                id="name"
+                type="text"
+                placeholder="Your full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+
             <div className="form-group">
               <label htmlFor="email">Email Address</label>
               <input
