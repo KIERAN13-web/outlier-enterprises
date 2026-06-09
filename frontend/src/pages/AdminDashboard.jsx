@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
-  const [pendingWithdrawals, setPendingWithdrawals] = useState([]);
+  const [withdrawals, setWithdrawals] = useState([]);
   const [fundAmount, setFundAmount] = useState('');
   const [fundReason, setFundReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
         const token = await user.getIdToken();
         setIdToken(token);
         fetchStats(token);
-        fetchPendingWithdrawals(token);
+        fetchWithdrawals(token);
       } catch (err) {
         console.error('Failed to get token:', err);
         navigate('/login', { replace: true });
@@ -52,10 +52,10 @@ export default function AdminDashboard() {
     }
   };
 
-  const fetchPendingWithdrawals = async (token) => {
+  const fetchWithdrawals = async (token) => {
     try {
-      const result = await adminApi.getPendingWithdrawals(token);
-      setPendingWithdrawals(result.pendingWithdrawals || []);
+      const result = await adminApi.getAllWithdrawals(token);
+      setWithdrawals(result.withdrawals || []);
     } catch (err) {
       console.error(err);
     }
@@ -126,8 +126,8 @@ export default function AdminDashboard() {
 
     setBusy(true);
     try {
-      await adminApi.updateWithdrawal(idToken, uid, withdrawalId, 'approved');
-      setPendingWithdrawals(prev => prev.filter(w => w.withdrawalId !== withdrawalId));
+      await adminApi.approveWithdrawal(idToken, uid, withdrawalId);
+      await fetchWithdrawals(idToken);
       fetchStats(idToken);
     } catch (err) {
       console.error(err);
@@ -143,11 +143,27 @@ export default function AdminDashboard() {
     setBusy(true);
     try {
       await adminApi.updateWithdrawal(idToken, uid, withdrawalId, 'rejected');
-      setPendingWithdrawals(prev => prev.filter(w => w.withdrawalId !== withdrawalId));
+      await fetchWithdrawals(idToken);
       fetchStats(idToken);
     } catch (err) {
       console.error(err);
       setError(err.message || 'Rejection failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onMarkPaid = async (uid, withdrawalId) => {
+    if (!window.confirm('Mark this withdrawal as paid?') || !idToken) return;
+
+    setBusy(true);
+    try {
+      await adminApi.markWithdrawalPaid(idToken, uid, withdrawalId);
+      await fetchWithdrawals(idToken);
+      fetchStats(idToken);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Mark paid failed');
     } finally {
       setBusy(false);
     }
@@ -188,7 +204,7 @@ export default function AdminDashboard() {
           className={`tab-btn ${activeTab === 'withdrawals' ? 'active' : ''}`}
           onClick={() => setActiveTab('withdrawals')}
         >
-          Withdrawals ({pendingWithdrawals.length})
+          Withdrawals ({withdrawals.filter(w => w.status === 'pending').length})
         </button>
       </div>
 
@@ -345,38 +361,64 @@ export default function AdminDashboard() {
       {/* Withdrawals Tab */}
       {activeTab === 'withdrawals' && (
         <div className="admin-section">
-          <h2>Pending Withdrawals</h2>
-          {pendingWithdrawals.length > 0 ? (
+          <h2>Withdrawal Requests</h2>
+          {withdrawals.length > 0 ? (
             <div className="withdrawals-list">
-              {pendingWithdrawals.map(w => (
-                <div key={w.withdrawalId} className="withdrawal-item">
+              {withdrawals.map((w) => (
+                <div key={`${w.uid}-${w.withdrawalId}`} className="withdrawal-item">
                   <div className="withdrawal-info">
                     <strong>{w.userName}</strong>
                     <small>{w.phoneNumber}</small>
                     <div className="amount">KES {w.amount.toLocaleString()}</div>
+                    <div className="status">Status: {w.status}</div>
                     <small className="date">{new Date(w.requestedAt).toLocaleString()}</small>
                   </div>
                   <div className="withdrawal-actions">
-                    <button
-                      onClick={() => onApproveWithdrawal(w.uid, w.withdrawalId)}
-                      disabled={busy}
-                      className="btn btn-success btn-sm"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => onRejectWithdrawal(w.uid, w.withdrawalId)}
-                      disabled={busy}
-                      className="btn btn-danger btn-sm"
-                    >
-                      Reject
-                    </button>
+                    {w.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => onApproveWithdrawal(w.uid, w.withdrawalId)}
+                          disabled={busy}
+                          className="btn btn-success btn-sm"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => onRejectWithdrawal(w.uid, w.withdrawalId)}
+                          disabled={busy}
+                          className="btn btn-danger btn-sm"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    {w.status === 'approved' && (
+                      <>
+                        <button
+                          onClick={() => onMarkPaid(w.uid, w.withdrawalId)}
+                          disabled={busy}
+                          className="btn btn-success btn-sm"
+                        >
+                          Mark as Paid
+                        </button>
+                        <button
+                          onClick={() => onRejectWithdrawal(w.uid, w.withdrawalId)}
+                          disabled={busy}
+                          className="btn btn-danger btn-sm"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    {(w.status === 'paid' || w.status === 'rejected') && (
+                      <span className="status-label">No actions available</span>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p>No pending withdrawals</p>
+            <p>No withdrawal requests</p>
           )}
         </div>
       )}

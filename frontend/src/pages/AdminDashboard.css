@@ -328,6 +328,21 @@
   color: #999;
 }
 
+.withdrawal-info .status {
+  font-size: 14px;
+  margin-top: 0.25rem;
+  color: #555;
+}
+
+.status-label {
+  display: inline-block;
+  padding: 0.5rem 0.75rem;
+  background: #e9ecef;
+  border-radius: 4px;
+  color: #495057;
+  font-size: 13px;
+}
+
 .withdrawal-actions {
   display: flex;
   gap: 0.75rem;

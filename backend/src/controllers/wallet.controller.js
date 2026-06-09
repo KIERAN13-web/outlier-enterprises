@@ -14,13 +14,29 @@ async function getWallet(req, res) {
       transactions: [],
     };
 
+    const withdrawalsSnap = await rdb.ref(`users/${uid}/wallet/withdrawals`).get();
+    const withdrawals = withdrawalsSnap.exists()
+      ? Object.entries(withdrawalsSnap.val()).map(([id, data]) => ({ id, ...data }))
+      : [];
+
+    const totalWithdrawn = withdrawals.reduce((sum, withdrawal) => {
+      if (withdrawal.status === 'paid') {
+        return sum + (withdrawal.amount || 0);
+      }
+      return sum;
+    }, 0);
+
     // Get user profile for display
     const userSnap = await rdb.ref(`users/${uid}`).get();
     const userProfile = userSnap.exists() ? userSnap.val() : {};
 
     return res.json({
       ok: true,
-      wallet,
+      wallet: {
+        ...wallet,
+        withdrawals: withdrawals.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)),
+        totalWithdrawn,
+      },
       user: {
         name: userProfile.name || 'User',
         email: userProfile.email || '',
@@ -81,9 +97,10 @@ async function withdraw(req, res) {
       withdrawalId,
       amount,
       phoneNumber,
-      status: 'pending', // pending, completed, failed
+      status: 'pending',
       requestedAt: new Date().toISOString(),
-      completedAt: null,
+      approvedAt: null,
+      paidAt: null,
     };
 
     await withdrawalRef.set(withdrawalData);
@@ -100,8 +117,9 @@ async function withdraw(req, res) {
     await transactionRef.set({
       type: 'withdrawal',
       amount: -amount,
-      phoneNumber,
+      description: 'Withdrawal request',
       status: 'pending',
+      phoneNumber,
       withdrawalId,
       createdAt: new Date().toISOString(),
     });

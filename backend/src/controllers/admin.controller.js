@@ -130,7 +130,8 @@ async function updateWithdrawal(req, res) {
 
     const rdb = firebaseAdmin.database();
 
-    const withdrawalSnap = await rdb.ref(`users/${uid}/wallet/withdrawals/${withdrawalId}`).get();
+    const withdrawalRef = rdb.ref(`users/${uid}/wallet/withdrawals/${withdrawalId}`);
+    const withdrawalSnap = await withdrawalRef.get();
     if (!withdrawalSnap.exists()) {
       return res.status(404).json({ ok: false, error: 'withdrawal_not_found' });
     }
@@ -138,29 +139,116 @@ async function updateWithdrawal(req, res) {
     const withdrawal = withdrawalSnap.val();
 
     if (status === 'approved') {
-      await rdb.ref(`users/${uid}/wallet/withdrawals/${withdrawalId}`).update({
-        status: 'completed',
-        completedAt: new Date().toISOString(),
+      await withdrawalRef.update({
+        status: 'approved',
+        approvedAt: new Date().toISOString(),
       });
+      await updateWithdrawalTransactionStatus(uid, withdrawalId, 'approved');
     } else {
-      // Rejected - restore balance
-      await rdb.ref(`users/${uid}/wallet/withdrawals/${withdrawalId}`).update({
+      await withdrawalRef.update({
         status: 'rejected',
-        completedAt: new Date().toISOString(),
+        approvedAt: null,
       });
 
       const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
       const wallet = walletSnap.exists() ? walletSnap.val() : { availableBalance: 0 };
-
       await rdb.ref(`users/${uid}/wallet`).update({
-        availableBalance: (wallet.availableBalance || 0) + withdrawal.amount,
+        availableBalance: (wallet.availableBalance || 0) + (withdrawal.amount || 0),
       });
+      await updateWithdrawalTransactionStatus(uid, withdrawalId, 'rejected');
     }
 
     return res.json({ ok: true, status: 'updated' });
   } catch (err) {
     console.error('updateWithdrawal error', err);
     return res.status(500).json({ ok: false, error: 'UPDATE_FAILED' });
+  }
+}
+
+async function approveWithdrawal(req, res) {
+  try {
+    const { uid, withdrawalId } = req.params;
+    if (!uid || !withdrawalId) {
+      return res.status(400).json({ ok: false, error: 'missing_required_fields' });
+    }
+
+    const rdb = firebaseAdmin.database();
+    const withdrawalRef = rdb.ref(`users/${uid}/wallet/withdrawals/${withdrawalId}`);
+    const withdrawalSnap = await withdrawalRef.get();
+
+    if (!withdrawalSnap.exists()) {
+      return res.status(404).json({ ok: false, error: 'withdrawal_not_found' });
+    }
+
+    const withdrawal = withdrawalSnap.val();
+    if (withdrawal.status !== 'pending') {
+      return res.status(400).json({ ok: false, error: 'invalid_withdrawal_status' });
+    }
+
+    await withdrawalRef.update({
+      status: 'approved',
+      approvedAt: new Date().toISOString(),
+    });
+    await updateWithdrawalTransactionStatus(uid, withdrawalId, 'approved');
+
+    return res.json({ ok: true, status: 'approved' });
+  } catch (err) {
+    console.error('approveWithdrawal error', err);
+    return res.status(500).json({ ok: false, error: 'APPROVE_FAILED' });
+  }
+}
+
+async function markWithdrawalPaid(req, res) {
+  try {
+    const { uid, withdrawalId } = req.params;
+    if (!uid || !withdrawalId) {
+      return res.status(400).json({ ok: false, error: 'missing_required_fields' });
+    }
+
+    const rdb = firebaseAdmin.database();
+    const withdrawalRef = rdb.ref(`users/${uid}/wallet/withdrawals/${withdrawalId}`);
+    const withdrawalSnap = await withdrawalRef.get();
+
+    if (!withdrawalSnap.exists()) {
+      return res.status(404).json({ ok: false, error: 'withdrawal_not_found' });
+    }
+
+    const withdrawal = withdrawalSnap.val();
+    if (withdrawal.status !== 'approved') {
+      return res.status(400).json({ ok: false, error: 'invalid_withdrawal_status' });
+    }
+
+    await withdrawalRef.update({
+      status: 'paid',
+      paidAt: new Date().toISOString(),
+    });
+    await updateWithdrawalTransactionStatus(uid, withdrawalId, 'paid');
+
+    return res.json({ ok: true, status: 'paid' });
+  } catch (err) {
+    console.error('markWithdrawalPaid error', err);
+    return res.status(500).json({ ok: false, error: 'MARK_PAID_FAILED' });
+  }
+}
+
+async function updateWithdrawalTransactionStatus(uid, withdrawalId, status) {
+  try {
+    const rdb = firebaseAdmin.database();
+    const txSnap = await rdb.ref(`users/${uid}/wallet/transactions`).get();
+    if (!txSnap.exists()) return;
+
+    const updates = {};
+    for (const [txId, tx] of Object.entries(txSnap.val())) {
+      if (tx.withdrawalId === withdrawalId) {
+        updates[`users/${uid}/wallet/transactions/${txId}/status`] = status;
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await rdb.ref().update(updates);
+    }
+  } catch (err) {
+    console.error('updateWithdrawalTransactionStatus error', err);
   }
 }
 
@@ -264,6 +352,44 @@ async function getPendingWithdrawals(req, res) {
   }
 }
 
+// Get withdrawal request list for admin
+async function getAllWithdrawals(req, res) {
+  try {
+    const rdb = firebaseAdmin.database();
+    const usersSnap = await rdb.ref('users').get();
+
+    if (!usersSnap.exists()) {
+      return res.json({ ok: true, withdrawals: [] });
+    }
+
+    const allUsers = usersSnap.val();
+    const withdrawals = [];
+
+    for (const [uid, userData] of Object.entries(allUsers)) {
+      if (userData.wallet && userData.wallet.withdrawals) {
+        for (const [withdrawalId, withdrawal] of Object.entries(userData.wallet.withdrawals)) {
+          withdrawals.push({
+            uid,
+            withdrawalId,
+            ...withdrawal,
+            userName: userData.fullName || userData.email || uid,
+            phoneNumber: userData.phoneNumber,
+          });
+        }
+      }
+    }
+
+    return res.json({
+      ok: true,
+      withdrawals: withdrawals.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)),
+      count: withdrawals.length,
+    });
+  } catch (err) {
+    console.error('getAllWithdrawals error', err);
+    return res.status(500).json({ ok: false, error: 'GET_ALL_WITHDRAWALS_FAILED' });
+  }
+}
+
 // Get dashboard stats
 async function getDashboardStats(req, res) {
   try {
@@ -326,6 +452,9 @@ export default {
   searchUsers,
   getUserDetails,
   updateWithdrawal,
+  approveWithdrawal,
+  markWithdrawalPaid,
+  getAllWithdrawals,
   fundUser,
   getPendingWithdrawals,
   getDashboardStats,

@@ -26,6 +26,24 @@ const updateWithdrawal = (idToken, uid, withdrawalId, status) =>
     body: { uid, withdrawalId, status },
   });
 
+const approveWithdrawal = (idToken, uid, withdrawalId) =>
+  client.request(`/admin/withdrawals/${encodeURIComponent(uid)}/${encodeURIComponent(withdrawalId)}/approve`, {
+    method: 'PUT',
+    token: idToken,
+  });
+
+const markWithdrawalPaid = (idToken, uid, withdrawalId) =>
+  client.request(`/admin/withdrawals/${encodeURIComponent(uid)}/${encodeURIComponent(withdrawalId)}/paid`, {
+    method: 'PUT',
+    token: idToken,
+  });
+
+const getAllWithdrawals = (idToken) =>
+  client.request('/admin/withdrawals', {
+    method: 'GET',
+    token: idToken,
+  });
+
 const fundUser = (idToken, uid, amount, reason) =>
   client.request('/admin/users/fund', {
     method: 'POST',
@@ -50,6 +68,9 @@ export default {
   searchUsers,
   getUserDetails,
   updateWithdrawal,
+  approveWithdrawal,
+  markWithdrawalPaid,
+  getAllWithdrawals,
   fundUser,
   getPendingWithdrawals,
   getDashboardStats,

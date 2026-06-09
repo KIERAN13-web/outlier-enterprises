@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { auth } from '../firebase/client';
 import walletApi from '../api/walletApi';
 import './WithdrawalModal.css';
 
-export default function WithdrawalModal({ isOpen, onClose, availableBalance, userPhone }) {
+export default function WithdrawalModal({ isOpen, onClose, availableBalance, userPhone, onWithdrawSuccess }) {
   const [amount, setAmount] = useState('');
   const [phoneNumber, setPhoneNumber] = useState(userPhone || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    setPhoneNumber(userPhone || '');
+  }, [userPhone]);
 
   const MIN_WITHDRAWAL = 15000;
   const isValidAmount = amount && parseInt(amount) >= MIN_WITHDRAWAL && parseInt(amount) <= availableBalance;
@@ -44,7 +48,9 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
         setAmount('');
         setPhoneNumber(userPhone || '');
         onClose();
-        window.location.reload(); // Refresh to get updated balance
+        if (onWithdrawSuccess) {
+          onWithdrawSuccess();
+        }
       }, 2000);
     } catch (err) {
       setError(err.message || 'Withdrawal failed');

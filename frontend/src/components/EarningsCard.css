@@ -123,6 +123,46 @@
   gap: 0.5rem;
 }
 
+.withdrawal-history {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.withdrawal-history h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.withdrawal-history table {
+  width: 100%;
+  border-collapse: collapse;
+  color: white;
+}
+
+.withdrawal-history th,
+.withdrawal-history td {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.withdrawal-history th {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.withdrawal-history td {
+  font-size: 0.95rem;
+}
+
+.withdrawal-history p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .withdrawal-notice {
   font-size: 0.85rem;
   opacity: 0.85;

@@ -11,26 +11,26 @@ export default function EarningsCard() {
   const [error, setError] = useState('');
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
 
+  const fetchWallet = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+
+      const token = await currentUser.getIdToken();
+      const response = await walletApi.getWallet(token);
+
+      setWallet(response.wallet);
+      setUser(response.user);
+      setError('');
+    } catch (err) {
+      console.error('Failed to fetch wallet:', err);
+      setError('Failed to load earnings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchWallet = async () => {
-      try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) return;
-
-        const token = await currentUser.getIdToken();
-        const response = await walletApi.getWallet(token);
-
-        setWallet(response.wallet);
-        setUser(response.user);
-        setError('');
-      } catch (err) {
-        console.error('Failed to fetch wallet:', err);
-        setError('Failed to load earnings');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchWallet();
   }, []);
 
@@ -64,6 +64,11 @@ export default function EarningsCard() {
             <div className="balance-item secondary">
               <span className="label">Total Earned</span>
               <span className="amount">KES {(wallet.totalEarnings || 0).toLocaleString()}</span>
+            </div>
+
+            <div className="balance-item secondary">
+              <span className="label">Total Withdrawn</span>
+              <span className="amount">KES {(wallet.totalWithdrawn || 0).toLocaleString()}</span>
             </div>
           </div>
 
@@ -107,6 +112,32 @@ export default function EarningsCard() {
               <p>Complete tasks to earn money</p>
             </div>
           )}
+
+          <div className="withdrawal-history">
+            <h4>Withdrawal History</h4>
+            {wallet.withdrawals?.length > 0 ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {wallet.withdrawals.map((item) => (
+                    <tr key={item.id}>
+                      <td>{new Date(item.requestedAt).toLocaleDateString()}</td>
+                      <td>KES {item.amount.toLocaleString()}</td>
+                      <td>{item.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No withdrawal history yet.</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -115,6 +146,7 @@ export default function EarningsCard() {
         onClose={() => setShowWithdrawalModal(false)}
         availableBalance={wallet.availableBalance || 0}
         userPhone={user?.phoneNumber || ''}
+        onWithdrawSuccess={fetchWallet}
       />
     </>
   );
