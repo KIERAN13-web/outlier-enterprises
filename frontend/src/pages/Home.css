@@ -26,7 +26,7 @@
 
 .hero-tagline {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.95rem; /* Increased */
   color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.3em;
@@ -52,7 +52,7 @@
 
 .hero-subtitle {
   margin-bottom: var(--spacing-2xl);
-  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  font-size: clamp(1.2rem, 3vw, 1.5rem); /* Scaled up */
   color: var(--text-secondary);
   line-height: 1.6;
   font-weight: 400;
@@ -80,7 +80,7 @@
 
 .stat-number {
   font-family: var(--font-heading);
-  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-size: clamp(2.5rem, 5vw, 4rem); /* Scaled up */
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1;
@@ -88,7 +88,7 @@
 
 .stat-label {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.85rem; /* Scaled up from 0.7rem */
   text-transform: uppercase;
   letter-spacing: 0.2em;
   color: var(--accent);
@@ -114,7 +114,7 @@
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  font-size: 0.85rem;
+  font-size: 0.95rem; /* Scaled up from 0.85rem */
 }
 
 .features-grid {

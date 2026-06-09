@@ -75,7 +75,7 @@ html {
 
 body {
   font-family: var(--font-family);
-  font-size: 16px;
+  font-size: 18px; /* Increased base size */
   line-height: 1.6;
   color: var(--text-secondary);
   background-color: var(--bg-primary);
@@ -118,8 +118,8 @@ h2 {
 
 p {
   color: var(--text-secondary);
-  font-size: 1.1rem;
-  max-width: 650px;
+  font-size: 1.15rem; /* Slightly larger */
+  max-width: 800px;
 }
 
 /* Elite Buttons */
@@ -127,8 +127,8 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 1.75rem;
-  font-size: 0.85rem;
+  padding: 1.1rem 2rem; /* More generous padding */
+  font-size: 0.95rem; /* Increased size */
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -176,6 +176,8 @@ p {
   padding: var(--spacing-xl);
   transition: var(--transition);
   box-shadow: var(--shadow-sm);
+  overflow: visible; /* Ensure content is not cut off */
+  word-break: break-word; /* Prevent long text overflow */
 }
 
 .card:hover {
@@ -187,7 +189,7 @@ p {
 
 /* Utilities */
 .container {
-  max-width: 1200px;
+  max-width: 1400px; /* Wider container for better data display */
   margin: 0 auto;
   padding: 0 var(--spacing-xl);
 }
@@ -201,13 +203,14 @@ p {
   background: var(--bg-secondary);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto; /* Horizontal scroll for small screens */
   margin: var(--spacing-xl) 0;
 }
 
 .modern-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 800px; /* Ensure table has enough room */
 }
 
 .modern-table th {
@@ -216,7 +219,7 @@ p {
   text-align: left;
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.9rem; /* Increased from 0.8rem */
   text-transform: uppercase;
   letter-spacing: 0.1em;
   border-bottom: 1px solid var(--glass-border);
@@ -226,11 +229,38 @@ p {
   padding: 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.02);
   color: var(--text-secondary);
+  font-size: 1rem; /* Clearer table text */
 }
 
 .modern-table tr:hover td {
   background: rgba(100, 255, 218, 0.02);
   color: var(--text-primary);
+}
+
+.modern-table code {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--accent-secondary);
+  background: rgba(0, 209, 255, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+}
+
+.modern-table pre {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  max-width: 500px; /* Increased max-width */
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.3); /* Darker for contrast */
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  color: var(--accent-secondary);
+}
+
+.payload-pre {
+  white-space: pre-wrap; /* Wrap long lines if possible */
+  word-break: break-all;
 }
 
 /* Scrollbar */
