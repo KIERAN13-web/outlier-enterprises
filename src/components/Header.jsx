@@ -23,9 +23,6 @@ export default function Header() {
     })();
   }, [user]);
 
-
-
-
   const handleLogout = () => {
     if (auth) {
       auth.signOut().then(() => {
@@ -81,7 +78,6 @@ export default function Header() {
               </>
             )}
           </nav>
-
         </div>
       </div>
     </header>
