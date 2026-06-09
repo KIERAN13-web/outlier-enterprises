@@ -194,4 +194,4 @@ async function getWithdrawals(req, res) {
   }
 }
 
-export default { getWallet, withdraw, getWithdrawals };
+export default { getWallet, withdraw, getWithdrawals, markNotificationRead };
