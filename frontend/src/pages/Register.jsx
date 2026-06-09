@@ -57,6 +57,18 @@ export default function Register() {
   const isDevMode = import.meta.env.MODE !== 'production';
 
   const navigate = useNavigate();
+  // capture referral code from hash (#/register?ref=...)
+  let initialReferral = null;
+  try {
+    const hash = window.location.hash || '';
+    const qIndex = hash.indexOf('?');
+    if (qIndex !== -1) {
+      const params = new URLSearchParams(hash.slice(qIndex + 1));
+      initialReferral = params.get('ref');
+    }
+  } catch (e) {
+    initialReferral = null;
+  }
 
   async function onCreateAccount(e) {
     e.preventDefault();
@@ -95,6 +107,7 @@ export default function Register() {
         name: fullName,
         country,
         idNumber,
+        referralCode: initialReferral,
       });
 
       setSuccess(true);

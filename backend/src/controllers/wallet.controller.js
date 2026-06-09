@@ -42,6 +42,7 @@ async function getWallet(req, res) {
         name: userProfile.name || 'User',
         email: userProfile.email || '',
         phoneNumber: userProfile.phoneNumber || '',
+        referralCode: userProfile.referralCode || null,
       },
     });
   } catch (err) {

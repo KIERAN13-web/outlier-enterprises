@@ -166,7 +166,7 @@ async function createStkPush(req, res) {
 
 async function createStkPushGuest(req, res) {
   try {
-    const { email, password, phoneNumber } = req.body;
+    const { email, password, phoneNumber, referralCode } = req.body;
 
     if (!email || !password || !phoneNumber) {
       return res.status(400).json({ ok: false, error: 'email_password_phone_required' });
@@ -185,6 +185,7 @@ async function createStkPushGuest(req, res) {
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
       type: 'GUEST',
+      referralCode: referralCode || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -194,6 +195,7 @@ async function createStkPushGuest(req, res) {
       phoneNumber: result.phoneNumber,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
+      referralCode: referralCode || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -253,6 +255,7 @@ async function processPendingPayment({ pendingKey, data, status }) {
       try {
         const userRecord = await firebaseAdmin.auth().createUser({ email: data.email, password: data.password });
         const newUid = userRecord.uid;
+        const referralCodeForNewUser = data.referralCode || `ref_${newUid.replace(/[^a-zA-Z0-9]/g, '').slice(0,10)}`;
         await rdb.ref(`users/${newUid}`).set({
           email: data.email || null,
           fullName: data.name || null,
@@ -261,15 +264,44 @@ async function processPendingPayment({ pendingKey, data, status }) {
           phoneNumber: data.phoneNumber || null,
           isPaid: true,
           paidAt: new Date().toISOString(),
+          referralCode: referralCodeForNewUser,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+        // Credit referral bonus if present
+        if (data.referralCode) {
+          try {
+            const refSnap = await rdb.ref('users').orderByChild('referralCode').equalTo(data.referralCode).limitToFirst(1).get();
+            if (refSnap.exists()) {
+              const entries = Object.entries(refSnap.val());
+              const [refUid, refUser] = entries[0];
+              const bonus = 50;
+              const walletRef = rdb.ref(`users/${refUid}/wallet`);
+              const walletSnap = await walletRef.get();
+              const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0, totalEarnings: 0 };
+              const newReferralBalance = (wallet.referralBalance || 0) + bonus;
+              const newTotalEarnings = (wallet.totalEarnings || 0) + bonus;
+              await walletRef.update({ referralBalance: newReferralBalance, totalEarnings: newTotalEarnings, updatedAt: new Date().toISOString() });
+              const txRef = rdb.ref(`users/${refUid}/wallet/transactions`).push();
+              await txRef.set({
+                type: 'referral',
+                amount: bonus,
+                description: `Referral bonus for inviting ${data.email || 'a user'}`,
+                status: 'credited',
+                createdAt: new Date().toISOString(),
+              });
+            }
+          } catch (err) {
+            console.error('Error crediting referrer:', err);
+          }
+        }
         await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), password: null, uid: newUid });
         await pendingUserRef?.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), uid: newUid });
       } catch (e) {
         console.warn('createUser during webhook failed, trying to update existing user', e?.message || e);
         const existing = await firebaseAdmin.auth().getUserByEmail(data.email);
         const existingUid = existing.uid;
+        const referralCodeForExisting = data.referralCode || `ref_${existingUid.replace(/[^a-zA-Z0-9]/g, '').slice(0,10)}`;
         await rdb.ref(`users/${existingUid}`).update({
           fullName: data.name || null,
           country: data.country || null,
@@ -277,8 +309,35 @@ async function processPendingPayment({ pendingKey, data, status }) {
           phoneNumber: data.phoneNumber || null,
           isPaid: true,
           paidAt: new Date().toISOString(),
+          referralCode: referralCodeForExisting,
           updatedAt: new Date().toISOString(),
         });
+        if (data.referralCode) {
+          try {
+            const refSnap = await rdb.ref('users').orderByChild('referralCode').equalTo(data.referralCode).limitToFirst(1).get();
+            if (refSnap.exists()) {
+              const entries = Object.entries(refSnap.val());
+              const [refUid] = entries[0];
+              const bonus = 50;
+              const walletRef = rdb.ref(`users/${refUid}/wallet`);
+              const walletSnap = await walletRef.get();
+              const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0, totalEarnings: 0 };
+              const newReferralBalance = (wallet.referralBalance || 0) + bonus;
+              const newTotalEarnings = (wallet.totalEarnings || 0) + bonus;
+              await walletRef.update({ referralBalance: newReferralBalance, totalEarnings: newTotalEarnings, updatedAt: new Date().toISOString() });
+              const txRef = rdb.ref(`users/${refUid}/wallet/transactions`).push();
+              await txRef.set({
+                type: 'referral',
+                amount: bonus,
+                description: `Referral bonus for inviting ${data.email || 'a user'}`,
+                status: 'credited',
+                createdAt: new Date().toISOString(),
+              });
+            }
+          } catch (err) {
+            console.error('Error crediting referrer for existing user path:', err);
+          }
+        }
         await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), password: null, uid: existingUid });
         await pendingUserRef?.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), uid: existingUid });
       }

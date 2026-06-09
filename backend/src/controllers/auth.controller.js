@@ -1,5 +1,11 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
 
+function generateReferralCode(uid) {
+  // Create a short, reasonably unique referral code from uid
+  if (!uid) return null;
+  return `ref_${uid.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10)}`;
+}
+
 async function syncUser(req, res) {
   try {
     const { uid, email } = req.user;
@@ -19,6 +25,7 @@ async function syncUser(req, res) {
       updates.createdAt = now;
       updates.updatedAt = now;
       updates.isAdmin = false;
+      updates.referralCode = generateReferralCode(uid);
     } else {
       const existing = snap.val();
       if (existing.email !== email) {

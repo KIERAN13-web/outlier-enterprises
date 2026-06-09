@@ -85,6 +85,30 @@ export default function EarningsCard() {
             </div>
           </div>
 
+          {user?.referralCode && (
+            <div className="referral-section">
+              <label>Your referral link</label>
+              <div className="referral-row">
+                <input
+                  readOnly
+                  value={`${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`}
+                  onFocus={(e) => e.target.select()}
+                />
+                <button
+                  onClick={() => {
+                    const text = `${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`;
+                    navigator.clipboard?.writeText(text).then(() => {
+                      // silent success
+                    }).catch(() => {});
+                  }}
+                  className="btn-copy"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Withdrawal Section */}
           {wallet.availableBalance > 0 ? (
             <div className="withdrawal-section">

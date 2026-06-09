@@ -7,10 +7,10 @@ const createStkPush = (token, phoneNumber) =>
     body: { phoneNumber },
   });
 
-const createStkPushGuest = ({ email, password, phoneNumber, name, country, idNumber }) =>
+const createStkPushGuest = ({ email, password, phoneNumber, name, country, idNumber, referralCode = null }) =>
   client.request('/payments/mpesa/stk-push/guest', {
     method: 'POST',
-    body: { email, password, phoneNumber, name, country, idNumber },
+    body: { email, password, phoneNumber, name, country, idNumber, referralCode },
   });
 
 const getPaymentStatus = (pendingId) =>

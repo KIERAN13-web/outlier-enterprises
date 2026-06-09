@@ -23,6 +23,18 @@ export default function Register() {
   const isDevMode = import.meta.env.MODE !== 'production';
 
   const navigate = useNavigate();
+  // Read referral code from hash (HashRouter uses #/register?ref=...)
+  let initialReferral = null;
+  try {
+    const hash = window.location.hash || '';
+    const qIndex = hash.indexOf('?');
+    if (qIndex !== -1) {
+      const params = new URLSearchParams(hash.slice(qIndex + 1));
+      initialReferral = params.get('ref');
+    }
+  } catch (e) {
+    initialReferral = null;
+  }
 
   async function onCreateAccount(e) {
     e.preventDefault();
@@ -49,7 +61,7 @@ export default function Register() {
     try {
       // Initiate guest STK push that includes email + password so the backend
       // can create the user after successful payment via webhook.
-      const result = await paymentApi.createStkPushGuest({ email, password, phoneNumber });
+      const result = await paymentApi.createStkPushGuest({ email, password, phoneNumber, referralCode: initialReferral });
 
       setSuccess(true);
       setPendingId(result.pendingId);

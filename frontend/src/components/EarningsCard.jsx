@@ -87,6 +87,28 @@ export default function EarningsCard() {
               <span className="info-value">{user?.phoneNumber || 'N/A'}</span>
             </div>
           </div>
+
+          {user?.referralCode && (
+            <div className="referral-section">
+              <label>Your referral link</label>
+              <div className="referral-row">
+                <input
+                  readOnly
+                  value={`${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`}
+                  onFocus={(e) => e.target.select()}
+                />
+                <button
+                  onClick={() => {
+                    const text = `${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`;
+                    navigator.clipboard?.writeText(text).catch(() => {});
+                  }}
+                  className="btn-copy"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Task Earnings Card */}
