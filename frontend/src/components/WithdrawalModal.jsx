@@ -3,7 +3,15 @@ import { auth } from '../firebase/client';
 import walletApi from '../api/walletApi';
 import './WithdrawalModal.css';
 
-export default function WithdrawalModal({ isOpen, onClose, availableBalance, userPhone, onWithdrawSuccess }) {
+export default function WithdrawalModal({ 
+  isOpen, 
+  onClose, 
+  availableBalance, 
+  userPhone, 
+  minWithdrawal = 1,
+  earningType = 'general',
+  onWithdrawSuccess 
+}) {
   const [amount, setAmount] = useState('');
   const [phoneNumber, setPhoneNumber] = useState(userPhone || '');
   const [loading, setLoading] = useState(false);
@@ -14,8 +22,7 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
     setPhoneNumber(userPhone || '');
   }, [userPhone]);
 
-  const MIN_WITHDRAWAL = 15000;
-  const isValidAmount = amount && parseInt(amount) >= MIN_WITHDRAWAL && parseInt(amount) <= availableBalance;
+  const isValidAmount = amount && parseInt(amount) >= minWithdrawal && parseInt(amount) <= availableBalance;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,8 +30,8 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
     setLoading(true);
 
     try {
-      if (parseInt(amount) < MIN_WITHDRAWAL) {
-        throw new Error(`Minimum withdrawal is KES ${MIN_WITHDRAWAL}`);
+      if (parseInt(amount) < minWithdrawal) {
+        throw new Error(`Minimum withdrawal is KES ${minWithdrawal}`);
       }
 
       if (parseInt(amount) > availableBalance) {
@@ -41,6 +48,7 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
       await walletApi.withdraw(token, {
         amount: parseInt(amount),
         phoneNumber,
+        earningType,
       });
 
       setSuccess(true);
@@ -79,7 +87,7 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Withdraw Funds</h2>
+          <h2>Withdraw from {earningType === 'task' ? 'Tasks' : 'Referrals'}</h2>
           <button className="close-btn" onClick={onClose}>✕</button>
         </div>
 
@@ -98,12 +106,12 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder={`Min: KES ${MIN_WITHDRAWAL}`}
-              min={MIN_WITHDRAWAL}
+              placeholder={`Min: KES ${minWithdrawal}`}
+              min={minWithdrawal}
               max={availableBalance}
               required
             />
-            <small>Minimum withdrawal: KES {MIN_WITHDRAWAL}</small>
+            <small>Minimum withdrawal: KES {minWithdrawal}</small>
           </div>
 
           <div className="form-group">

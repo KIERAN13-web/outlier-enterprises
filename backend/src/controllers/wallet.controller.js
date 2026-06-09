@@ -8,8 +8,9 @@ async function getWallet(req, res) {
 
     const snap = await rdb.ref(`users/${uid}/wallet`).get();
     const wallet = snap.exists() ? snap.val() : {
+      taskBalance: 0,
+      referralBalance: 0,
       totalEarnings: 0,
-      availableBalance: 0,
       withdrawals: [],
       transactions: [],
     };
@@ -53,14 +54,14 @@ async function getWallet(req, res) {
 async function withdraw(req, res) {
   try {
     const { uid } = req.user;
-    const { amount, phoneNumber } = req.body;
+    const { amount, phoneNumber, earningType } = req.body;
 
-    if (!amount || !phoneNumber) {
+    if (!amount || !phoneNumber || !earningType) {
       return res.status(400).json({ ok: false, error: 'missing_required_fields' });
     }
 
-    // Minimum withdrawal amount
-    const MIN_WITHDRAWAL = 15000;
+    // Set minimum based on earning type
+    const MIN_WITHDRAWAL = earningType === 'task' ? 10000 : 1;
     if (amount < MIN_WITHDRAWAL) {
       return res.status(400).json({
         ok: false,
@@ -74,18 +75,22 @@ async function withdraw(req, res) {
     // Get current wallet
     const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
     const wallet = walletSnap.exists() ? walletSnap.val() : {
+      taskBalance: 0,
+      referralBalance: 0,
       totalEarnings: 0,
-      availableBalance: 0,
       withdrawals: [],
       transactions: [],
     };
 
+    const balanceField = earningType === 'task' ? 'taskBalance' : 'referralBalance';
+    const currentBalance = wallet[balanceField] || 0;
+
     // Check sufficient balance
-    if (wallet.availableBalance < amount) {
+    if (currentBalance < amount) {
       return res.status(400).json({
         ok: false,
         error: 'INSUFFICIENT_BALANCE',
-        availableBalance: wallet.availableBalance,
+        availableBalance: currentBalance,
       });
     }
 
@@ -97,6 +102,7 @@ async function withdraw(req, res) {
       withdrawalId,
       amount,
       phoneNumber,
+      earningType,
       status: 'pending',
       requestedAt: new Date().toISOString(),
       approvedAt: null,
@@ -105,19 +111,20 @@ async function withdraw(req, res) {
 
     await withdrawalRef.set(withdrawalData);
 
-    // Update available balance
-    const newBalance = wallet.availableBalance - amount;
-    await rdb.ref(`users/${uid}/wallet`).update({
-      availableBalance: newBalance,
+    // Update the appropriate balance
+    const updateObj = {
+      [balanceField]: currentBalance - amount,
       updatedAt: new Date().toISOString(),
-    });
+    };
+    await rdb.ref(`users/${uid}/wallet`).update(updateObj);
 
     // Add transaction record
     const transactionRef = rdb.ref(`users/${uid}/wallet/transactions`).push();
     await transactionRef.set({
       type: 'withdrawal',
       amount: -amount,
-      description: 'Withdrawal request',
+      description: `Withdrawal request from ${earningType} earnings`,
+      earningType,
       status: 'pending',
       phoneNumber,
       withdrawalId,
@@ -128,7 +135,7 @@ async function withdraw(req, res) {
       ok: true,
       withdrawalId,
       withdrawal: withdrawalData,
-      newBalance,
+      newBalance: currentBalance - amount,
     });
   } catch (err) {
     console.error('withdraw error', err);

@@ -9,7 +9,8 @@ export default function EarningsCard() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
+  const [showTaskWithdrawal, setShowTaskWithdrawal] = useState(false);
+  const [showReferralWithdrawal, setShowReferralWithdrawal] = useState(false);
 
   const fetchWallet = async () => {
     try {
@@ -42,110 +43,151 @@ export default function EarningsCard() {
     return null;
   }
 
-  const MIN_WITHDRAWAL = 15000;
-  const canWithdraw = wallet.availableBalance >= MIN_WITHDRAWAL;
+  const taskBalance = wallet.taskBalance || 0;
+  const referralBalance = wallet.referralBalance || 0;
+  const totalBalance = taskBalance + referralBalance;
+
+  const MIN_TASK_WITHDRAWAL = 10000;
+  const MIN_REFERRAL_WITHDRAWAL = 1;
+  
+  const canWithdrawTask = taskBalance >= MIN_TASK_WITHDRAWAL;
+  const canWithdrawReferral = referralBalance >= MIN_REFERRAL_WITHDRAWAL;
 
   return (
     <>
-      <div className="earnings-card">
-        <div className="earnings-header">
-          <h3>💰 Your Earnings</h3>
-          <div className="earnings-badge">{wallet.availableBalance > 0 ? '✓' : '—'}</div>
-        </div>
-
-        <div className="earnings-content">
-          {/* Balance Section */}
-          <div className="balance-section">
-            <div className="balance-item primary">
-              <span className="label">Available Balance</span>
-              <span className="amount">KES {(wallet.availableBalance || 0).toLocaleString()}</span>
+      <div className="earnings-container">
+        {/* Summary Card */}
+        <div className="earnings-summary">
+          <div className="summary-header">
+            <h3>💰 Your Earnings Summary</h3>
+          </div>
+          <div className="summary-stats">
+            <div className="summary-stat">
+              <span className="stat-label">Total Balance</span>
+              <span className="stat-amount">KES {totalBalance.toLocaleString()}</span>
             </div>
-
-            <div className="balance-item secondary">
-              <span className="label">Total Earned</span>
-              <span className="amount">KES {(wallet.totalEarnings || 0).toLocaleString()}</span>
+            <div className="summary-stat">
+              <span className="stat-label">Total Earned</span>
+              <span className="stat-amount">KES {(wallet.totalEarnings || 0).toLocaleString()}</span>
             </div>
-
-            <div className="balance-item secondary">
-              <span className="label">Total Withdrawn</span>
-              <span className="amount">KES {(wallet.totalWithdrawn || 0).toLocaleString()}</span>
+            <div className="summary-stat">
+              <span className="stat-label">Total Withdrawn</span>
+              <span className="stat-amount">KES {(wallet.totalWithdrawn || 0).toLocaleString()}</span>
             </div>
           </div>
 
           {/* User Info Section */}
           <div className="user-info-section">
             <div className="info-item">
-              <span className="info-label">Name</span>
+              <span className="info-label">Name:</span>
               <span className="info-value">{user?.name || 'User'}</span>
             </div>
-
             <div className="info-item">
-              <span className="info-label">Email</span>
-              <span className="info-value">{user?.email || 'N/A'}</span>
-            </div>
-
-            <div className="info-item">
-              <span className="info-label">Phone (Payment)</span>
+              <span className="info-label">Phone:</span>
               <span className="info-value">{user?.phoneNumber || 'N/A'}</span>
             </div>
           </div>
+        </div>
 
-          {/* Withdrawal Section */}
-          {wallet.availableBalance > 0 ? (
-            <div className="withdrawal-section">
-              {!canWithdraw && (
-                <p className="withdrawal-notice">
-                  Minimum withdrawal: KES {MIN_WITHDRAWAL}
-                </p>
-              )}
-
+        {/* Task Earnings Card */}
+        <div className="earnings-card">
+          <div className="earnings-header">
+            <h4>📋 Earned from Tasks</h4>
+            <span className="earning-badge">Tasks</span>
+          </div>
+          <div className="earnings-content">
+            <div className="balance-display">
+              <span className="label">Available Balance</span>
+              <span className="amount">KES {taskBalance.toLocaleString()}</span>
+            </div>
+            <div className="min-withdrawal-note">Min withdrawal: KES {MIN_TASK_WITHDRAWAL}</div>
+            {taskBalance > 0 ? (
               <button
-                onClick={() => setShowWithdrawalModal(true)}
-                disabled={!canWithdraw}
-                className={`btn-withdraw ${!canWithdraw ? 'disabled' : ''}`}
+                onClick={() => setShowTaskWithdrawal(true)}
+                disabled={!canWithdrawTask}
+                className={`btn-withdraw ${!canWithdrawTask ? 'disabled' : ''}`}
               >
-                {canWithdraw ? 'Withdraw Funds' : 'Need More Balance'}
+                {canWithdrawTask ? 'Withdraw from Tasks' : `Need KES ${MIN_TASK_WITHDRAWAL - taskBalance} more`}
               </button>
-            </div>
-          ) : (
-            <div className="no-balance">
-              <p>Complete tasks to earn money</p>
-            </div>
-          )}
-
-          <div className="withdrawal-history">
-            <h4>Withdrawal History</h4>
-            {wallet.withdrawals?.length > 0 ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {wallet.withdrawals.map((item) => (
-                    <tr key={item.id}>
-                      <td>{new Date(item.requestedAt).toLocaleDateString()}</td>
-                      <td>KES {item.amount.toLocaleString()}</td>
-                      <td>{item.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             ) : (
-              <p>No withdrawal history yet.</p>
+              <p className="no-balance-text">Complete tasks to earn money</p>
             )}
           </div>
+        </div>
+
+        {/* Referral Earnings Card */}
+        <div className="earnings-card">
+          <div className="earnings-header">
+            <h4>👥 Earned from Referrals</h4>
+            <span className="earning-badge">Referrals</span>
+          </div>
+          <div className="earnings-content">
+            <div className="balance-display">
+              <span className="label">Available Balance</span>
+              <span className="amount">KES {referralBalance.toLocaleString()}</span>
+            </div>
+            <div className="min-withdrawal-note">Min withdrawal: KES {MIN_REFERRAL_WITHDRAWAL}</div>
+            {referralBalance > 0 ? (
+              <button
+                onClick={() => setShowReferralWithdrawal(true)}
+                disabled={!canWithdrawReferral}
+                className={`btn-withdraw ${!canWithdrawReferral ? 'disabled' : ''}`}
+              >
+                {canWithdrawReferral ? 'Withdraw from Referrals' : 'Insufficient balance'}
+              </button>
+            ) : (
+              <p className="no-balance-text">Refer friends to earn money</p>
+            )}
+          </div>
+        </div>
+
+        {/* Withdrawal History */}
+        <div className="withdrawal-history">
+          <h4>📊 Withdrawal History</h4>
+          {wallet.withdrawals?.length > 0 ? (
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wallet.withdrawals.map((item) => (
+                  <tr key={item.id}>
+                    <td>{new Date(item.requestedAt).toLocaleDateString()}</td>
+                    <td>{item.earningType || 'N/A'}</td>
+                    <td>KES {item.amount.toLocaleString()}</td>
+                    <td><span className={`status-badge status-${item.status}`}>{item.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No withdrawal history yet.</p>
+          )}
         </div>
       </div>
 
       <WithdrawalModal
-        isOpen={showWithdrawalModal}
-        onClose={() => setShowWithdrawalModal(false)}
-        availableBalance={wallet.availableBalance || 0}
+        isOpen={showTaskWithdrawal}
+        onClose={() => setShowTaskWithdrawal(false)}
+        availableBalance={taskBalance}
         userPhone={user?.phoneNumber || ''}
+        minWithdrawal={MIN_TASK_WITHDRAWAL}
+        earningType="task"
+        onWithdrawSuccess={fetchWallet}
+      />
+
+      <WithdrawalModal
+        isOpen={showReferralWithdrawal}
+        onClose={() => setShowReferralWithdrawal(false)}
+        availableBalance={referralBalance}
+        userPhone={user?.phoneNumber || ''}
+        minWithdrawal={MIN_REFERRAL_WITHDRAWAL}
+        earningType="referral"
         onWithdrawSuccess={fetchWallet}
       />
     </>

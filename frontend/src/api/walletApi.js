@@ -6,11 +6,11 @@ const getWallet = (token) =>
     token,
   });
 
-const withdraw = (token, { amount, phoneNumber }) =>
+const withdraw = (token, { amount, phoneNumber, earningType }) =>
   client.request('/wallet/withdraw', {
     method: 'POST',
     token,
-    body: { amount, phoneNumber },
+    body: { amount, phoneNumber, earningType },
   });
 
 const getWithdrawals = (token) =>
