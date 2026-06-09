@@ -97,6 +97,7 @@ async function testCreditReferral() {
     await testGenerateUnique();
     await testCreditReferral();
     console.log('All referral service tests passed');
+    console.log('You can also run the Jest suite with `npm test` after installing dev dependencies.');
     process.exit(0);
   } catch (err) {
     console.error('Referral service tests failed:', err);

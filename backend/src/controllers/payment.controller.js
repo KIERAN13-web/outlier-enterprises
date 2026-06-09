@@ -278,7 +278,7 @@ async function processPendingPayment({ pendingKey, data, status }) {
         if (data.referralCode) {
           try {
             const referralService = (await import('../services/referralService.js')).default;
-            await referralService.creditReferralBonus(rdb, data.referralCode, data.email, 50);
+            await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
           } catch (err) {
             console.error('Error crediting referrer:', err);
           }
@@ -309,7 +309,7 @@ async function processPendingPayment({ pendingKey, data, status }) {
         if (data.referralCode) {
           try {
             const referralService = (await import('../services/referralService.js')).default;
-            await referralService.creditReferralBonus(rdb, data.referralCode, data.email, 50);
+            await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
           } catch (err) {
             console.error('Error crediting referrer for existing user path:', err);
           }

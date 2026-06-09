@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../firebase/client';
 import authApi from '../api/authApi';
+import walletApi from '../api/walletApi';
 import './Header.css';
 
 export default function Header() {
@@ -9,6 +10,8 @@ export default function Header() {
   const location = useLocation();
   const user = auth?.currentUser;
   const [isPaid, setIsPaid] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifs, setShowNotifs] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -17,6 +20,13 @@ export default function Header() {
         const token = await user.getIdToken();
         const resp = await authApi.getStatus(token);
         setIsPaid(Boolean(resp?.isPaid));
+        // fetch notifications via wallet API
+        try {
+          const w = await walletApi.getWallet(token);
+          setNotifications(w.user?.notifications || []);
+        } catch (e) {
+          // ignore
+        }
       } catch {
         setIsPaid(null);
       }
@@ -70,7 +80,35 @@ export default function Header() {
                 )}
 
                 <div className="user-section">
-                  <span className="user-email">{user.email}</span>
+                  <div className="user-email">{user.email}</div>
+                  <div className="notif-wrap">
+                    <button className="notif-btn" onClick={() => setShowNotifs(!showNotifs)} title="Notifications">
+                      🔔{notifications?.length > 0 && <span className="notif-badge">{notifications.length}</span>}
+                    </button>
+                    {showNotifs && (
+                      <div className="notif-dropdown">
+                        {notifications.length === 0 ? (
+                          <div className="notif-empty">No notifications</div>
+                        ) : (
+                          notifications.slice(0,5).map((n) => (
+                            <div key={n.id} className="notif-item">
+                              <div className="notif-msg">{n.message}</div>
+                              <div className="notif-actions">
+                                <button className="btn-sm" onClick={async () => {
+                                  try {
+                                    const token = await auth.currentUser.getIdToken();
+                                    await walletApi.markNotificationRead(token, n.id);
+                                    const w = await walletApi.getWallet(token);
+                                    setNotifications(w.user?.notifications || []);
+                                  } catch (e) { console.error(e); }
+                                }}>Dismiss</button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
                     Logout
                   </button>
