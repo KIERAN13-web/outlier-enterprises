@@ -42,6 +42,14 @@ async function syncUser(req, res) {
       if (existing.isAdmin === undefined) {
         updates.isAdmin = false;
       }
+      // Generate referral code if missing
+      if (!existing.referralCode) {
+        try {
+          updates.referralCode = await referralService.generateUniqueReferralCode(firebaseAdmin.database());
+        } catch (e) {
+          updates.referralCode = `R${uid.slice(0, 8)}`;
+        }
+      }
       updates.updatedAt = now;
     }
 
