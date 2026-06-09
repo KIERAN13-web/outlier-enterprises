@@ -112,6 +112,31 @@ export default function EarningsCard() {
         </div>
 
         {/* Task Earnings Card */}
+        {user?.notifications?.length > 0 && (
+          <div className="notification-banner">
+            <div className="notification-message">{user.notifications[0].message}</div>
+            <div className="notification-actions">
+              <button
+                className="btn-dismiss"
+                onClick={async () => {
+                  try {
+                    const token = await auth.currentUser.getIdToken();
+                    await walletApi.markNotificationRead(token, user.notifications[0].id);
+                    const res = await walletApi.getWallet(token);
+                    // refresh
+                    setWallet(res.wallet);
+                    setUser(res.user);
+                  } catch (e) {
+                    console.error('Unable to dismiss notification', e);
+                  }
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="earnings-card">
           <div className="earnings-header">
             <h4>📋 Earned from Tasks</h4>

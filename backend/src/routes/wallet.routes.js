@@ -13,4 +13,7 @@ router.post('/withdraw', authRequired, walletController.withdraw);
 // Get withdrawal history
 router.get('/withdrawals', authRequired, walletController.getWithdrawals);
 
+// Mark notification read
+router.post('/notifications/:id/read', authRequired, walletController.markNotificationRead);
+
 export default router;

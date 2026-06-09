@@ -30,26 +30,52 @@ async function getWallet(req, res) {
     // Get user profile for display
     const userSnap = await rdb.ref(`users/${uid}`).get();
     const userProfile = userSnap.exists() ? userSnap.val() : {};
+      // fetch notifications (include unread only)
+      const notSnap = await rdb.ref(`users/${uid}/notifications`).get();
+      const notifications = notSnap.exists()
+        ? Object.entries(notSnap.val()).map(([nid, data]) => ({ id: nid, ...data }))
+        : [];
 
-    return res.json({
-      ok: true,
-      wallet: {
-        ...wallet,
-        withdrawals: withdrawals.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)),
-        totalWithdrawn,
-      },
-      user: {
-        name: userProfile.name || 'User',
-        email: userProfile.email || '',
-        phoneNumber: userProfile.phoneNumber || '',
-        referralCode: userProfile.referralCode || null,
-      },
-    });
+      return res.json({
+        ok: true,
+        wallet: {
+          ...wallet,
+          withdrawals: withdrawals.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)),
+          totalWithdrawn,
+        },
+        user: {
+          name: userProfile.name || 'User',
+          email: userProfile.email || '',
+          phoneNumber: userProfile.phoneNumber || '',
+          referralCode: userProfile.referralCode || null,
+          notifications: notifications.filter((n) => n.read !== true),
+        },
+      });
   } catch (err) {
     console.error('getWallet error', err);
     return res.status(500).json({ ok: false, error: 'GET_WALLET_FAILED' });
   }
 }
+
+  // Mark a notification as read
+  async function markNotificationRead(req, res) {
+    try {
+      const { uid } = req.user;
+      const { id } = req.params;
+      if (!id) return res.status(400).json({ ok: false, error: 'id_required' });
+
+      const rdb = firebaseAdmin.database();
+      const notifRef = rdb.ref(`users/${uid}/notifications/${id}`);
+      const snap = await notifRef.get();
+      if (!snap.exists()) return res.status(404).json({ ok: false, error: 'NOT_FOUND' });
+
+      await notifRef.update({ read: true, readAt: new Date().toISOString() });
+      return res.json({ ok: true });
+    } catch (err) {
+      console.error('markNotificationRead error', err);
+      return res.status(500).json({ ok: false, error: 'MARK_FAILED' });
+    }
+  }
 
 // Withdraw funds
 async function withdraw(req, res) {

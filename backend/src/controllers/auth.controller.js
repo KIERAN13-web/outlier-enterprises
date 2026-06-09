@@ -1,10 +1,5 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
-
-function generateReferralCode(uid) {
-  // Create a short, reasonably unique referral code from uid
-  if (!uid) return null;
-  return `ref_${uid.replace(/[^a-zA-Z0-9]/g, '').slice(0, 10)}`;
-}
+import referralService from '../services/referralService.js';
 
 async function syncUser(req, res) {
   try {
@@ -25,7 +20,11 @@ async function syncUser(req, res) {
       updates.createdAt = now;
       updates.updatedAt = now;
       updates.isAdmin = false;
-      updates.referralCode = generateReferralCode(uid);
+      try {
+        updates.referralCode = await referralService.generateUniqueReferralCode(firebaseAdmin.database());
+      } catch (e) {
+        updates.referralCode = `R${uid.slice(0, 8)}`;
+      }
     } else {
       const existing = snap.val();
       if (existing.email !== email) {

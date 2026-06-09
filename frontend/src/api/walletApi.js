@@ -19,4 +19,10 @@ const getWithdrawals = (token) =>
     token,
   });
 
-export default { getWallet, withdraw, getWithdrawals };
+const markNotificationRead = (token, id) =>
+  client.request(`/wallet/notifications/${id}/read`, {
+    method: 'POST',
+    token,
+  });
+
+export default { getWallet, withdraw, getWithdrawals, markNotificationRead };

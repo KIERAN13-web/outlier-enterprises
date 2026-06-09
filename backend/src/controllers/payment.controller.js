@@ -255,7 +255,13 @@ async function processPendingPayment({ pendingKey, data, status }) {
       try {
         const userRecord = await firebaseAdmin.auth().createUser({ email: data.email, password: data.password });
         const newUid = userRecord.uid;
-        const referralCodeForNewUser = data.referralCode || `ref_${newUid.replace(/[^a-zA-Z0-9]/g, '').slice(0,10)}`;
+        const referralCodeForNewUser = data.referralCode || await (async () => {
+          try {
+            return await (await import('../services/referralService.js')).default.generateUniqueReferralCode(rdb);
+          } catch (e) {
+            return `R${newUid.slice(0,8)}`;
+          }
+        })();
         await rdb.ref(`users/${newUid}`).set({
           email: data.email || null,
           fullName: data.name || null,
@@ -268,29 +274,11 @@ async function processPendingPayment({ pendingKey, data, status }) {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
-        // Credit referral bonus if present
+        // Credit referral bonus if present (uses referralService)
         if (data.referralCode) {
           try {
-            const refSnap = await rdb.ref('users').orderByChild('referralCode').equalTo(data.referralCode).limitToFirst(1).get();
-            if (refSnap.exists()) {
-              const entries = Object.entries(refSnap.val());
-              const [refUid, refUser] = entries[0];
-              const bonus = 50;
-              const walletRef = rdb.ref(`users/${refUid}/wallet`);
-              const walletSnap = await walletRef.get();
-              const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0, totalEarnings: 0 };
-              const newReferralBalance = (wallet.referralBalance || 0) + bonus;
-              const newTotalEarnings = (wallet.totalEarnings || 0) + bonus;
-              await walletRef.update({ referralBalance: newReferralBalance, totalEarnings: newTotalEarnings, updatedAt: new Date().toISOString() });
-              const txRef = rdb.ref(`users/${refUid}/wallet/transactions`).push();
-              await txRef.set({
-                type: 'referral',
-                amount: bonus,
-                description: `Referral bonus for inviting ${data.email || 'a user'}`,
-                status: 'credited',
-                createdAt: new Date().toISOString(),
-              });
-            }
+            const referralService = (await import('../services/referralService.js')).default;
+            await referralService.creditReferralBonus(rdb, data.referralCode, data.email, 50);
           } catch (err) {
             console.error('Error crediting referrer:', err);
           }
@@ -301,7 +289,13 @@ async function processPendingPayment({ pendingKey, data, status }) {
         console.warn('createUser during webhook failed, trying to update existing user', e?.message || e);
         const existing = await firebaseAdmin.auth().getUserByEmail(data.email);
         const existingUid = existing.uid;
-        const referralCodeForExisting = data.referralCode || `ref_${existingUid.replace(/[^a-zA-Z0-9]/g, '').slice(0,10)}`;
+        const referralCodeForExisting = data.referralCode || await (async () => {
+          try {
+            return await (await import('../services/referralService.js')).default.generateUniqueReferralCode(rdb);
+          } catch (e) {
+            return `R${existingUid.slice(0,8)}`;
+          }
+        })();
         await rdb.ref(`users/${existingUid}`).update({
           fullName: data.name || null,
           country: data.country || null,
@@ -314,26 +308,8 @@ async function processPendingPayment({ pendingKey, data, status }) {
         });
         if (data.referralCode) {
           try {
-            const refSnap = await rdb.ref('users').orderByChild('referralCode').equalTo(data.referralCode).limitToFirst(1).get();
-            if (refSnap.exists()) {
-              const entries = Object.entries(refSnap.val());
-              const [refUid] = entries[0];
-              const bonus = 50;
-              const walletRef = rdb.ref(`users/${refUid}/wallet`);
-              const walletSnap = await walletRef.get();
-              const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0, totalEarnings: 0 };
-              const newReferralBalance = (wallet.referralBalance || 0) + bonus;
-              const newTotalEarnings = (wallet.totalEarnings || 0) + bonus;
-              await walletRef.update({ referralBalance: newReferralBalance, totalEarnings: newTotalEarnings, updatedAt: new Date().toISOString() });
-              const txRef = rdb.ref(`users/${refUid}/wallet/transactions`).push();
-              await txRef.set({
-                type: 'referral',
-                amount: bonus,
-                description: `Referral bonus for inviting ${data.email || 'a user'}`,
-                status: 'credited',
-                createdAt: new Date().toISOString(),
-              });
-            }
+            const referralService = (await import('../services/referralService.js')).default;
+            await referralService.creditReferralBonus(rdb, data.referralCode, data.email, 50);
           } catch (err) {
             console.error('Error crediting referrer for existing user path:', err);
           }

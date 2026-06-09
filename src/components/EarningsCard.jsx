@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { auth } from '../firebase/client';
-import walletApi from '../api/walletApi';
+import walletApi, { markNotificationRead } from '../api/walletApi';
 import WithdrawalModal from './WithdrawalModal';
 import './EarningsCard.css';
 
@@ -47,6 +47,30 @@ export default function EarningsCard() {
 
   return (
     <>
+      {user?.notifications?.length > 0 && (
+        <div className="notification-banner">
+          <div className="notification-message">{user.notifications[0].message}</div>
+          <div className="notification-actions">
+            <button
+              className="btn-dismiss"
+              onClick={async () => {
+                try {
+                  const token = await auth.currentUser.getIdToken();
+                  await markNotificationRead(token, user.notifications[0].id);
+                  // refresh
+                  const res = await walletApi.getWallet(token);
+                  setWallet(res.wallet);
+                  setUser(res.user);
+                } catch (e) {
+                  console.error('Unable to dismiss notification', e);
+                }
+              }}
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
       <div className="earnings-card">
         <div className="earnings-header">
           <h3>💰 Your Earnings</h3>

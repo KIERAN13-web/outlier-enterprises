@@ -19,4 +19,12 @@ const getWithdrawals = (token) =>
     token,
   });
 
+const markNotificationRead = (token, id) =>
+  client.request(`/wallet/notifications/${id}/read`, {
+    method: 'POST',
+    token,
+  });
+
 export default { getWallet, withdraw, getWithdrawals };
+// append new API
+export { markNotificationRead };
