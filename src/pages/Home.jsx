@@ -170,6 +170,12 @@ export default function Home() {
               View Pricing
             </Link>
           </div>
+          {/* TEMP: Admin registration (remove after creating the initial admin account) */}
+          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+            <Link to="/admin-register" className="btn btn-outline" style={{ fontSize: '0.9rem' }}>
+              Admin Registration
+            </Link>
+          </div>
         </div>
       </section>
     </div>
