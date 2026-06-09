@@ -61,6 +61,9 @@ export default function Header() {
                 <Link to="/register" className={`nav-link ${isActive('/register') ? 'active' : ''}`}>
                   Register
                 </Link>
+                <Link to="/admin-register" className={`nav-link ${isActive('/admin-register') ? 'active' : ''}`}>
+                  Admin Registration
+                </Link>
               </>
             ) : (
               <>
