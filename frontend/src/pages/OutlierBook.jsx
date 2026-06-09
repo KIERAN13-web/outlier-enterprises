@@ -85,13 +85,19 @@ export default function OutlierBook() {
   async function placeOrder(account) {
     setPlacing(account.id);
     setError('');
-    
+
+    if (account.amount < MIN_ORDER_AMOUNT || account.amount > MAX_ORDER_AMOUNT) {
+      setError(`Order amount must be between KES ${MIN_ORDER_AMOUNT} and KES ${MAX_ORDER_AMOUNT}.`);
+      setPlacing(null);
+      return;
+    }
+
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Please log in to continue.');
 
       const token = await user.getIdToken();
-      const order = await paymentApi.placeOrder(token, {
+      await paymentApi.placeOrder(token, {
         accountId: account.id,
         accountName: account.name,
         amount: account.amount,
@@ -99,14 +105,14 @@ export default function OutlierBook() {
 
       setSelected(account.id);
       setMessage(`✓ Order placed for ${account.name} at KES ${account.amount}.`);
-      
+
       // Auto-redirect to dashboard after 2 seconds
       setTimeout(() => {
         navigate('/dashboard');
       }, 2000);
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Failed to place order');
+      setError(err?.data?.message || err.message || 'Failed to place order');
     } finally {
       setPlacing(null);
     }
