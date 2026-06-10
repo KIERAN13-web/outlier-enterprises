@@ -4,6 +4,16 @@ export async function getAdminStatus(user) {
   if (!user) return false;
 
   try {
+    const token = await user.getIdToken();
+    const syncResult = await authApi.syncUser(token);
+    if (typeof syncResult?.isAdmin === 'boolean') {
+      return syncResult.isAdmin;
+    }
+  } catch (err) {
+    console.warn('Failed to sync user before admin status check:', err);
+  }
+
+  try {
     const idTokenResult = await user.getIdTokenResult(true);
     if (idTokenResult?.claims?.isAdmin === true) {
       return true;
