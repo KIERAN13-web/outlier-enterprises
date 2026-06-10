@@ -70,7 +70,7 @@ async function getPesapalToken() {
       },
       body: JSON.stringify({
         consumer_key: key,
-        consumer_secret: process.env.PESAPAL_CONSUMER_SECRET,
+        consumer_secret: secret,
       }),
     });
 
