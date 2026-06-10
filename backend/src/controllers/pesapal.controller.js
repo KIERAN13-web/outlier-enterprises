@@ -65,35 +65,11 @@ async function parsePesapalErrorResponse(response) {
   }
 }
 
-// Pesapal v3 API uses JWT tokens. Generate one using the consumer credentials.
-function generatePesapalJWT() {
-  const { key, secret } = validateConfig();
-  
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const payload = {
-    iss: key,
-    sub: key,
-    aud: 'https://pesapal.com',
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 3600,
-  };
-
-  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
-  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(`${encodedHeader}.${encodedPayload}`)
-    .digest('base64url');
-
-  return `${encodedHeader}.${encodedPayload}.${signature}`;
-}
-
 // Get OAuth2 token from Pesapal v3 API
 async function getPesapalToken() {
   const { key, secret } = validateConfig();
   const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
   const tokenUrls = buildPesapalApiUrls('/Auth/RequestToken');
-  const jwt = generatePesapalJWT();
 
   try {
     console.log(`[Pesapal] Requesting token from ${env} environment`);
@@ -105,7 +81,6 @@ async function getPesapalToken() {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Authorization': `Bearer ${jwt}`,
           },
           body: JSON.stringify({
             consumer_key: key,
