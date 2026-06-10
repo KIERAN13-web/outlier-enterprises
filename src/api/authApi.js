@@ -14,5 +14,16 @@ const getStatus = async (token) => {
   return client.request('/auth/status', { token });
 };
 
-export default { syncUser, getStatus };
+const changePassword = async (token, newPassword) => {
+  if (!isBackendConfigured) {
+    throw new Error('Backend not configured');
+  }
+  return client.request('/auth/change-password', { 
+    method: 'POST', 
+    token,
+    body: { newPassword }
+  });
+};
+
+export default { syncUser, getStatus, changePassword };
 

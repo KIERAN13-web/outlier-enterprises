@@ -16,10 +16,10 @@ if not exist ".env" (
     exit /b 1
 )
 
-REM Check if serviceAccountKey.json exists
-if not exist "serviceAccountKey.json" (
-    echo ❌ Error: serviceAccountKey.json not found
-    echo Please place your Firebase service account key in the backend directory
+REM Check if serviceAccountKey.json exists OR FIREBASE_SERVICE_ACCOUNT_JSON is provided
+if "%FIREBASE_SERVICE_ACCOUNT_JSON%"=="" if not exist "serviceAccountKey.json" (
+    echo ❌ Error: serviceAccountKey.json not found and FIREBASE_SERVICE_ACCOUNT_JSON is not set
+    echo Provide the Firebase service account via the FIREBASE_SERVICE_ACCOUNT_JSON environment variable (Railway) or place serviceAccountKey.json in the backend directory
     exit /b 1
 )
 

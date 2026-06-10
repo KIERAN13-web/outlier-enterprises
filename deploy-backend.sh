@@ -22,10 +22,10 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
-# Check if serviceAccountKey.json exists
-if [ ! -f "serviceAccountKey.json" ]; then
-    echo -e "${RED}❌ Error: serviceAccountKey.json not found${NC}"
-    echo "Please place your Firebase service account key in the backend directory"
+# Check if serviceAccountKey.json exists OR FIREBASE_SERVICE_ACCOUNT_JSON is provided
+if [ -z "$FIREBASE_SERVICE_ACCOUNT_JSON" ] && [ ! -f "serviceAccountKey.json" ]; then
+    echo -e "${RED}❌ Error: serviceAccountKey.json not found and FIREBASE_SERVICE_ACCOUNT_JSON is not set${NC}"
+    echo "Provide the Firebase service account via the FIREBASE_SERVICE_ACCOUNT_JSON environment variable (Railway) or place serviceAccountKey.json in the backend directory"
     exit 1
 fi
 
