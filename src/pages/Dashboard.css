@@ -65,6 +65,11 @@
   font-weight: 600;
 }
 
+.stat-card:nth-child(5) .stat-label,
+.stat-card:nth-child(5) .stat-value {
+  color: #07111f;
+}
+
 .error-message {
   background-color: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--danger);

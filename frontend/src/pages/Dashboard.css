@@ -105,6 +105,12 @@
 
 .stat-card:nth-child(5) {
   background: linear-gradient(135deg, #f43f5e, #fb7185);
+  color: #ffffff;
+}
+
+.stat-card:nth-child(5) .stat-label,
+.stat-card:nth-child(5) .stat-value {
+  color: #ffffff;
 }
 
 .stat-card:hover {
