@@ -17,8 +17,23 @@ validateStartupEnv();
 
 const app = express();
 
+// Build allowed origins list from env. Support comma-separated list and
+// tolerate values that include a path (e.g. https://host/path) by extracting
+// the origin portion so comparisons match the browser `Origin` header.
+const rawCors = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = rawCors
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean)
+  .map(v => {
+    try {
+      return new URL(v).origin;
+    } catch {
+      return v;
+    }
+  });
+
 // Debug endpoint to inspect incoming Origin header and allowedOrigins
-// Place before CORS middleware so it can be reached even when CORS blocks later
 app.get('/debug-cors', (req, res) => {
   try {
     const incomingOrigin = req.get('Origin') || null;
@@ -28,8 +43,22 @@ app.get('/debug-cors', (req, res) => {
   }
 });
 
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // allow non-browser requests (curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error('CORS not allowed'));
+    },
+    credentials: true,
+  })
+);
+
+app.use(express.json({ limit: '2mb' }));
+
 // Temporary setup endpoint - SET UP ADMIN USERS
-// Protect with a simple secret from env var
+// Place after express.json() so req.body is available
 app.post('/setup/make-admin', async (req, res) => {
   try {
     const setupSecret = process.env.SETUP_SECRET || 'dev-only-secret-change-me';
@@ -58,36 +87,6 @@ app.post('/setup/make-admin', async (req, res) => {
     return res.status(400).json({ ok: false, error: err.message });
   }
 });
-
-// Build allowed origins list from env. Support comma-separated list and
-// tolerate values that include a path (e.g. https://host/path) by extracting
-// the origin portion so comparisons match the browser `Origin` header.
-const rawCors = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173';
-const allowedOrigins = rawCors
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean)
-  .map(v => {
-    try {
-      return new URL(v).origin;
-    } catch {
-      return v;
-    }
-  });
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // allow non-browser requests (curl, server-to-server)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('CORS not allowed'));
-    },
-    credentials: true,
-  })
-);
-
-app.use(express.json({ limit: '2mb' }));
 
 // Health check endpoint
 app.get('/health', (_req, res) => {
