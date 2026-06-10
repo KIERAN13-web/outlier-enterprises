@@ -13,7 +13,9 @@ export default async function authRequired(req, res, next) {
     req.user = {
       uid: decoded.uid,
       email: decoded.email,
+      isAdmin: Boolean(decoded.isAdmin),
     };
+    req.decodedToken = decoded;
 
     next();
   } catch (err) {

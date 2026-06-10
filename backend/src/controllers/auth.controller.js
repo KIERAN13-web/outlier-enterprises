@@ -19,7 +19,7 @@ async function syncUser(req, res) {
       updates.paidAt = null;
       updates.createdAt = now;
       updates.updatedAt = now;
-      updates.isAdmin = false;
+      updates.isAdmin = req.user?.isAdmin === true;
       try {
         updates.referralCode = await referralService.generateUniqueReferralCode(firebaseAdmin.database());
       } catch (e) {
