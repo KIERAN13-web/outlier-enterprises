@@ -14,9 +14,21 @@ function getHomepageBase() {
   return '/';
 }
 
+function getBasePath() {
+  if (process.env.VITE_BASE_PATH) {
+    return process.env.VITE_BASE_PATH;
+  }
+
+  // Vercel should always use root path.
+  if (process.env.VERCEL === '1' || process.env.VERCEL === 'true') {
+    return '/';
+  }
+
+  return getHomepageBase();
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  // Allow explicit override for Vercel or other hosts.
-  base: process.env.VITE_BASE_PATH || getHomepageBase(),
+  base: getBasePath(),
   plugins: [react()],
 })
