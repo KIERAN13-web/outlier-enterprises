@@ -2,14 +2,24 @@ import crypto from 'crypto';
 import firebaseAdmin from '../services/firebaseAdmin.js';
 
 const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 200);
-const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY || process.env.PESAPAL_KEY || process.env.PESAPAL_API_KEY;
-const PESAPAL_CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET || process.env.PESAPAL_SECRET || process.env.PESAPAL_API_SECRET;
+
+// Read from env at runtime (not at module load) so Railway env vars are picked up even if process is already running
+function getConsumerKey() {
+  return process.env.PESAPAL_CONSUMER_KEY || process.env.PESAPAL_KEY || process.env.PESAPAL_API_KEY;
+}
+
+function getConsumerSecret() {
+  return process.env.PESAPAL_CONSUMER_SECRET || process.env.PESAPAL_SECRET || process.env.PESAPAL_API_SECRET;
+}
 
 function validateConfig() {
+  const key = getConsumerKey();
+  const secret = getConsumerSecret();
   const missing = [];
-  if (!PESAPAL_CONSUMER_KEY) missing.push('PESAPAL_CONSUMER_KEY / PESAPAL_KEY / PESAPAL_API_KEY');
-  if (!PESAPAL_CONSUMER_SECRET) missing.push('PESAPAL_CONSUMER_SECRET / PESAPAL_SECRET / PESAPAL_API_SECRET');
+  if (!key) missing.push('PESAPAL_CONSUMER_KEY / PESAPAL_KEY / PESAPAL_API_KEY');
+  if (!secret) missing.push('PESAPAL_CONSUMER_SECRET / PESAPAL_SECRET / PESAPAL_API_SECRET');
   if (missing.length) throw new Error(`Missing Pesapal configuration: ${missing.join(', ')}`);
+  return { key, secret };
 }
 
 function percentEncode(str) {
@@ -29,6 +39,7 @@ function buildOauthSignature(method, url, params, consumerSecret) {
 }
 
 function buildPesapalIframeUrl({ amount, reference, email, callbackUrl, customerName }) {
+  const { key, secret } = validateConfig(); // Get keys and validate at runtime
   const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
   const base = env === 'production' ? 'https://www.pesapal.com' : 'https://sandbox.pesapal.com';
   const endpoint = `${base}/API/PostPesapalDirectOrderV4`;
@@ -41,7 +52,7 @@ function buildPesapalIframeUrl({ amount, reference, email, callbackUrl, customer
   const oauthNonce = generateNonce(8);
 
   const params = {
-    oauth_consumer_key: PESAPAL_CONSUMER_KEY,
+    oauth_consumer_key: key,
     oauth_nonce: oauthNonce,
     oauth_signature_method: 'HMAC-SHA1',
     oauth_timestamp: oauthTimestamp,
@@ -50,7 +61,7 @@ function buildPesapalIframeUrl({ amount, reference, email, callbackUrl, customer
     pesapal_request_data: pesapalRequestData,
   };
 
-  const oauthSignature = buildOauthSignature('GET', endpoint, params, PESAPAL_CONSUMER_SECRET);
+  const oauthSignature = buildOauthSignature('GET', endpoint, params, secret);
   params.oauth_signature = oauthSignature;
 
   const qs = Object.keys(params).map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`).join('&');
