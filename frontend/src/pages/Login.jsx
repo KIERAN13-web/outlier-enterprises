@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 import { auth } from '../firebase/client';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { getAndClearRedirectPage } from '../utils/pagePersistence';
-import { getAdminStatus } from '../utils/adminAuth';
+import { useNavigate, Link } from 'react-router-dom';
+import authApi from '../api/authApi';
 import './Auth.css';
 
 export default function Login() {
@@ -29,27 +28,11 @@ export default function Login() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      console.log('[Login] Signed in, calling getAdminStatus');
-      const isAdmin = await getAdminStatus(cred.user);
-      console.log('[Login] getAdminStatus returned:', isAdmin);
-      
-      // Try to restore the saved page, or use admin/dashboard based on role
-      const redirectPage = getAndClearRedirectPage();
-      let destination = isAdmin ? '/admin/dashboard' : '/dashboard';
-      console.log('[Login] Redirecting to:', destination, 'saved redirectPage:', redirectPage);
-      
-      // If we have a saved page and it's not a public page, use it.
-      // Admin users should only restore admin routes.
-      if (redirectPage && !['/login', '/register', '/payment', '/'].includes(redirectPage)) {
-        if (isAdmin) {
-          if (redirectPage.startsWith('/admin')) {
-            destination = redirectPage;
-          }
-        } else {
-          destination = redirectPage;
-        }
-      }
-      
+      const token = await cred.user.getIdToken();
+      const statusResult = await authApi.getStatus(token);
+      const isAdmin = Boolean(statusResult?.isAdmin);
+      const destination = isAdmin ? '/admin/dashboard' : '/dashboard';
+
       navigate(destination, { replace: true });
     } catch (err) {
       console.error(err);
