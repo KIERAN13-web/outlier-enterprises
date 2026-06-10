@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { auth } from '../firebase/client';
 import authApi from '../api/authApi';
 import walletApi from '../api/walletApi';
 import useAuthState from '../hooks/useAuthState';
