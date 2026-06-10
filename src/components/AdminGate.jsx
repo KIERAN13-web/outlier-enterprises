@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getAuth } from 'firebase/auth';
 import { app } from '../firebase/client';
-import authApi from '../api/authApi';
+import { resolveAdminStatus } from '../utils/adminAuth.js';
 
 export default function AdminGate({ children }) {
   const navigate = useNavigate();
@@ -22,15 +22,13 @@ export default function AdminGate({ children }) {
       }
 
       try {
-        const idToken = await user.getIdToken();
-        const statusResult = await authApi.getStatus(idToken);
+        const isAdminResult = await resolveAdminStatus(user);
         if (!isMounted) return;
 
-        if (statusResult?.isAdmin) {
+        if (isAdminResult) {
           setIsAdmin(true);
         } else {
           setError('not_admin');
-          // Redirect non-admins to dashboard
           navigate('/dashboard', { replace: true });
         }
       } catch (err) {

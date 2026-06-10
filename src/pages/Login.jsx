@@ -2,29 +2,10 @@ import { useState } from 'react';
 import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 import { auth } from '../firebase/client';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import authApi from '../api/authApi';
+import { useNavigate, Link } from 'react-router-dom';
 import { getAndClearRedirectPage } from '../utils/pagePersistence';
+import { resolveAdminStatus } from '../utils/adminAuth.js';
 import './Auth.css';
-
-const getAdminStatus = async (token) => {
-  try {
-    const syncResult = await authApi.syncUser(token);
-    if (typeof syncResult?.isAdmin === 'boolean') {
-      return syncResult.isAdmin;
-    }
-  } catch (err) {
-    console.warn('syncUser failed, falling back to status check:', err);
-  }
-
-  try {
-    const statusResult = await authApi.getStatus(token);
-    return Boolean(statusResult?.isAdmin);
-  } catch (err) {
-    console.error('Admin status check failed:', err);
-    return false;
-  }
-};
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -48,18 +29,19 @@ export default function Login() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      const token = await cred.user.getIdToken();
-      const isAdmin = await getAdminStatus(token);
-      
-      // Try to restore the saved page, or use admin/dashboard based on role
+      const isAdmin = await resolveAdminStatus(cred.user);
+
       const redirectPage = getAndClearRedirectPage();
-      let destination = isAdmin ? '/admin/dashboard' : '/dashboard';
-      
-      // If we have a saved page and it's not a public page, use it
+      const defaultDestination = isAdmin ? '/admin/dashboard' : '/dashboard';
+      let destination = defaultDestination;
+
       if (redirectPage && !['/login', '/register', '/payment', '/'].includes(redirectPage)) {
-        destination = redirectPage;
+        const isAdminRedirect = redirectPage.startsWith('/admin');
+        if ((isAdmin && isAdminRedirect) || (!isAdmin && !isAdminRedirect)) {
+          destination = redirectPage;
+        }
       }
-      
+
       navigate(destination, { replace: true });
     } catch (err) {
       console.error(err);
