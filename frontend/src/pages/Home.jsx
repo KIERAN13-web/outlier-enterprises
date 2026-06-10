@@ -97,10 +97,10 @@ export default function Home() {
             Uncover the unburnished truth in your financial accounts. Our enterprise-grade engine identifies anomalies and patterns with 99.9% accuracy.
           </p>
           <div className="hero-buttons">
-            <Link to="/login" className="btn btn-primary">
-              Begin Exploration <i className="ti ti-chevron-right"></i>
+            <Link to="/login" className="btn btn-primary btn-centered">
+              Get Started <i className="ti ti-chevron-right"></i>
             </Link>
-            <a href="#features" className="btn btn-outline">
+            <a href="#features" className="btn btn-outline btn-centered">
               The Technology
             </a>
           </div>

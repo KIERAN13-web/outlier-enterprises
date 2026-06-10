@@ -84,6 +84,10 @@
   min-width: 190px;
   border-radius: 999px;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .hero-buttons .btn-primary {
@@ -95,9 +99,20 @@
 
 .hero-buttons .btn-outline {
   background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #7dd3fc;
+  border: 1px solid rgba(125, 211, 252, 0.55);
   backdrop-filter: blur(10px);
+}
+
+.hero-buttons .btn-outline:hover {
+  color: #ffffff;
+  background: rgba(34, 211, 238, 0.18);
+  border-color: rgba(125, 211, 252, 0.85);
+}
+
+.btn-centered {
+  justify-content: center;
+  text-align: center;
 }
 
 .btn:hover {
