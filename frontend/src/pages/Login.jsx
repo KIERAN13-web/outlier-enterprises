@@ -36,11 +36,18 @@ export default function Login() {
       // Try to restore the saved page, or use admin/dashboard based on role
       const redirectPage = getAndClearRedirectPage();
       let destination = isAdmin ? '/admin/dashboard' : '/dashboard';
-      console.log('[Login] Redirecting to:', destination);
+      console.log('[Login] Redirecting to:', destination, 'saved redirectPage:', redirectPage);
       
-      // If we have a saved page and it's not a public page, use it
+      // If we have a saved page and it's not a public page, use it.
+      // Admin users should only restore admin routes.
       if (redirectPage && !['/login', '/register', '/payment', '/'].includes(redirectPage)) {
-        destination = redirectPage;
+        if (isAdmin) {
+          if (redirectPage.startsWith('/admin')) {
+            destination = redirectPage;
+          }
+        } else {
+          destination = redirectPage;
+        }
       }
       
       navigate(destination, { replace: true });
