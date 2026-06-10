@@ -6,6 +6,7 @@ const router = Router();
 
 // Initialize a Pesapal payment for the authenticated user
 router.post('/init', authRequired, pesapalController.initPesapal);
+router.post('/init/guest', pesapalController.initPesapalGuest);
 
 // Pesapal webhook endpoint (Pesapal would POST here in production)
 router.post('/webhook', pesapalController.webhook);

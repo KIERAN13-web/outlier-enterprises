@@ -12,6 +12,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [provider, setProvider] = useState('mpesa');
 
   const [step, setStep] = useState(1); // 1=email+password, 2=phone+payment
   const [busy, setBusy] = useState(false);
@@ -59,13 +60,22 @@ export default function Register() {
     setBusy(true);
     setError('');
     setSimulationMessage('');
+    let popup;
     try {
-      // Initiate guest STK push that includes email + password so the backend
-      // can create the user after successful payment via webhook.
-      const result = await paymentApi.createStkPushGuest({ name, email, password, phoneNumber, referralCode: initialReferral });
+      if (provider === 'pesapal') {
+        popup = window.open('', 'pesapal', 'width=700,height=800');
+      }
+
+      const result = provider === 'mpesa'
+        ? await paymentApi.createStkPushGuest({ name, email, password, phoneNumber, referralCode: initialReferral })
+        : await paymentApi.createPesapalGuest({ name, email, password, phoneNumber, country: null, idNumber: null, referralCode: initialReferral });
 
       setSuccess(true);
       setPendingId(result.pendingId);
+      if (result.iframeUrl && popup && !popup.closed) {
+        popup.location.href = result.iframeUrl;
+      }
+
       if (!isDevMode) {
         setTimeout(() => navigate(`/payment-status/${result.pendingId}`, { replace: true }), 500);
       }
@@ -165,7 +175,19 @@ export default function Register() {
             {success && <div className="success-message">✓ Payment request sent! Redirecting...</div>}
 
             <div className="form-group">
-              <label htmlFor="phone">M-Pesa Phone Number</label>
+              <label>Payment Method</label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <label>
+                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => setProvider('mpesa')} /> M-Pesa
+                </label>
+                <label>
+                  <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => setProvider('pesapal')} /> Pesapal
+                </label>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="phone">Phone Number</label>
               <input
                 id="phone"
                 type="tel"
@@ -173,13 +195,13 @@ export default function Register() {
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={success}
-                required
+                required={provider === 'mpesa'}
               />
-              <small>Enter your M-Pesa registered phone number</small>
+              <small>{provider === 'mpesa' ? 'Enter your M-Pesa registered phone number' : 'Optional for Pesapal payment'}</small>
             </div>
 
             <button disabled={busy || success} type="submit" className="btn btn-primary btn-full">
-              {busy ? 'Processing...' : 'Pay KES 200'}
+              {busy ? (provider === 'mpesa' ? 'Processing...' : 'Initializing Pesapal...') : provider === 'mpesa' ? 'Pay KES 200' : 'Pay with Pesapal'}
             </button>
 
             <div className="auth-footer">

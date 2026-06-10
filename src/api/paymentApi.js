@@ -20,6 +20,12 @@ const createPesapalInit = (token) =>
     body: {},
   });
 
+const createPesapalGuest = ({ name, email, password, phoneNumber, country, idNumber, referralCode = null }) =>
+  client.request('/payments/pesapal/init/guest', {
+    method: 'POST',
+    body: { name, email, password, phoneNumber, country, idNumber, referralCode },
+  });
+
 const getPaymentStatus = (pendingId) =>
   client.request(`/payments/mpesa/status/${pendingId}`, {
     method: 'GET',
@@ -44,5 +50,5 @@ const placeOrder = (token, { accountId, accountName, amount }) =>
     body: { accountId, accountName, amount },
   });
 
-export default { createStkPush, createStkPushGuest, getPaymentStatus, simulateWebhook, bypassPayment, placeOrder };
+export default { createStkPush, createStkPushGuest, createPesapalInit, createPesapalGuest, getPaymentStatus, simulateWebhook, bypassPayment, placeOrder };
 
