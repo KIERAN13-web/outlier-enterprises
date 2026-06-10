@@ -17,6 +17,7 @@ dotenv.config();
 validateStartupEnv();
 
 const app = express();
+app.set('trust proxy', true);
 
 // Build allowed origins list from env. Support comma-separated list and
 // tolerate values that include a path (e.g. https://host/path) by extracting

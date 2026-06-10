@@ -110,7 +110,7 @@ async function submitPesapalOrder({
     : 'https://cybjqa.pesapal.com/pesapalv3/api/Transactions/InitiateTransaction';
 
   try {
-    console.log(`[Pesapal] Submitting order ${reference} for amount ${amount} KES`);
+    console.log(`[Pesapal] Submitting order ${reference} for amount ${amount} KES to ${orderUrl}`);
     const response = await fetch(orderUrl, {
       method: 'POST',
       headers: {
@@ -235,13 +235,15 @@ async function initPesapal(req, res) {
     const pendingId = pendingRef.key;
 
     // Submit order to Pesapal
+    const callbackUrl = process.env.PESAPAL_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/payments/pesapal/webhook`;
+    console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
     const orderData = await submitPesapalOrder({
       amount: PAID_AMOUNT,
       reference: pendingId,
       email,
       firstName: 'Customer',
       lastName: '',
-      callbackUrl: process.env.PESAPAL_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/payments/pesapal/webhook`,
+      callbackUrl,
     });
 
     await pendingRef.set({
@@ -294,13 +296,15 @@ async function initPesapalGuest(req, res) {
     const firstName = nameParts[0] || 'Customer';
     const lastName = nameParts.slice(1).join(' ') || '';
 
+    const callbackUrl = process.env.PESAPAL_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/payments/pesapal/webhook`;
+    console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
     const orderData = await submitPesapalOrder({
       amount: PAID_AMOUNT,
       reference: pendingId,
       email,
       firstName,
       lastName,
-      callbackUrl: process.env.PESAPAL_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/payments/pesapal/webhook`,
+      callbackUrl,
     });
 
     await pendingRef.set({
