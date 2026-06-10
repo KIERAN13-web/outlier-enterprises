@@ -114,5 +114,11 @@ app.listen(port, () => {
   console.log(`Backend listening on http://localhost:${port}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Allowed CORS origins: ${allowedOrigins.join(', ')}`);
+  const pesapalEnv = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
+  const pesapalApiBase = pesapalEnv === 'production'
+    ? 'https://pay.pesapal.com/v3/api'
+    : 'https://cybjqa.pesapal.com/pesapalv3/api';
+  console.log(`Pesapal mode: ${pesapalEnv}; API base: ${pesapalApiBase}`);
+  console.log(`Pesapal callback URL: ${process.env.PESAPAL_CALLBACK_URL || 'not set (will default to runtime host)'}`);
 });
 

@@ -18,6 +18,12 @@ function validateConfig() {
   const missing = [];
   if (!key) missing.push('PESAPAL_CONSUMER_KEY / PESAPAL_KEY / PESAPAL_API_KEY');
   if (!secret) missing.push('PESAPAL_CONSUMER_SECRET / PESAPAL_SECRET / PESAPAL_API_SECRET');
+  // If running in production, ensure callback URL is provided so Pesapal can POST webhooks
+  const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
+  if (env === 'production' && !process.env.PESAPAL_CALLBACK_URL) {
+    missing.push('PESAPAL_CALLBACK_URL');
+  }
+
   if (missing.length) throw new Error(`Missing Pesapal configuration: ${missing.join(', ')}`);
   return { key, secret };
 }
