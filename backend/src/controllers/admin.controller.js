@@ -34,6 +34,14 @@ async function toggleAdminRole(req, res) {
       updatedAt: new Date().toISOString(),
     });
 
+    try {
+      await firebaseAdmin.auth().setCustomUserClaims(uid, {
+        isAdmin: makeAdmin === true,
+      });
+    } catch (claimError) {
+      console.warn('Unable to set admin custom claim after role toggle:', claimError);
+    }
+
     return res.json({
       ok: true,
       message: `User ${makeAdmin ? 'promoted to' : 'removed from'} admin role`,

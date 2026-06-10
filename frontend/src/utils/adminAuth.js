@@ -5,8 +5,8 @@ export async function getAdminStatus(user) {
 
   try {
     const idTokenResult = await user.getIdTokenResult(true);
-    if (idTokenResult?.claims?.isAdmin !== undefined) {
-      return Boolean(idTokenResult.claims.isAdmin);
+    if (idTokenResult?.claims?.isAdmin === true) {
+      return true;
     }
   } catch (err) {
     console.warn('Failed to resolve admin claims from Firebase token:', err);

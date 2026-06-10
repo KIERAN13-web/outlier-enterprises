@@ -60,6 +60,14 @@ async function syncUser(req, res) {
     const updatedSnap = await userRef.get();
     const data = updatedSnap.exists() ? updatedSnap.val() : {};
 
+    try {
+      await firebaseAdmin.auth().setCustomUserClaims(uid, {
+        isAdmin: Boolean(data?.isAdmin),
+      });
+    } catch (claimError) {
+      console.warn('Unable to set admin custom claim during sync:', claimError);
+    }
+
     return res.json({
       ok: true,
       isPaid: Boolean(data?.isPaid),
