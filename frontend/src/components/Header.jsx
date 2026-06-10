@@ -120,6 +120,9 @@ export default function Header() {
                       </div>
                     )}
                   </div>
+                  <Link to="/change-password" className="btn btn-secondary btn-sm">
+                    Change Password
+                  </Link>
                   <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
                     Logout
                   </button>

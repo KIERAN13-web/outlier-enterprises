@@ -24,6 +24,46 @@
   color: var(--text-secondary);
 }
 
+.outlier-header .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.5rem;
+  min-width: 190px;
+  padding: 0.95rem 1.4rem;
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  text-decoration: none;
+  transition: var(--transition);
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.12);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #22d3ee, #3b82f6);
+  color: #07111f;
+  border: none;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.btn-lg {
+  font-size: 1.05rem;
+  padding: 1rem 1.6rem;
+}
+
 .error-message {
   background-color: rgba(239, 68, 68, 0.1);
   border: 1px solid var(--danger);
