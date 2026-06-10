@@ -10,7 +10,9 @@
   width: 100%;
   max-width: 420px;
   padding: var(--spacing-2xl);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(16, 185, 129, 0.16));
+  border: 1px solid rgba(100, 255, 218, 0.2);
 }
 
 .auth-header {
@@ -108,16 +110,24 @@
   display: flex;
   justify-content: space-around;
   gap: var(--spacing-lg);
+  flex-wrap: wrap;
 }
 
 .auth-links a {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: #07111f;
+  background: rgba(100, 255, 218, 0.15);
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(100, 255, 218, 0.25);
   transition: var(--transition);
+  text-decoration: none;
 }
 
 .auth-links a:hover {
-  color: var(--primary);
+  color: #07111f;
+  background: rgba(100, 255, 218, 0.3);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {

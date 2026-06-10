@@ -111,20 +111,70 @@ h1 {
   -webkit-text-fill-color: transparent;
 }
 
-/* Optimized Cards - Reduced filter load */
+/* Optimized Cards - Bright and eye-catching */
 .card {
-  background: var(--glass-bg);
-  background-image: var(--glass-frost);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(16, 185, 129, 0.14)), var(--glass-bg);
+  background-image: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(16, 185, 129, 0.14)), var(--glass-frost);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-md);
+  border: 1px solid rgba(100, 255, 218, 0.2);
+  border-radius: var(--radius-lg);
   padding: var(--spacing-xl);
   transition: var(--transition);
-  box-shadow: var(--shadow-sm);
-  contain: content; /* Significant optimization */
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14);
+  contain: content;
   overflow: visible;
   word-break: break-word;
+  color: var(--text-primary);
+}
+
+.card h1,
+.card h2,
+.card h3,
+.card h4,
+.card p,
+.card span,
+.card label,
+.card li {
+  color: var(--text-primary);
+}
+
+.card a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(100, 255, 218, 0.95), rgba(0, 209, 255, 0.95));
+  color: #07111f;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  transition: var(--transition);
+}
+
+.card a:hover {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.95), rgba(59, 130, 246, 0.95));
+  transform: translateY(-1px);
+}
+
+.link-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.95rem 1.25rem;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, #7c3aed, #22d3ee);
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 18px 40px rgba(34, 211, 238, 0.15);
+  transition: var(--transition);
+}
+
+.link-card:hover {
+  background: linear-gradient(135deg, #22d3ee, #7c3aed);
 }
 
 /* Disable backdrop-filter on small screens or low-power modes if supported */
@@ -137,10 +187,10 @@ h1 {
 }
 
 .card:hover {
-  border-color: var(--border-glow);
+  border-color: rgba(100, 255, 218, 0.5);
   transform: translateY(-4px);
-  background: rgba(17, 34, 64, 0.7);
-  box-shadow: var(--shadow-md);
+  background: rgba(15, 34, 64, 0.88);
+  box-shadow: var(--shadow-lg);
 }
 
 /* Utilities */
