@@ -29,11 +29,14 @@ export default function Login() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
+      console.log('[Login] Signed in, calling getAdminStatus');
       const isAdmin = await getAdminStatus(cred.user);
+      console.log('[Login] getAdminStatus returned:', isAdmin);
       
       // Try to restore the saved page, or use admin/dashboard based on role
       const redirectPage = getAndClearRedirectPage();
       let destination = isAdmin ? '/admin/dashboard' : '/dashboard';
+      console.log('[Login] Redirecting to:', destination);
       
       // If we have a saved page and it's not a public page, use it
       if (redirectPage && !['/login', '/register', '/payment', '/'].includes(redirectPage)) {

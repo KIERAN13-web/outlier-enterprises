@@ -19,24 +19,30 @@ export default function AdminGate({ children }) {
     }
 
     const verifyAdmin = async () => {
+      console.log('[AdminGate] verifyAdmin START');
       if (!user) {
+        console.log('[AdminGate] No user, redirecting to login');
         navigate('/login', { replace: true });
         return;
       }
 
       try {
+        console.log('[AdminGate] Checking admin status for user:', user.uid);
         const adminStatus = await getAdminStatus(user);
+        console.log('[AdminGate] Admin status:', adminStatus);
         if (!isMounted) return;
 
         if (adminStatus) {
+          console.log('[AdminGate] User is admin, showing admin dashboard');
           setIsAdmin(true);
         } else {
+          console.log('[AdminGate] User is not admin, redirecting to dashboard');
           setError('not_admin');
           navigate('/dashboard', { replace: true });
         }
       } catch (err) {
         if (!isMounted) return;
-        console.error('Admin verification failed:', err);
+        console.error('[AdminGate] Admin verification failed:', err);
         setError('verification_failed');
         navigate('/dashboard', { replace: true });
       }
