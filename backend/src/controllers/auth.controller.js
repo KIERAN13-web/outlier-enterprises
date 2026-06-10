@@ -39,9 +39,8 @@ async function syncUser(req, res) {
       if (!existing.createdAt) {
         updates.createdAt = now;
       }
-      if (existing.isAdmin === undefined) {
-        updates.isAdmin = false;
-      }
+      // Always update isAdmin based on current token claims
+      updates.isAdmin = req.user?.isAdmin === true;
       // Generate referral code if missing
       if (!existing.referralCode) {
         try {
