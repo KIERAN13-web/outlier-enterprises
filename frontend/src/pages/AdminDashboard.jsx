@@ -19,7 +19,6 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
   const navigate = useNavigate();
-  const auth = getAuth(app);
 
   useEffect(() => {
     if (!auth) {
