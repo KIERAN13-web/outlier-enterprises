@@ -42,11 +42,14 @@ function getPesapalApiBaseUrls() {
   const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
   if (env === 'production') {
     return [
+      'https://pay.pesapal.com/v3',
       'https://pay.pesapal.com/pesapalv3/api',
-      'https://pay.pesapal.com/v3/api',
     ];
   }
-  return ['https://cybjqa.pesapal.com/pesapalv3/api'];
+  return [
+    'https://cybqa.pesapal.com/pesapalv3',
+    'https://cybqa.pesapal.com/pesapalv3/api',
+  ];
 }
 
 function buildPesapalApiUrls(path) {
