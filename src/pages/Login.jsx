@@ -14,7 +14,6 @@ export default function Login() {
 
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const location = useLocation();
 
   async function onSubmit(e) {
     e.preventDefault();
