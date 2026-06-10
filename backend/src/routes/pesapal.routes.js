@@ -1,0 +1,16 @@
+import { Router } from 'express';
+import pesapalController from '../controllers/pesapal.controller.js';
+import authRequired from '../middleware/authRequired.js';
+
+const router = Router();
+
+// Initialize a Pesapal payment for the authenticated user
+router.post('/init', authRequired, pesapalController.initPesapal);
+
+// Pesapal webhook endpoint (Pesapal would POST here in production)
+router.post('/webhook', pesapalController.webhook);
+
+// For local development, allow simulating a Pesapal webhook (will mark pending payment)
+router.post('/webhook/simulate', pesapalController.simulateWebhook);
+
+export default router;

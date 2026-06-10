@@ -6,6 +6,7 @@ import './Payment.css';
 
 export default function Payment() {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [provider, setProvider] = useState('mpesa');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -22,9 +23,21 @@ export default function Payment() {
         return;
       }
       const token = await user.getIdToken();
-      await paymentApi.createStkPush(token, phoneNumber);
-      setSuccess(true);
-      setTimeout(() => navigate('/dashboard'), 2000);
+      if (provider === 'mpesa') {
+        await paymentApi.createStkPush(token, phoneNumber);
+        setSuccess(true);
+        setTimeout(() => navigate('/dashboard'), 2000);
+      } else {
+        const resp = await paymentApi.createPesapalInit(token);
+        if (resp && resp.pendingId) {
+          if (resp.iframeUrl) {
+            window.open(resp.iframeUrl, 'pesapal', 'width=700,height=800');
+          }
+          navigate(`/payment-status/${resp.pendingId}`);
+        } else {
+          setError('Failed to initialize Pesapal payment');
+        }
+      }
     } catch (err) {
       console.error(err);
       setError(err.message || 'Payment failed');
@@ -64,25 +77,39 @@ export default function Payment() {
             {success && <div className="success-message">✓ Payment successful! Redirecting...</div>}
 
             <div className="form-group">
-              <label htmlFor="phone">M-Pesa Phone Number</label>
-              <input
-                id="phone"
-                type="tel"
-                placeholder="07XXXXXXXX"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                disabled={success}
-                required
-              />
-              <small>Enter your M-Pesa registered phone number</small>
+              <label>Payment Method</label>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <label>
+                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => setProvider('mpesa')} /> M-Pesa
+                </label>
+                <label>
+                  <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => setProvider('pesapal')} /> Pesapal
+                </label>
+              </div>
             </div>
+
+            {provider === 'mpesa' && (
+              <div className="form-group">
+                <label htmlFor="phone">M-Pesa Phone Number</label>
+                <input
+                  id="phone"
+                  type="tel"
+                  placeholder="07XXXXXXXX"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  disabled={success}
+                  required
+                />
+                <small>Enter your M-Pesa registered phone number</small>
+              </div>
+            )}
 
             <button
               disabled={busy || success}
               type="submit"
               className="btn btn-primary btn-full"
             >
-              {busy ? 'Processing...' : success ? 'Payment Successful!' : 'Pay KES 200'}
+              {busy ? (provider === 'mpesa' ? 'Processing...' : 'Initializing Pesapal...') : success ? 'Payment Successful!' : provider === 'mpesa' ? 'Pay KES 200' : 'Pay with Pesapal'}
             </button>
           </form>
 

@@ -13,6 +13,13 @@ const createStkPushGuest = ({ email, password, phoneNumber, name, country, idNum
     body: { email, password, phoneNumber, name, country, idNumber, referralCode },
   });
 
+const createPesapalInit = (token) =>
+  client.request('/payments/pesapal/init', {
+    method: 'POST',
+    token,
+    body: {},
+  });
+
 const getPaymentStatus = (pendingId) =>
   client.request(`/payments/mpesa/status/${pendingId}`, {
     method: 'GET',

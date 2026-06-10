@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { validateStartupEnv } from './utils/env.js';
 import authRoutes from './routes/auth.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
+import pesapalRoutes from './routes/pesapal.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import outlierRoutes from './routes/outlier.routes.js';
 import taskRoutes from './routes/task.routes.js';
@@ -95,6 +96,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/payments/pesapal', pesapalRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/outliers', outlierRoutes);
 app.use('/api/tasks', taskRoutes);
