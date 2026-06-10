@@ -14,6 +14,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const Task = lazy(() => import('./pages/Task.jsx'));
 const OutlierBook = lazy(() => import('./pages/OutlierBook.jsx'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'));
+const ChangePassword = lazy(() => import('./pages/ChangePassword.jsx'));
 
 function AppRoutes() {
   const location = useLocation();
@@ -43,6 +44,7 @@ function AppRoutes() {
           <Route path="/login" element={<Login />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/payment-status/:pendingId" element={<PaymentStatus />} />
 
           <Route path="/dashboard" element={
