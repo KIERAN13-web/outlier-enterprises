@@ -3,8 +3,8 @@ import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence } f
 
 import { auth } from '../firebase/client';
 import { useNavigate, Link } from 'react-router-dom';
+import authApi from '../api/authApi';
 import { getAndClearRedirectPage } from '../utils/pagePersistence';
-import { resolveAdminStatus } from '../utils/adminAuth.js';
 import './Auth.css';
 
 export default function Login() {
@@ -29,7 +29,9 @@ export default function Login() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      const isAdmin = await resolveAdminStatus(cred.user);
+      const token = await cred.user.getIdToken();
+      const statusResult = await authApi.getStatus(token);
+      const isAdmin = Boolean(statusResult?.isAdmin);
 
       const redirectPage = getAndClearRedirectPage();
       const defaultDestination = isAdmin ? '/admin/dashboard' : '/dashboard';
