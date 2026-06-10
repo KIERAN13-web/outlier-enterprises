@@ -39,8 +39,10 @@ async function syncUser(req, res) {
       if (!existing.createdAt) {
         updates.createdAt = now;
       }
-      // Always update isAdmin based on current token claims
-      updates.isAdmin = req.user?.isAdmin === true;
+      // Don't override existing isAdmin - preserve the DB value
+      if (existing.isAdmin === undefined) {
+        updates.isAdmin = false;
+      }
       // Generate referral code if missing
       if (!existing.referralCode) {
         try {
@@ -60,9 +62,11 @@ async function syncUser(req, res) {
     const data = updatedSnap.exists() ? updatedSnap.val() : {};
 
     try {
+      // Always sync custom claims to match current DB value
       await firebaseAdmin.auth().setCustomUserClaims(uid, {
         isAdmin: Boolean(data?.isAdmin),
       });
+      console.log(`[syncUser] Set custom claims for ${uid}: isAdmin=${Boolean(data?.isAdmin)}`);
     } catch (claimError) {
       console.warn('Unable to set admin custom claim during sync:', claimError);
     }
