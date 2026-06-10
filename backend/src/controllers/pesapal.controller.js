@@ -42,18 +42,18 @@ function getPesapalApiBaseUrls() {
   const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
   if (env === 'production') {
     return [
-      'https://pay.pesapal.com/v3/api',
       'https://pay.pesapal.com/pesapalv3/api',
+      'https://pay.pesapal.com/v3/api',
     ];
   }
   return ['https://cybjqa.pesapal.com/pesapalv3/api'];
 }
 
 function buildPesapalApiUrls(path) {
-  return getPesapalApiBaseUrls().flatMap((base) => [
-    `${base}${path}`,
-    `${base}${path}/`,
-  ]);
+  return getPesapalApiBaseUrls().flatMap((base) => {
+    const url = `${base}${path}`;
+    return path.includes('?') ? [url] : [url, `${url}/`];
+  });
 }
 
 // Pesapal v3 API uses JWT tokens. Generate one using the consumer credentials.
@@ -95,6 +95,7 @@ async function getPesapalToken() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
           body: JSON.stringify({
             consumer_key: key,
@@ -152,6 +153,7 @@ async function submitPesapalOrder({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
@@ -218,6 +220,7 @@ async function getPesapalPaymentStatus(orderTrackingId) {
         const response = await fetch(statusUrl, {
           method: 'GET',
           headers: {
+            'Accept': 'application/json',
             'Authorization': `Bearer ${token}`,
           },
         });
