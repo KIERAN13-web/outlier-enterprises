@@ -53,7 +53,7 @@ function generatePesapalJWT() {
 
 // Get OAuth2 token from Pesapal v3 API
 async function getPesapalToken() {
-  const { key } = validateConfig();
+  const { key, secret } = validateConfig();
   const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
   const tokenUrl = env === 'production'
     ? 'https://pay.pesapal.com/v3/api/Auth/RequestToken'
