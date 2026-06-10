@@ -92,5 +92,42 @@ async function getStatus(req, res) {
   }
 }
 
-export default { syncUser, getStatus };
+async function changePassword(req, res) {
+  try {
+    const { uid } = req.user;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.trim().length < 6) {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'PASSWORD_TOO_SHORT',
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    // Update the password using Firebase Admin SDK
+    await firebaseAdmin.auth().updateUser(uid, { password: newPassword });
+
+    return res.json({
+      ok: true,
+      message: 'Password changed successfully'
+    });
+  } catch (err) {
+    console.error('changePassword error', err);
+    if (err.code === 'auth/invalid-password') {
+      return res.status(400).json({ 
+        ok: false, 
+        error: 'INVALID_PASSWORD',
+        message: 'Password is invalid or does not meet security requirements'
+      });
+    }
+    return res.status(500).json({ 
+      ok: false, 
+      error: 'PASSWORD_CHANGE_FAILED',
+      message: err.message || 'Failed to change password'
+    });
+  }
+}
+
+export default { syncUser, getStatus, changePassword };
 

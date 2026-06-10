@@ -8,7 +8,7 @@ const router = Router();
 // These endpoints exist mainly to sync/create user docs.
 router.post('/sync', authRequired, authController.syncUser);
 router.get('/status', authRequired, authController.getStatus);
-
+router.post('/change-password', authRequired, authController.changePassword);
 
 export default router;
 
