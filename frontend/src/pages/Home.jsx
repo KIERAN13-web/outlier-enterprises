@@ -1,25 +1,7 @@
-import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/client';
-import { getAdminStatus } from '../utils/adminAuth';
+import { Link } from 'react-router-dom';
 import './Home.css';
 
 export default function Home() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!auth) return;
-
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const isAdmin = await getAdminStatus(user);
-        navigate(isAdmin ? '/admin/dashboard' : '/dashboard', { replace: true });
-      }
-    });
-
-    return () => unsub();
-  }, [navigate]);
 
   const features = [
     {
