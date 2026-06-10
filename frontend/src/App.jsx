@@ -62,6 +62,7 @@ function AppRoutes() {
               <OutlierBook />
             </PaidGate>
           } />
+          <Route path="/admin/dashboard" element={null} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
