@@ -56,6 +56,15 @@ function buildPesapalApiUrls(path) {
   });
 }
 
+async function parsePesapalErrorResponse(response) {
+  const text = await response.text();
+  try {
+    return { statusText: response.statusText || `HTTP ${response.status}`, body: JSON.parse(text) };
+  } catch {
+    return { statusText: response.statusText || `HTTP ${response.status}`, body: text };
+  }
+}
+
 // Pesapal v3 API uses JWT tokens. Generate one using the consumer credentials.
 function generatePesapalJWT() {
   const { key, secret } = validateConfig();
@@ -96,6 +105,7 @@ async function getPesapalToken() {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'Authorization': `Bearer ${jwt}`,
           },
           body: JSON.stringify({
             consumer_key: key,
@@ -104,10 +114,9 @@ async function getPesapalToken() {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          const statusText = response.statusText || `HTTP ${response.status}`;
-          console.error(`[Pesapal] Token request failed for ${tokenUrl}: ${statusText}`, errorText);
-          lastError = new Error(`Pesapal token request failed: ${statusText} - ${errorText.substring(0, 100)}`);
+          const { statusText, body } = await parsePesapalErrorResponse(response);
+          console.error(`[Pesapal] Token request failed for ${tokenUrl}: ${statusText}`, body);
+          lastError = new Error(`Pesapal token request failed: ${statusText} - ${JSON.stringify(body).substring(0, 200)}`);
           continue;
         }
 
@@ -178,10 +187,9 @@ async function submitPesapalOrder({
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          const statusText = response.statusText || `HTTP ${response.status}`;
-          console.error(`[Pesapal] Order submission failed for ${orderUrl}: ${statusText}`, errorText);
-          lastError = new Error(`Pesapal order submission failed: ${statusText} - ${errorText.substring(0, 200)}`);
+          const { statusText, body } = await parsePesapalErrorResponse(response);
+          console.error(`[Pesapal] Order submission failed for ${orderUrl}: ${statusText}`, body);
+          lastError = new Error(`Pesapal order submission failed: ${statusText} - ${JSON.stringify(body).substring(0, 200)}`);
           continue;
         }
 
@@ -226,9 +234,8 @@ async function getPesapalPaymentStatus(orderTrackingId) {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          const statusText = response.statusText || `HTTP ${response.status}`;
-          console.error(`[Pesapal] Status query failed for ${statusUrl}: ${statusText}`, errorText);
+          const { statusText, body } = await parsePesapalErrorResponse(response);
+          console.error(`[Pesapal] Status query failed for ${statusUrl}: ${statusText}`, body);
           lastError = new Error(`Pesapal status query failed: ${statusText}`);
           continue;
         }
