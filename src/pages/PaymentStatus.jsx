@@ -12,13 +12,20 @@ export default function PaymentStatus() {
   const [simulationBusy, setSimulationBusy] = useState(false);
   const [error, setError] = useState('');
   const isDevMode = import.meta.env.MODE !== 'production';
+  const provider = localStorage.getItem('paymentProvider') || 'mpesa';
 
   useEffect(() => {
     let intervalId;
 
     async function fetchStatus() {
       try {
-        const response = await paymentApi.getPaymentStatus(pendingId);
+        // Use the stored provider to determine which endpoint to call
+        let response;
+        if (provider === 'pesapal') {
+          response = await paymentApi.getPesapalPaymentStatus(pendingId);
+        } else {
+          response = await paymentApi.getPaymentStatus(pendingId);
+        }
         setStatus(response.status || 'PENDING');
         setBusy(false);
         if (response.status === 'COMPLETED') {
@@ -43,16 +50,27 @@ export default function PaymentStatus() {
     intervalId = setInterval(fetchStatus, 3000);
 
     return () => clearInterval(intervalId);
-  }, [navigate, pendingId]);
+  }, [navigate, pendingId, provider]);
 
   async function onSimulateWebhook() {
     setSimulationBusy(true);
     setError('');
 
     try {
-      await paymentApi.simulateWebhook(pendingId, 'SUCCESS');
+      if (provider === 'pesapal') {
+        await paymentApi.simulatePesapalWebhook(pendingId, 'SUCCESS');
+      } else {
+        await paymentApi.simulateWebhook(pendingId, 'SUCCESS');
+      }
       setMessage('Simulated payment received. Refreshing status...');
-      const response = await paymentApi.getPaymentStatus(pendingId);
+      
+      // Get updated status using the stored provider
+      let response;
+      if (provider === 'pesapal') {
+        response = await paymentApi.getPesapalPaymentStatus(pendingId);
+      } else {
+        response = await paymentApi.getPaymentStatus(pendingId);
+      }
       setStatus(response.status || 'PENDING');
     } catch (err) {
       console.error(err);

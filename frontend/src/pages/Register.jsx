@@ -130,6 +130,8 @@ export default function Register() {
 
       setSuccess(true);
       setPendingId(result.pendingId);
+      // Store provider for use in PaymentStatus page
+      localStorage.setItem('paymentProvider', provider);
       if (provider === 'pesapal' && result.iframeUrl) {
         if (!popup || popup.closed) {
           popup = window.open(result.iframeUrl, 'pesapal', 'width=700,height=800');

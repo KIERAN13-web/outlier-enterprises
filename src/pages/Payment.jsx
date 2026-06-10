@@ -23,19 +23,28 @@ export default function Payment() {
         return;
       }
       const token = await user.getIdToken();
+      
+      // Store provider in localStorage for PaymentStatus component
+      localStorage.setItem('paymentProvider', provider);
+      
       if (provider === 'mpesa') {
         await paymentApi.createStkPush(token, phoneNumber);
         setSuccess(true);
         setTimeout(() => navigate('/dashboard'), 2000);
       } else {
-        const resp = await paymentApi.createPesapalInit(token);
-        if (resp && resp.pendingId) {
-          if (resp.iframeUrl) {
-            window.open(resp.iframeUrl, 'pesapal', 'width=700,height=800');
+        try {
+          const resp = await paymentApi.createPesapalInit(token);
+          if (resp && resp.pendingId) {
+            if (resp.iframeUrl) {
+              window.open(resp.iframeUrl, 'pesapal', 'width=700,height=800');
+            }
+            navigate(`/payment-status/${resp.pendingId}`);
+          } else {
+            setError('Failed to initialize Pesapal payment');
           }
-          navigate(`/payment-status/${resp.pendingId}`);
-        } else {
-          setError('Failed to initialize Pesapal payment');
+        } catch (pesapalError) {
+          console.error('Pesapal initialization error:', pesapalError);
+          setError(pesapalError.message || 'Failed to initialize Pesapal payment');
         }
       }
     } catch (err) {

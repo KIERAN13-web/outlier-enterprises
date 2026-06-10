@@ -31,8 +31,19 @@ const getPaymentStatus = (pendingId) =>
     method: 'GET',
   });
 
+const getPesapalPaymentStatus = (pendingId) =>
+  client.request(`/payments/pesapal/status/${pendingId}`, {
+    method: 'GET',
+  });
+
 const simulateWebhook = (pendingId, status = 'SUCCESS') =>
   client.request('/payments/mpesa/webhook/simulate', {
+    method: 'POST',
+    body: { pendingId, status },
+  });
+
+const simulatePesapalWebhook = (pendingId, status = 'SUCCESS') =>
+  client.request('/payments/pesapal/webhook/simulate', {
     method: 'POST',
     body: { pendingId, status },
   });
@@ -50,5 +61,5 @@ const placeOrder = (token, { accountId, accountName, amount }) =>
     body: { accountId, accountName, amount },
   });
 
-export default { createStkPush, createStkPushGuest, createPesapalInit, createPesapalGuest, getPaymentStatus, simulateWebhook, bypassPayment, placeOrder };
+export default { createStkPush, createStkPushGuest, createPesapalInit, createPesapalGuest, getPaymentStatus, getPesapalPaymentStatus, simulateWebhook, simulatePesapalWebhook, bypassPayment, placeOrder };
 
