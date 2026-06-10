@@ -41,20 +41,14 @@ function getPesapalCallbackUrl(req) {
 function getPesapalApiBaseUrls() {
   const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
   if (env === 'production') {
-    return [
-      'https://pay.pesapal.com/v3',
-      'https://pay.pesapal.com/pesapalv3/api',
-    ];
+    return ['https://pay.pesapal.com/v3'];
   }
-  return [
-    'https://cybqa.pesapal.com/pesapalv3',
-    'https://cybqa.pesapal.com/pesapalv3/api',
-  ];
+  return ['https://cybqa.pesapal.com/pesapalv3'];
 }
 
 function buildPesapalApiUrls(path) {
   return getPesapalApiBaseUrls().flatMap((base) => {
-    const url = `${base}${path}`;
+    const url = `${base}/api${path}`;
     return path.includes('?') ? [url] : [url, `${url}/`];
   });
 }
