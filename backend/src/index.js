@@ -10,6 +10,7 @@ import outlierRoutes from './routes/outlier.routes.js';
 import taskRoutes from './routes/task.routes.js';
 import walletRoutes from './routes/wallet.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import firebaseAdmin from './services/firebaseAdmin.js';
 
 dotenv.config();
 validateStartupEnv();
@@ -26,6 +27,38 @@ app.get('/debug-cors', (req, res) => {
     return res.json({ ok: false, error: 'DEBUG_FAILED', message: e.message });
   }
 });
+
+// Temporary setup endpoint - SET UP ADMIN USERS
+// Protect with a simple secret from env var
+app.post('/setup/make-admin', async (req, res) => {
+  try {
+    const setupSecret = process.env.SETUP_SECRET || 'dev-only-secret-change-me';
+    const { email, secret } = req.body;
+
+    if (!email || !secret || secret !== setupSecret) {
+      return res.status(403).json({ ok: false, error: 'FORBIDDEN' });
+    }
+
+    // Get user by email
+    const user = await firebaseAdmin.auth().getUserByEmail(email);
+
+    // Set custom claims
+    await firebaseAdmin.auth().setCustomUserClaims(user.uid, { isAdmin: true });
+
+    // Update database
+    await firebaseAdmin.database().ref(`users/${user.uid}`).update({
+      isAdmin: true,
+      updatedAt: new Date().toISOString(),
+    });
+
+    console.log(`[SETUP] Made ${email} an admin`);
+    return res.json({ ok: true, message: `${email} is now an admin`, uid: user.uid });
+  } catch (err) {
+    console.error('[SETUP] Error:', err.message);
+    return res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
 // Build allowed origins list from env. Support comma-separated list and
 // tolerate values that include a path (e.g. https://host/path) by extracting
 // the origin portion so comparisons match the browser `Origin` header.
