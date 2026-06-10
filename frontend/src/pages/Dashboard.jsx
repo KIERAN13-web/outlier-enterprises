@@ -98,11 +98,8 @@ export default function Dashboard() {
           <p>Enterprise audit environment initialized</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Link to="/outlier-book" className="btn btn-primary">
+          <Link to="/outlier-book" className="btn btn-primary btn-lg">
             <i className="ti ti-book"></i> Create Outlier Book
-          </Link>
-          <Link to="/change-password" className="btn btn-outline">
-            <i className="ti ti-lock"></i> Change Password
           </Link>
         </div>
       </div>
