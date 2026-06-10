@@ -123,7 +123,7 @@ export default function OutlierBook() {
       <div className="outlier-header">
         <div>
           <h1>Create Outlier Book</h1>
-          <p>Choose an account and place an order for testing. Order amounts are between KES {MIN_ORDER_AMOUNT} and KES {MAX_ORDER_AMOUNT}.</p>
+          <p>Choose an account and place an order. Order amounts are between KES {MIN_ORDER_AMOUNT} and KES {MAX_ORDER_AMOUNT}.</p>
         </div>
         <Link to="/dashboard" className="btn btn-secondary">
           ← Back to Dashboard
