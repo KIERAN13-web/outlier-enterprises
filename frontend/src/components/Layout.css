@@ -10,6 +10,34 @@
   padding: var(--spacing-2xl) 0;
 }
 
+/* Configuration Error */
+.config-error {
+  padding: 1.5rem;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: var(--radius-md);
+  margin: 1rem;
+}
+
+.config-error h2 {
+  color: var(--danger);
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+}
+
+.config-error p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.config-error code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  color: var(--accent-secondary);
+}
+
 @media (max-width: 768px) {
   .main-content {
     padding: var(--spacing-xl) 0;

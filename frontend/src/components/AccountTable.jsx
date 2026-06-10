@@ -1,5 +1,6 @@
 import { useState, useEffect, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './AccountTable.css';
 
 const AccountTable = memo(({ accounts, orders = [] }) => {
   const [localOrders, setLocalOrders] = useState(orders);
@@ -18,7 +19,7 @@ const AccountTable = memo(({ accounts, orders = [] }) => {
       {/* Orders Table */}
       {localOrders.length > 0 && (
         <div className="orders-section">
-          <h3 style={{ marginBottom: '1.5rem', marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3>
             <i className="ti ti-receipt"></i> Active Orders
           </h3>
           <table className="modern-table">
@@ -35,12 +36,6 @@ const AccountTable = memo(({ accounts, orders = [] }) => {
             <tbody>
               {localOrders.map((order) => {
                 const createdDate = new Date(order.createdAt).toLocaleString();
-                const statusColor =
-                  order.status === 'verified' ? 'var(--success)' :
-                  order.status === 'pending' ? 'var(--warning)' :
-                  'var(--danger)';
-
-                // Handle both phoneNumber (from STK push) and accountInfo (from place order)
                 const displayInfo = order.accountInfo || order.phoneNumber || 'N/A';
 
                 return (
@@ -51,37 +46,25 @@ const AccountTable = memo(({ accounts, orders = [] }) => {
                     <td>{displayInfo}</td>
                     <td>KES {order.amount}</td>
                     <td>
-                      <span
-                        className={`status-badge status-${order.status}`}
-                        style={{
-                          backgroundColor: statusColor,
-                          color: 'var(--primary)',
-                          padding: '0.25rem 0.6rem',
-                          borderRadius: '4px',
-                          fontSize: '0.8rem',
-                          fontWeight: '700',
-                          border: 'none'
-                        }}
-                      >
+                      <span className={`status-badge status-${order.status}`}>
                         {order.status}
                       </span>
                     </td>
-                    <td style={{ fontSize: '0.9rem', color: 'var(--secondary)' }}>{createdDate}</td>
+                    <td className="created-date">{createdDate}</td>
                     <td>
                       {order.status === 'completed' ? (
-                        <span className="text-accent" style={{ fontWeight: '600' }}>
+                        <span className="text-accent">
                           <i className="ti ti-circle-check"></i> Complete
                         </span>
                       ) : order.status === 'verified' ? (
                         <button
                           onClick={() => handleTaskClick(order.id)}
                           className="btn-copy"
-                          style={{ padding: '0.4rem 0.8rem' }}
                         >
                           Process Task
                         </button>
                       ) : (
-                        <span style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>—</span>
+                        <span className="status-text">—</span>
                       )}
                     </td>
                   </tr>
@@ -94,37 +77,35 @@ const AccountTable = memo(({ accounts, orders = [] }) => {
 
       {/* Accounts Table */}
       {accounts.length > 0 && (
-        <div className="accounts-section" style={{ marginTop: '3rem' }}>
-          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="accounts-section">
+          <h3>
             <i className="ti ti-database-share"></i> Monitored Telemetry
           </h3>
-          <div className="table-wrapper" style={{ margin: 0 }}>
-            <table className="modern-table">
-              <thead>
-                <tr>
-                  <th>Account ID</th>
-                  <th>Payload Structure</th>
+          <table className="modern-table">
+            <thead>
+              <tr>
+                <th>Account ID</th>
+                <th>Payload Structure</th>
+              </tr>
+            </thead>
+            <tbody>
+              {accounts?.map((a) => (
+                <tr key={a.id}>
+                  <td>
+                    <code>{a.id}</code>
+                  </td>
+                  <td>
+                    <pre className="payload-pre">{JSON.stringify(a, null, 2)}</pre>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {accounts?.map((a) => (
-                  <tr key={a.id}>
-                    <td>
-                      <code>{a.id}</code>
-                    </td>
-                    <td>
-                      <pre className="payload-pre">{JSON.stringify(a, null, 2)}</pre>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
       {localOrders.length === 0 && accounts.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+        <div className="empty-state-message">
           <p>No orders or accounts yet</p>
         </div>
       )}
@@ -133,5 +114,3 @@ const AccountTable = memo(({ accounts, orders = [] }) => {
 });
 
 export default AccountTable;
-
-/* Styling is in index.css under .table-wrapper and .modern-table */

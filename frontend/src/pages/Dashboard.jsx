@@ -134,7 +134,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="empty-state">
-            <i className="ti ti-database-off" style={{fontSize: '3rem', marginBottom: '1rem', display: 'block'}}></i>
+            <i className="ti ti-database-off"></i>
             <p>No telemetry data available</p>
             <small>Initialize your first account pool to begin auditing</small>
           </div>

@@ -304,7 +304,7 @@ export default function Task() {
               multiple
               accept="image/*"
               onChange={handleImageUpload}
-              style={{ display: 'none' }}
+              className="hidden-input"
             />
             
             <button

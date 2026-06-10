@@ -1,0 +1,215 @@
+/* Table Wrapper - Base styling */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+/* Sections */
+.orders-section {
+  padding: var(--spacing-xl);
+}
+
+.accounts-section {
+  margin-top: 3rem;
+  padding: var(--spacing-xl);
+}
+
+.orders-section:not(:last-child),
+.accounts-section:not(:last-child) {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Section Headers - H3 styling */
+.orders-section h3,
+.accounts-section h3 {
+  margin-bottom: 1.5rem;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.accounts-section h3 {
+  margin-top: 0;
+}
+
+/* Tables - Modern styling */
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.modern-table thead {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 2px solid var(--glass-border);
+}
+
+.modern-table th {
+  padding: var(--spacing-md) var(--spacing-md);
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.modern-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  transition: var(--transition);
+}
+
+.modern-table tbody tr:hover {
+  background: rgba(100, 255, 218, 0.03);
+}
+
+.modern-table td {
+  padding: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.modern-table td code {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  color: var(--accent-secondary);
+  font-size: 0.85rem;
+}
+
+/* Status Badge Styling */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.status-badge.status-verified {
+  background-color: var(--success);
+}
+
+.status-badge.status-pending {
+  background-color: var(--warning);
+}
+
+.status-badge.status-completed {
+  background-color: var(--success);
+}
+
+.status-badge.status-failed,
+.status-badge.status-rejected {
+  background-color: var(--danger);
+}
+
+/* Created Date Column */
+.created-date {
+  font-size: 0.9rem;
+  color: var(--secondary);
+}
+
+/* Text Styles */
+.text-accent {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* Action Buttons */
+.btn-copy {
+  background: var(--accent);
+  color: var(--primary);
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+  font-family: var(--font-heading);
+}
+
+.btn-copy:hover {
+  background: rgba(100, 255, 218, 0.8);
+  box-shadow: 0 0 10px rgba(100, 255, 218, 0.2);
+}
+
+.btn-copy:active {
+  transform: scale(0.98);
+}
+
+/* Status Text */
+.status-text {
+  font-size: 0.9rem;
+  color: var(--text-tertiary);
+}
+
+/* Empty State */
+.empty-state-message {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-size: 0.95rem;
+}
+
+/* Payload Pre (for JSON display) */
+.payload-pre {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  color: var(--accent-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .orders-section h3,
+  .accounts-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  .modern-table {
+    font-size: 0.85rem;
+  }
+
+  .modern-table th {
+    padding: 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .modern-table td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .status-badge {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .btn-copy {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .table-wrapper {
+    font-size: 0.9rem;
+  }
+}

@@ -16,7 +16,7 @@ export default function AuthGate({ children }) {
 
   if (!auth) {
     return (
-      <div style={{ padding: 24 }}>
+      <div className="config-error">
         <h2>Firebase is not configured</h2>
         <p>Set the required <code>VITE_FIREBASE_*</code> environment variables and redeploy.</p>
       </div>

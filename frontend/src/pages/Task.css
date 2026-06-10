@@ -355,3 +355,8 @@ textarea:focus {
     width: 100%;
   }
 }
+
+/* Hidden Input for File Uploads */
+.hidden-input {
+  display: none;
+}
