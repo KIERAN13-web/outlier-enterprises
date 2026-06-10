@@ -16,6 +16,16 @@ validateStartupEnv();
 
 const app = express();
 
+// Debug endpoint to inspect incoming Origin header and allowedOrigins
+// Place before CORS middleware so it can be reached even when CORS blocks later
+app.get('/debug-cors', (req, res) => {
+  try {
+    const incomingOrigin = req.get('Origin') || null;
+    return res.json({ ok: true, origin: incomingOrigin, allowedOrigins });
+  } catch (e) {
+    return res.json({ ok: false, error: 'DEBUG_FAILED', message: e.message });
+  }
+});
 // Build allowed origins list from env. Support comma-separated list and
 // tolerate values that include a path (e.g. https://host/path) by extracting
 // the origin portion so comparisons match the browser `Origin` header.
