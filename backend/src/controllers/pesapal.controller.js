@@ -2,13 +2,13 @@ import crypto from 'crypto';
 import firebaseAdmin from '../services/firebaseAdmin.js';
 
 const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 200);
-const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
-const PESAPAL_CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
+const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY || process.env.PESAPAL_KEY || process.env.PESAPAL_API_KEY;
+const PESAPAL_CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET || process.env.PESAPAL_SECRET || process.env.PESAPAL_API_SECRET;
 
 function validateConfig() {
   const missing = [];
-  if (!PESAPAL_CONSUMER_KEY) missing.push('PESAPAL_CONSUMER_KEY');
-  if (!PESAPAL_CONSUMER_SECRET) missing.push('PESAPAL_CONSUMER_SECRET');
+  if (!PESAPAL_CONSUMER_KEY) missing.push('PESAPAL_CONSUMER_KEY / PESAPAL_KEY / PESAPAL_API_KEY');
+  if (!PESAPAL_CONSUMER_SECRET) missing.push('PESAPAL_CONSUMER_SECRET / PESAPAL_SECRET / PESAPAL_API_SECRET');
   if (missing.length) throw new Error(`Missing Pesapal configuration: ${missing.join(', ')}`);
 }
 

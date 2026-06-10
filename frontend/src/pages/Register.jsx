@@ -124,15 +124,26 @@ export default function Register() {
             referralCode: initialReferral,
           });
 
+      if (provider === 'pesapal' && (!result.iframeUrl || !result.pendingId)) {
+        throw new Error('Pesapal initialization failed. Please check backend configuration.');
+      }
+
       setSuccess(true);
       setPendingId(result.pendingId);
-      if (result.iframeUrl && popup && !popup.closed) {
-        popup.location.href = result.iframeUrl;
+      if (provider === 'pesapal' && result.iframeUrl) {
+        if (!popup || popup.closed) {
+          popup = window.open(result.iframeUrl, 'pesapal', 'width=700,height=800');
+        } else {
+          popup.location.href = result.iframeUrl;
+        }
       }
       if (!isDevMode) {
         setTimeout(() => navigate(`/payment-status/${result.pendingId}`, { replace: true }), 500);
       }
     } catch (err) {
+      if (popup && !popup.closed) {
+        popup.close();
+      }
       console.error(err);
       setError(err.message || 'Payment failed');
     } finally {
