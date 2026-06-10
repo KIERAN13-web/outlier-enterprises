@@ -12,6 +12,8 @@ router.post('/init/guest', pesapalController.initPesapalGuest);
 router.get('/status/:pendingId', pesapalController.checkPaymentStatus);
 
 // Pesapal webhook endpoint (Pesapal would POST here in production)
+router.get('/webhook', pesapalController.webhookHealth);
+router.head('/webhook', pesapalController.webhookHealth);
 router.post('/webhook', pesapalController.webhook);
 
 // For local development, allow simulating a Pesapal webhook (will mark pending payment)

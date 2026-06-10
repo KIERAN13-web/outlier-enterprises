@@ -485,4 +485,8 @@ async function checkPaymentStatus(req, res) {
   }
 }
 
-export default { initPesapal, initPesapalGuest, checkPaymentStatus, webhook, simulateWebhook };
+function webhookHealth(req, res) {
+  return res.json({ ok: true, message: 'Pesapal webhook endpoint is available' });
+}
+
+export default { initPesapal, initPesapalGuest, checkPaymentStatus, webhook, webhookHealth, simulateWebhook };
