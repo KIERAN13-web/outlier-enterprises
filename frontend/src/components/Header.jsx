@@ -1,42 +1,66 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { auth } from '../firebase/client';
 import authApi from '../api/authApi';
 import walletApi from '../api/walletApi';
+import useAuthState from '../hooks/useAuthState';
 import { clearRedirectPage } from '../utils/pagePersistence';
 import './Header.css';
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = auth?.currentUser;
+  const { user, loading: authLoading } = useAuthState();
   const [isPaid, setIsPaid] = useState(null);
   const [statusChecked, setStatusChecked] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
+    if (authLoading) {
+      return () => {
+        mounted = false;
+      };
+    }
+
+    if (!user) {
+      setIsPaid(false);
+      setStatusChecked(true);
+      return () => {
+        mounted = false;
+      };
+    }
+
+    setStatusChecked(false);
+
     (async () => {
-      if (!user) {
-        setStatusChecked(true);
-        return;
-      }
       try {
         const token = await user.getIdToken();
         const resp = await authApi.getStatus(token);
+        if (!mounted) return;
         setIsPaid(Boolean(resp?.isPaid));
         try {
           const w = await walletApi.getWallet(token);
+          if (!mounted) return;
           setNotifications(w.user?.notifications || []);
-        } catch (e) {}
+        } catch (e) {
+          // ignore notification fetch failure
+        }
       } catch (err) {
         console.error('Header status fetch failed', err);
+        if (!mounted) return;
         setIsPaid(null);
       } finally {
+        if (!mounted) return;
         setStatusChecked(true);
       }
     })();
-  }, [user]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [authLoading, user]);
 
 
 

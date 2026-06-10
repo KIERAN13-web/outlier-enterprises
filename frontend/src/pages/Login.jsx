@@ -3,28 +3,9 @@ import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence } f
 
 import { auth } from '../firebase/client';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import authApi from '../api/authApi';
 import { getAndClearRedirectPage } from '../utils/pagePersistence';
+import { getAdminStatus } from '../utils/adminAuth';
 import './Auth.css';
-
-const getAdminStatus = async (token) => {
-  try {
-    const syncResult = await authApi.syncUser(token);
-    if (typeof syncResult?.isAdmin === 'boolean') {
-      return syncResult.isAdmin;
-    }
-  } catch (err) {
-    console.warn('syncUser failed, falling back to status check:', err);
-  }
-
-  try {
-    const statusResult = await authApi.getStatus(token);
-    return Boolean(statusResult?.isAdmin);
-  } catch (err) {
-    console.error('Admin status check failed:', err);
-    return false;
-  }
-};
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -48,8 +29,7 @@ export default function Login() {
     try {
       await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
-      const token = await cred.user.getIdToken();
-      const isAdmin = await getAdminStatus(token);
+      const isAdmin = await getAdminStatus(cred.user);
       
       // Try to restore the saved page, or use admin/dashboard based on role
       const redirectPage = getAndClearRedirectPage();

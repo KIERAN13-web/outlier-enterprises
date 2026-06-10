@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAuth } from 'firebase/auth';
-import { app } from '../firebase/client';
+import { auth } from '../firebase/client';
 import adminApi from '../api/adminApi';
 import { clearRedirectPage } from '../utils/pagePersistence';
 import './AdminDashboard.css';
@@ -23,6 +22,11 @@ export default function AdminDashboard() {
   const auth = getAuth(app);
 
   useEffect(() => {
+    if (!auth) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
         navigate('/login', { replace: true });
@@ -41,7 +45,7 @@ export default function AdminDashboard() {
     });
 
     return () => unsubscribe();
-  }, [navigate, auth]);
+  }, [navigate]);
 
   const fetchStats = async (token) => {
     try {

@@ -1,23 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { auth } from '../firebase/client';
 import authApi from '../api/authApi';
+import useAuthState from '../hooks/useAuthState';
 
 export default function PaidGate({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [status, setStatus] = useState('checking');
+  const { user, loading } = useAuthState();
 
   useEffect(() => {
     let mounted = true;
 
-    async function checkAccess() {
-      const user = auth.currentUser;
-      if (!user) {
-        navigate('/login', { replace: true });
-        return;
-      }
+    if (loading) {
+      return () => {
+        mounted = false;
+      };
+    }
 
+    if (!user) {
+      navigate('/login', { replace: true });
+      return () => {
+        mounted = false;
+      };
+    }
+
+    async function checkAccess() {
       try {
         const token = await user.getIdToken();
         const response = await authApi.getStatus(token);
@@ -42,7 +50,7 @@ export default function PaidGate({ children }) {
     return () => {
       mounted = false;
     };
-  }, [location.pathname, navigate]);
+  }, [loading, navigate, user, location.pathname]);
 
   if (status !== 'ok') {
     return (

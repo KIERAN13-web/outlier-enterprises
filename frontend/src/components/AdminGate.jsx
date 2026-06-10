@@ -1,32 +1,34 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { getAuth } from 'firebase/auth';
-import { app } from '../firebase/client';
-import authApi from '../api/authApi';
+import useAuthState from '../hooks/useAuthState';
+import { getAdminStatus } from '../utils/adminAuth';
 
 export default function AdminGate({ children }) {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(null);
   const [error, setError] = useState(null);
-  const auth = getAuth(app);
+  const { user, loading } = useAuthState();
 
   useEffect(() => {
     let isMounted = true;
 
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!isMounted) return;
+    if (loading) {
+      return () => {
+        isMounted = false;
+      };
+    }
 
+    const verifyAdmin = async () => {
       if (!user) {
         navigate('/login', { replace: true });
         return;
       }
 
       try {
-        const idToken = await user.getIdToken();
-        const statusResult = await authApi.getStatus(idToken);
+        const adminStatus = await getAdminStatus(user);
         if (!isMounted) return;
 
-        if (statusResult?.isAdmin) {
+        if (adminStatus) {
           setIsAdmin(true);
         } else {
           setError('not_admin');
@@ -38,13 +40,14 @@ export default function AdminGate({ children }) {
         setError('verification_failed');
         navigate('/dashboard', { replace: true });
       }
-    });
+    };
+
+    verifyAdmin();
 
     return () => {
       isMounted = false;
-      unsubscribe();
     };
-  }, [navigate, auth]);
+  }, [loading, navigate, user]);
 
   if (error) {
     return null; // Will redirect via navigate above
