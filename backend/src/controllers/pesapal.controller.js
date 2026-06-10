@@ -28,6 +28,16 @@ function validateConfig() {
   return { key, secret };
 }
 
+function getPesapalCallbackUrl(req) {
+  if (process.env.PESAPAL_CALLBACK_URL) {
+    return process.env.PESAPAL_CALLBACK_URL;
+  }
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const protocol = forwardedProto ? forwardedProto.split(',')[0] : req.protocol;
+  const host = req.get('host');
+  return `${protocol}://${host}/api/payments/pesapal/webhook`;
+}
+
 // Pesapal v3 API uses JWT tokens. Generate one using the consumer credentials.
 function generatePesapalJWT() {
   const { key, secret } = validateConfig();
@@ -235,7 +245,7 @@ async function initPesapal(req, res) {
     const pendingId = pendingRef.key;
 
     // Submit order to Pesapal
-    const callbackUrl = process.env.PESAPAL_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/payments/pesapal/webhook`;
+    const callbackUrl = getPesapalCallbackUrl(req);
     console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
     const orderData = await submitPesapalOrder({
       amount: PAID_AMOUNT,
@@ -296,7 +306,7 @@ async function initPesapalGuest(req, res) {
     const firstName = nameParts[0] || 'Customer';
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    const callbackUrl = process.env.PESAPAL_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/payments/pesapal/webhook`;
+    const callbackUrl = getPesapalCallbackUrl(req);
     console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
     const orderData = await submitPesapalOrder({
       amount: PAID_AMOUNT,
