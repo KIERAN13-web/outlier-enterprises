@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
-import { signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { useState } from 'react';
+import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'firebase/auth';
 
 import { auth } from '../firebase/client';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import authApi from '../api/authApi';
+import { getAndClearRedirectPage } from '../utils/pagePersistence';
 import './Auth.css';
 
 const getAdminStatus = async (token) => {
@@ -32,23 +33,7 @@ export default function Login() {
 
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!auth) return;
-
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const token = await user.getIdToken();
-        const isAdmin = await getAdminStatus(token);
-        if (isAdmin) {
-          navigate('/admin/dashboard', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
-      }
-    });
-    return () => unsub();
-  }, [navigate]);
+  const location = useLocation();
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -65,16 +50,20 @@ export default function Login() {
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const token = await cred.user.getIdToken();
       const isAdmin = await getAdminStatus(token);
-      if (isAdmin) {
-        navigate('/admin/dashboard', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
+      
+      // Try to restore the saved page, or use admin/dashboard based on role
+      const redirectPage = getAndClearRedirectPage();
+      let destination = isAdmin ? '/admin/dashboard' : '/dashboard';
+      
+      // If we have a saved page and it's not a public page, use it
+      if (redirectPage && !['/login', '/register', '/payment', '/'].includes(redirectPage)) {
+        destination = redirectPage;
       }
-
+      
+      navigate(destination, { replace: true });
     } catch (err) {
       console.error(err);
       setError(err.message || 'Authentication failed');
-    } finally {
       setBusy(false);
     }
   }

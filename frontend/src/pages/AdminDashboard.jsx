@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { app } from '../firebase/client';
 import adminApi from '../api/adminApi';
+import { clearRedirectPage } from '../utils/pagePersistence';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -171,6 +172,7 @@ export default function AdminDashboard() {
 
   const onLogout = async () => {
     try {
+      clearRedirectPage();
       await auth.signOut();
       navigate('/login', { replace: true });
     } catch (err) {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { app } from '../firebase/client';
 import adminApi from '../api/adminApi';
+import { clearRedirectPage } from '../utils/pagePersistence';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -153,6 +154,7 @@ export default function AdminDashboard() {
 
   const onLogout = async () => {
     try {
+      clearRedirectPage();
       await auth.signOut();
       navigate('/login', { replace: true });
     } catch (err) {
@@ -330,6 +332,9 @@ export default function AdminDashboard() {
                   <div className="withdrawal-info">
                     <strong>{withdrawal.userName || withdrawal.email}</strong>
                     <span className="amount">KES {withdrawal.amount}</span>
+                    <div className="withdrawal-status">
+                      <span className="status-label">{withdrawal.status || 'pending'}</span>
+                    </div>
                     <small className="date">Requested: {new Date(withdrawal.requestedAt).toLocaleString()}</small>
                   </div>
                   <div className="withdrawal-actions">

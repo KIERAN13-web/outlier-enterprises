@@ -1,8 +1,9 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import AdminGate from './components/AdminGate.jsx';
 import PaidGate from './components/PaidGate.jsx';
+import { saveCurrentPage } from './utils/pagePersistence';
 
 const Home = lazy(() => import('./pages/Home.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
@@ -14,7 +15,14 @@ const Task = lazy(() => import('./pages/Task.jsx'));
 const OutlierBook = lazy(() => import('./pages/OutlierBook.jsx'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'));
 
-export default function App() {
+function AppRoutes() {
+  const location = useLocation();
+
+  // Save current page for restoration after login
+  useEffect(() => {
+    saveCurrentPage(location.pathname);
+  }, [location.pathname]);
+
   return (
     <Suspense fallback={<div className="page-loading">Loading...</div>}>
       <Routes>
@@ -57,4 +65,8 @@ export default function App() {
       </Layout>
     </Suspense>
   );
+}
+
+export default function App() {
+  return <AppRoutes />;
 }

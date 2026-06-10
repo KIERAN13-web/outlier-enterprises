@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../firebase/client';
 import authApi from '../api/authApi';
 import walletApi from '../api/walletApi';
+import { clearRedirectPage } from '../utils/pagePersistence';
 import './Header.css';
 
 export default function Header() {
@@ -42,6 +43,7 @@ export default function Header() {
 
   const handleLogout = () => {
     if (auth) {
+      clearRedirectPage();
       auth.signOut().then(() => {
         navigate('/login', { replace: true });
       });

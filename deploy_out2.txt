@@ -1,0 +1,723 @@
+🚀 Starting Frontend Deployment...
+📦 Installing dependencies...
+
+up to date, audited 268 packages in 3s
+
+42 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+🔍 Running linter...
+
+> chat-app@0.0.0 lint
+> eslint .
+
+
+C:\Users\USER\Desktop\chat-app\backend\src\controllers\auth.controller.js
+  25:16  error  'e' is defined but never used  no-unused-vars
+  49:18  error  'e' is defined but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\backend\src\controllers\payment.controller.js
+    7:36  error  'process' is not defined       no-undef
+    8:35  error  'process' is not defined       no-undef
+  281:20  error  'e' is defined but never used  no-unused-vars
+  315:20  error  'e' is defined but never used  no-unused-vars
+  394:9   error  'process' is not defined       no-undef
+  418:9   error  'process' is not defined       no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\src\index.js
+  22:17  error  'process' is not defined           no-undef
+  22:45  error  'process' is not defined           no-undef
+  51:37  error  'process' is not defined           no-undef
+  63:26  error  '_next' is defined but never used  no-unused-vars
+  68:21  error  'process' is not defined           no-undef
+  71:31  error  'process' is not defined           no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\src\services\firebaseAdmin.js
+  14:14  error  'error' is defined but never used  no-unused-vars
+  32:21  error  'Buffer' is not defined            no-undef
+  35:12  error  'error' is defined but never used  no-unused-vars
+  45:30  error  'process' is not defined           no-undef
+  46:23  error  'process' is not defined           no-undef
+  46:60  error  'process' is not defined           no-undef
+  47:21  error  'process' is not defined           no-undef
+  47:56  error  'process' is not defined           no-undef
+  48:30  error  'process' is not defined           no-undef
+  57:24  error  'process' is not defined           no-undef
+  58:17  error  'process' is not defined           no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\src\services\paymentProvider.js
+   2:16  error  'process' is not defined  no-undef
+   2:42  error  'process' is not defined  no-undef
+   3:16  error  'process' is not defined  no-undef
+   3:51  error  'process' is not defined  no-undef
+   4:19  error  'process' is not defined  no-undef
+   4:57  error  'process' is not defined  no-undef
+   5:14  error  'process' is not defined  no-undef
+   5:47  error  'process' is not defined  no-undef
+   5:78  error  'process' is not defined  no-undef
+   6:12  error  'process' is not defined  no-undef
+   6:42  error  'process' is not defined  no-undef
+   7:16  error  'process' is not defined  no-undef
+   7:51  error  'process' is not defined  no-undef
+  44:10  error  'Buffer' is not defined   no-undef
+  49:22  error  'Buffer' is not defined   no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\src\services\referralService.js
+  21:14  error  'e' is defined but never used  no-unused-vars
+  31:29  error  'process' is not defined       no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\src\utils\env.js
+   4:8   error  'process' is not defined  no-undef
+   4:54  error  'process' is not defined  no-undef
+   8:7   error  'process' is not defined  no-undef
+   9:10  error  'process' is not defined  no-undef
+   9:38  error  'process' is not defined  no-undef
+  12:10  error  'process' is not defined  no-undef
+  12:48  error  'process' is not defined  no-undef
+  23:7   error  'process' is not defined  no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\src\utils\orderValidation.js
+  1:33  error  'process' is not defined  no-undef
+  2:33  error  'process' is not defined  no-undef
+  3:35  error  'process' is not defined  no-undef
+  4:36  error  'process' is not defined  no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\tests\orderValidation.test.js
+   3:1  error  'describe' is not defined  no-undef
+   4:3  error  'it' is not defined        no-undef
+   5:5  error  'expect' is not defined    no-undef
+   6:5  error  'expect' is not defined    no-undef
+   9:3  error  'it' is not defined        no-undef
+  10:5  error  'expect' is not defined    no-undef
+  11:5  error  'expect' is not defined    no-undef
+  12:5  error  'expect' is not defined    no-undef
+  15:3  error  'it' is not defined        no-undef
+  16:5  error  'expect' is not defined    no-undef
+  17:5  error  'expect' is not defined    no-undef
+  18:5  error  'expect' is not defined    no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\tests\referral.test.js
+  28:1  error  'test' is not defined    no-undef
+  31:3  error  'expect' is not defined  no-undef
+  32:3  error  'expect' is not defined  no-undef
+  33:3  error  'expect' is not defined  no-undef
+  36:1  error  'test' is not defined    no-undef
+  40:3  error  'expect' is not defined  no-undef
+  41:3  error  'expect' is not defined  no-undef
+  43:3  error  'expect' is not defined  no-undef
+  44:3  error  'expect' is not defined  no-undef
+  45:3  error  'expect' is not defined  no-undef
+  46:3  error  'expect' is not defined  no-undef
+
+C:\Users\USER\Desktop\chat-app\backend\tests\run-referral-tests.js
+  101:5  error  'process' is not defined  no-undef
+  104:5  error  'process' is not defined  no-undef
+
+C:\Users\USER\Desktop\chat-app\frontend\dist\assets\Dashboard-CukVQJ_4.js
+  1:5681  error  'l' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\frontend\dist\assets\Home-BnhxVCfL.js
+  1:274  error  Empty block statement  no-empty
+
+C:\Users\USER\Desktop\chat-app\frontend\dist\assets\PaymentStatus-DDA9RB98.js
+  1:302  error  'f' is assigned a value but never used  no-unused-vars
+  1:327  error  'm' is assigned a value but never used  no-unused-vars
+  1:329  error  'h' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\frontend\dist\assets\Register-CwdMDEFx.js
+  1:735  error  'A' is assigned a value but never used  no-unused-vars
+  1:762  error  'M' is assigned a value but never used  no-unused-vars
+  1:764  error  'N' is assigned a value but never used  no-unused-vars
+  1:787  error  'P' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\frontend\dist\assets\index-Cm7gOAZ_.js
+   2:5292    error  'process' is not defined                                                   no-undef
+   2:5318    error  'process' is not defined                                                   no-undef
+   2:9674    error  'setImmediate' is not defined                                              no-undef
+   2:10520   error  Unreachable code                                                           no-unreachable
+   2:15604   error  '__REACT_DEVTOOLS_GLOBAL_HOOK__' is not defined                            no-undef
+   2:15661   error  '__REACT_DEVTOOLS_GLOBAL_HOOK__' is not defined                            no-undef
+   2:18975   error  Empty block statement                                                      no-empty
+   7:202     error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:548     error  Empty block statement                                                      no-empty
+   9:4218    error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:4318    error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:4401    error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:5220    error  Unexpected combined character in character class                           no-misleading-character-class
+   9:6369    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:8589    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:10698   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:10728   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:10847   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:10908   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:13871   error  Unexpected control character(s) in regular expression: \x00, \x1f          no-control-regex
+   9:15902   error  Expected to return a value in method 'get'                                 getter-return
+   9:16592   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:16934   error  Invalid typeof comparison value                                            valid-typeof
+   9:17108   error  Invalid typeof comparison value                                            valid-typeof
+   9:18943   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:25203   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:26506   error  'process' is not defined                                                   no-undef
+   9:26532   error  'process' is not defined                                                   no-undef
+   9:40435   error  The value assigned to 'g' is not used in subsequent statements             no-useless-assignment
+   9:41091   error  The value assigned to '_' is not used in subsequent statements             no-useless-assignment
+   9:45286   error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:45745   error  Unexpected constant condition                                              no-constant-condition
+   9:58594   error  Empty block statement                                                      no-empty
+   9:64085   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:68950   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:71820   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:72921   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:74595   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:81196   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:86147   error  Unnecessary escape character: \/                                           no-useless-escape
+   9:95646   error  The value assigned to 'e' is not used in subsequent statements             no-useless-assignment
+   9:96801   error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:97752   error  Empty block statement                                                      no-empty
+   9:98028   error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:101199  error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:103567  error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+   9:105361  error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:106030  error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:111753  error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:112087  error  Unexpected constant condition                                              no-constant-condition
+   9:114364  error  The value assigned to 'o' is not used in subsequent statements             no-useless-assignment
+   9:114633  error  Unexpected constant condition                                              no-constant-condition
+   9:115230  error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:115541  error  Unexpected constant condition                                              no-constant-condition
+   9:115929  error  Expected a 'break' statement before 'default'                              no-fallthrough
+   9:118333  error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:119121  error  Empty block statement                                                      no-empty
+   9:119846  error  Empty block statement                                                      no-empty
+   9:123682  error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:127426  error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:127613  error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:128821  error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:129898  error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+   9:130301  error  Expected a 'break' statement before 'case'                                 no-fallthrough
+   9:131814  error  Unexpected control character(s) in regular expression: \x00                no-control-regex
+  10:475     error  Expected a 'break' statement before 'case'                                 no-fallthrough
+  10:5055    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:5625    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:5960    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:6353    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:6469    error  Expected a 'break' statement before 'default'                              no-fallthrough
+  10:6629    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:6891    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:7373    error  Expected a 'break' statement before 'case'                                 no-fallthrough
+  10:7512    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:7689    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:7771    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:8031    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:8129    error  Expected a 'break' statement before 'default'                              no-fallthrough
+  10:8139    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:8216    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:8603    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:8677    error  Expected a 'break' statement before 'default'                              no-fallthrough
+  10:8687    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:8754    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:8872    error  Expected a 'break' statement before 'default'                              no-fallthrough
+  10:9047    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:9078    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:9201    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:9474    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:9505    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:9624    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:9978    error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:10009   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:10076   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:10287   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:10321   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:10389   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:10487   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:10518   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:10583   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:18616   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+  10:19687   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+  10:22220   error  Expected a conditional expression and instead saw an assignment            no-cond-assign
+  10:35760   error  '__REACT_DEVTOOLS_GLOBAL_HOOK__' is not defined                            no-undef
+  10:35859   error  Empty block statement                                                      no-empty
+  10:36362   error  '__REACT_DEVTOOLS_GLOBAL_HOOK__' is not defined                            no-undef
+  10:36419   error  '__REACT_DEVTOOLS_GLOBAL_HOOK__' is not defined                            no-undef
+  10:36553   error  'y' is a function                                                          no-func-assign
+  10:37590   error  Empty block statement                                                      no-empty
+  10:39688   error  The value assigned to 'se' is not used in subsequent statements            no-useless-assignment
+  10:45965   error  'Be' is a function                                                         no-func-assign
+  10:52051   error  'e' is defined but never used                                              no-unused-vars
+  10:52107   error  'e' is defined but never used                                              no-unused-vars
+  10:52163   error  'e' is defined but never used                                              no-unused-vars
+  10:52707   error  'n' is defined but never used                                              no-unused-vars
+  10:54201   error  'o' is assigned a value but never used                                     no-unused-vars
+  10:54446   error  'e' is defined but never used                                              no-unused-vars
+  10:55136   error  The value assigned to 'wt' is not used in subsequent statements            no-useless-assignment
+  10:56051   error  'Et' is a function                                                         no-func-assign
+  10:56687   error  Empty block statement                                                      no-empty
+  10:57700   error  Empty block statement                                                      no-empty
+  10:58145   error  The value assigned to 'Lt' is not used in subsequent statements            no-useless-assignment
+  10:58276   error  The value assigned to 'Rt' is not used in subsequent statements            no-useless-assignment
+  10:62147   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:62350   error  'global' is not defined                                                    no-undef
+  10:64329   error  'chrome' is not defined                                                    no-undef
+  10:64369   error  'browser' is not defined                                                   no-undef
+  10:65887   error  Empty block statement                                                      no-empty
+  10:66002   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:70076   error  Empty block statement                                                      no-empty
+  10:72781   error  Empty block statement                                                      no-empty
+  10:73503   error  Empty block statement                                                      no-empty
+  10:73676   error  Empty block statement                                                      no-empty
+  10:74874   error  Empty block statement                                                      no-empty
+  10:75258   error  Empty block statement                                                      no-empty
+  10:98932   error  Empty block statement                                                      no-empty
+  10:109393  error  'e' is defined but never used                                              no-unused-vars
+  10:109395  error  't' is defined but never used                                              no-unused-vars
+  10:109415  error  'e' is defined but never used                                              no-unused-vars
+  10:109417  error  't' is defined but never used                                              no-unused-vars
+  10:111059  error  Empty block statement                                                      no-empty
+  10:111268  error  Empty block statement                                                      no-empty
+  10:111784  error  Unnecessary escape character: \.                                           no-useless-escape
+  10:111800  error  Unnecessary escape character: \.                                           no-useless-escape
+  10:113184  error  Empty block statement                                                      no-empty
+  10:117131  error  Empty block statement                                                      no-empty
+  10:125670  error  'e' is defined but never used                                              no-unused-vars
+  10:125672  error  't' is defined but never used                                              no-unused-vars
+  10:125714  error  'e' is defined but never used                                              no-unused-vars
+  10:125716  error  't' is defined but never used                                              no-unused-vars
+  10:125760  error  'e' is defined but never used                                              no-unused-vars
+  10:125762  error  't' is defined but never used                                              no-unused-vars
+  10:125804  error  'e' is defined but never used                                              no-unused-vars
+  10:125806  error  't' is defined but never used                                              no-unused-vars
+  10:126204  error  Promise executor functions should not be async                             no-async-promise-executor
+  10:131399  error  'e' is defined but never used                                              no-unused-vars
+  10:131446  error  'e' is defined but never used                                              no-unused-vars
+  10:131448  error  't' is defined but never used                                              no-unused-vars
+  10:131509  error  'e' is defined but never used                                              no-unused-vars
+  10:146272  error  'e' is defined but never used                                              no-unused-vars
+  10:146274  error  't' is defined but never used                                              no-unused-vars
+  10:147322  error  'e' is defined but never used                                              no-unused-vars
+  10:147324  error  't' is defined but never used                                              no-unused-vars
+  10:147344  error  'e' is defined but never used                                              no-unused-vars
+  10:147346  error  't' is defined but never used                                              no-unused-vars
+  10:152068  error  'e' is defined but never used                                              no-unused-vars
+  10:152070  error  't' is defined but never used                                              no-unused-vars
+  10:152580  error  Empty block statement                                                      no-empty
+  10:152708  error  Empty block statement                                                      no-empty
+  10:158348  error  Promise executor functions should not be async                             no-async-promise-executor
+  10:163955  error  Empty block statement                                                      no-empty
+  10:164676  error  'gapi' is not defined                                                      no-undef
+  10:164718  error  'gapi' is not defined                                                      no-undef
+  10:164852  error  'gapi' is not defined                                                      no-undef
+  10:164954  error  'gapi' is not defined                                                      no-undef
+  10:165988  error  Promise executor functions should not be async                             no-async-promise-executor
+  10:166418  error  Empty block statement                                                      no-empty
+  10:166898  error  Empty block statement                                                      no-empty
+  10:168954  error  'gapi' is not defined                                                      no-undef
+  10:169205  error  'gapi' is not defined                                                      no-undef
+  10:173733  error  't' is defined but never used                                              no-unused-vars
+  10:173735  error  'n' is defined but never used                                              no-unused-vars
+  10:186341  error  'e' is defined but never used                                              no-unused-vars
+  10:187238  error  Empty block statement                                                      no-empty
+  10:193484  error  Empty block statement                                                      no-empty
+  10:196029  error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  10:196769  error  'Windows' is not defined                                                   no-undef
+  10:197336  error  'Deno' is not defined                                                      no-undef
+  10:197352  error  'Deno' is not defined                                                      no-undef
+  10:199761  error  'e' is defined but never used                                              no-unused-vars
+  10:199891  error  'e' is defined but never used                                              no-unused-vars
+  10:203336  error  'i' is assigned a value but never used                                     no-unused-vars
+  10:203338  error  'a' is assigned a value but never used                                     no-unused-vars
+  10:206356  error  Unnecessary escape character: \/                                           no-useless-escape
+  10:208685  error  Empty block statement                                                      no-empty
+  10:208746  error  'MozWebSocket' is not defined                                              no-undef
+  10:209598  error  'process' is not defined                                                   no-undef
+  10:220300  error  'e' is defined but never used                                              no-unused-vars
+  10:220302  error  't' is defined but never used                                              no-unused-vars
+  10:220304  error  'n' is defined but never used                                              no-unused-vars
+  10:220306  error  'r' is defined but never used                                              no-unused-vars
+  10:220316  error  'e' is defined but never used                                              no-unused-vars
+  10:220318  error  't' is defined but never used                                              no-unused-vars
+  10:220320  error  'n' is defined but never used                                              no-unused-vars
+  10:220322  error  'r' is defined but never used                                              no-unused-vars
+  10:220343  error  'e' is defined but never used                                              no-unused-vars
+  10:220368  error  'e' is defined but never used                                              no-unused-vars
+  10:220388  error  'e' is defined but never used                                              no-unused-vars
+  10:220390  error  't' is defined but never used                                              no-unused-vars
+  10:220392  error  'n' is defined but never used                                              no-unused-vars
+  10:220414  error  'e' is defined but never used                                              no-unused-vars
+  10:220416  error  't' is defined but never used                                              no-unused-vars
+  10:220418  error  'n' is defined but never used                                              no-unused-vars
+  10:220441  error  'e' is defined but never used                                              no-unused-vars
+  10:220443  error  't' is defined but never used                                              no-unused-vars
+  10:220459  error  'e' is defined but never used                                              no-unused-vars
+  13:1250    error  'e' is defined but never used                                              no-unused-vars
+  13:1333    error  'e' is defined but never used                                              no-unused-vars
+  13:1335    error  't' is defined but never used                                              no-unused-vars
+  13:1411    error  't' is defined but never used                                              no-unused-vars
+  13:1640    error  The value assigned to 'a' is not used in subsequent statements             no-useless-assignment
+  13:1668    error  'e' is assigned to itself                                                  no-self-assign
+  13:5304    error  'e' is defined but never used                                              no-unused-vars
+  13:5306    error  't' is defined but never used                                              no-unused-vars
+  13:5308    error  'n' is defined but never used                                              no-unused-vars
+  13:5310    error  'r' is defined but never used                                              no-unused-vars
+  13:5312    error  'i' is defined but never used                                              no-unused-vars
+  13:5338    error  'n' is defined but never used                                              no-unused-vars
+  13:5372    error  'e' is defined but never used                                              no-unused-vars
+  13:5374    error  't' is defined but never used                                              no-unused-vars
+  13:5442    error  'e' is defined but never used                                              no-unused-vars
+  13:5471    error  'e' is defined but never used                                              no-unused-vars
+  13:8120    error  'e' is defined but never used                                              no-unused-vars
+  13:8122    error  't' is defined but never used                                              no-unused-vars
+  13:8643    error  'e' is defined but never used                                              no-unused-vars
+  13:8645    error  't' is defined but never used                                              no-unused-vars
+  13:16693   error  'e' is defined but never used                                              no-unused-vars
+  13:18544   error  'e' is defined but never used                                              no-unused-vars
+  13:21741   error  'e' is defined but never used                                              no-unused-vars
+  13:22790   error  'e' is defined but never used                                              no-unused-vars
+  13:32690   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  13:36481   error  'e' is defined but never used                                              no-unused-vars
+  13:36515   error  'e' is defined but never used                                              no-unused-vars
+  13:36517   error  't' is defined but never used                                              no-unused-vars
+  13:36519   error  'n' is defined but never used                                              no-unused-vars
+  13:41688   error  't' is defined but never used                                              no-unused-vars
+  13:42224   error  'n' is assigned to itself                                                  no-self-assign
+  13:46744   error  'n' is defined but never used                                              no-unused-vars
+  13:46749   error  Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins
+  13:48529   error  Unexpected control character(s) in regular expression: \x00, \x1f          no-control-regex
+  13:48531   error  Unnecessary escape character: \[                                           no-useless-escape
+  13:48538   error  Unnecessary escape character: \/                                           no-useless-escape
+  13:48565   error  Unexpected control character(s) in regular expression: \x00, \x1f          no-control-regex
+  13:48567   error  Unnecessary escape character: \[                                           no-useless-escape
+  13:51493   error  There is no `cause` attached to the symptom error being thrown             preserve-caught-error
+  13:52661   error  The value assigned to 'o' is not used in subsequent statements             no-useless-assignment
+  13:57548   error  Empty block statement                                                      no-empty
+  13:65242   error  The value assigned to 's' is not used in subsequent statements             no-useless-assignment
+  13:66696   error  Empty block statement                                                      no-empty
+  13:75872   error  Empty block statement                                                      no-empty
+
+C:\Users\USER\Desktop\chat-app\frontend\src\api\client.js
+  30:7  error  The value assigned to 'data' is not used in subsequent statements  no-useless-assignment
+
+C:\Users\USER\Desktop\chat-app\frontend\src\components\EarningsCard.jsx
+  11:10  error  'error' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                no-unused-vars
+  35:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  33 |
+  34 |   useEffect(() => {
+> 35 |     fetchWallet();
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  36 |   }, []);
+  37 |
+  38 |   if (loading) {  react-hooks/set-state-in-effect
+
+C:\Users\USER\Desktop\chat-app\frontend\src\components\Header.jsx
+  30:18  error  'e' is defined but never used  no-unused-vars
+  30:21  error  Empty block statement          no-empty
+
+C:\Users\USER\Desktop\chat-app\frontend\src\components\WithdrawalModal.jsx
+  22:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  20 |
+  21 |   useEffect(() => {
+> 22 |     setPhoneNumber(userPhone || '');
+     |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  23 |   }, [userPhone]);
+  24 |
+  25 |   const isValidAmount = amount && parseInt(amount) >= minWithdrawal && parseInt(amount) <= availableBalance;  react-hooks/set-state-in-effect
+
+C:\Users\USER\Desktop\chat-app\frontend\src\main.jsx
+  12:10  error  'e' is defined but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\frontend\src\pages\AdminDashboard.jsx
+  34:9  error  Error: Cannot access variable before it is declared
+
+`fetchStats` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  32 |         const token = await user.getIdToken();
+  33 |         setIdToken(token);
+> 34 |         fetchStats(token);
+     |         ^^^^^^^^^^ `fetchStats` accessed before it is declared
+  35 |         fetchWithdrawals(token);
+  36 |       } catch (err) {
+  37 |         console.error('Failed to get token:', err);
+
+  43 |   }, [navigate, auth]);
+  44 |
+> 45 |   const fetchStats = async (token) => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 46 |     try {
+     | ^^^^^^^^^
+> 47 |       const result = await adminApi.getDashboardStats(token);
+     | ^^^^^^^^^
+> 48 |       setStats(result.stats);
+     | ^^^^^^^^^
+> 49 |     } catch (err) {
+     | ^^^^^^^^^
+> 50 |       console.error(err);
+     | ^^^^^^^^^
+> 51 |       setError('Failed to load stats');
+     | ^^^^^^^^^
+> 52 |     }
+     | ^^^^^^^^^
+> 53 |   };
+     | ^^^^^ `fetchStats` is declared here
+  54 |
+  55 |   const fetchWithdrawals = async (token) => {
+  56 |     try {  react-hooks/immutability
+  35:9  error  Error: Cannot access variable before it is declared
+
+`fetchWithdrawals` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  33 |         setIdToken(token);
+  34 |         fetchStats(token);
+> 35 |         fetchWithdrawals(token);
+     |         ^^^^^^^^^^^^^^^^ `fetchWithdrawals` accessed before it is declared
+  36 |       } catch (err) {
+  37 |         console.error('Failed to get token:', err);
+  38 |         navigate('/login', { replace: true });
+
+  53 |   };
+  54 |
+> 55 |   const fetchWithdrawals = async (token) => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 56 |     try {
+     | ^^^^^^^^^
+> 57 |       const result = await adminApi.getAllWithdrawals(token);
+     | ^^^^^^^^^
+> 58 |       setWithdrawals(result.withdrawals || []);
+     | ^^^^^^^^^
+> 59 |     } catch (err) {
+     | ^^^^^^^^^
+> 60 |       console.error(err);
+     | ^^^^^^^^^
+> 61 |     }
+     | ^^^^^^^^^
+> 62 |   };
+     | ^^^^^ `fetchWithdrawals` is declared here
+  63 |
+  64 |   const onSearch = async (e) => {
+  65 |     e.preventDefault();                             react-hooks/immutability
+
+C:\Users\USER\Desktop\chat-app\frontend\src\pages\Dashboard.jsx
+   3:10  error    'getIdToken' is defined but never used                                                                        no-unused-vars
+  54:6   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  91:6   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\USER\Desktop\chat-app\frontend\src\pages\PaymentStatus.jsx
+  11:10  error  'busy' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\frontend\src\pages\Register.jsx
+    3:10  error  'ref' is defined but never used                         no-unused-vars
+    3:15  error  'set' is defined but never used                         no-unused-vars
+    4:10  error  'auth' is defined but never used                        no-unused-vars
+    4:16  error  'database' is defined but never used                    no-unused-vars
+    5:8   error  'authApi' is defined but never used                     no-unused-vars
+   55:10  error  'simulationBusy' is assigned a value but never used     no-unused-vars
+   56:10  error  'simulationMessage' is assigned a value but never used  no-unused-vars
+   69:12  error  'e' is defined but never used                           no-unused-vars
+  126:18  error  'onSimulatePayment' is defined but never used           no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\frontend\src\pages\Task.jsx
+  195:13  error  'data' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\frontend\src\services\questionsService.js
+  423:35  error  'userId' is defined but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\frontend\vite.config.js
+  8:9  error  'process' is not defined  no-undef
+
+C:\Users\USER\Desktop\chat-app\setup.js
+  11:12  error  'require' is not defined    no-undef
+  12:14  error  'require' is not defined    no-undef
+  13:18  error  'require' is not defined    no-undef
+  16:10  error  'process' is not defined    no-undef
+  17:11  error  'process' is not defined    no-undef
+  32:37  error  '__dirname' is not defined  no-undef
+  68:36  error  '__dirname' is not defined  no-undef
+  89:37  error  '__dirname' is not defined  no-undef
+
+C:\Users\USER\Desktop\chat-app\src\components\AccountTable.jsx
+  9:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+   7 |
+   8 |   useEffect(() => {
+>  9 |     setLocalOrders(orders);
+     |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  10 |   }, [orders]);
+  11 |
+  12 |   const handleTaskClick = (orderId) => {  react-hooks/set-state-in-effect
+
+C:\Users\USER\Desktop\chat-app\src\components\EarningsCard.jsx
+  11:10  error  'error' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\src\components\Header.jsx
+  38:18  error  'e' is defined but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\src\main.jsx
+  12:10  error  'e' is defined but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\src\pages\AdminDashboard.jsx
+  34:9  error  Error: Cannot access variable before it is declared
+
+`fetchStats` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  32 |         const token = await user.getIdToken();
+  33 |         setIdToken(token);
+> 34 |         fetchStats(token);
+     |         ^^^^^^^^^^ `fetchStats` accessed before it is declared
+  35 |         fetchPendingWithdrawals(token);
+  36 |       } catch (err) {
+  37 |         console.error('Failed to get token:', err);
+
+  43 |   }, [navigate, auth]);
+  44 |
+> 45 |   const fetchStats = async (token) => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 46 |     try {
+     | ^^^^^^^^^
+> 47 |       const result = await adminApi.getDashboardStats(token);
+     | ^^^^^^^^^
+> 48 |       setStats(result.stats);
+     | ^^^^^^^^^
+> 49 |     } catch (err) {
+     | ^^^^^^^^^
+> 50 |       console.error(err);
+     | ^^^^^^^^^
+> 51 |       setError('Failed to load stats');
+     | ^^^^^^^^^
+> 52 |     }
+     | ^^^^^^^^^
+> 53 |   };
+     | ^^^^^ `fetchStats` is declared here
+  54 |
+  55 |   const fetchPendingWithdrawals = async (token) => {
+  56 |     try {                            react-hooks/immutability
+  35:9  error  Error: Cannot access variable before it is declared
+
+`fetchPendingWithdrawals` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  33 |         setIdToken(token);
+  34 |         fetchStats(token);
+> 35 |         fetchPendingWithdrawals(token);
+     |         ^^^^^^^^^^^^^^^^^^^^^^^ `fetchPendingWithdrawals` accessed before it is declared
+  36 |       } catch (err) {
+  37 |         console.error('Failed to get token:', err);
+  38 |         navigate('/login', { replace: true });
+
+  53 |   };
+  54 |
+> 55 |   const fetchPendingWithdrawals = async (token) => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 56 |     try {
+     | ^^^^^^^^^
+> 57 |       const result = await adminApi.getPendingWithdrawals(token);
+     | ^^^^^^^^^
+> 58 |       setPendingWithdrawals(result.pendingWithdrawals || []);
+     | ^^^^^^^^^
+> 59 |     } catch (err) {
+     | ^^^^^^^^^
+> 60 |       console.error(err);
+     | ^^^^^^^^^
+> 61 |     }
+     | ^^^^^^^^^
+> 62 |   };
+     | ^^^^^ `fetchPendingWithdrawals` is declared here
+  63 |
+  64 |   const onSearch = async (e) => {
+  65 |     e.preventDefault();  react-hooks/immutability
+
+C:\Users\USER\Desktop\chat-app\src\pages\Dashboard.jsx
+   3:10  error    'getIdToken' is defined but never used                                                                        no-unused-vars
+  49:6   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  66:6   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\USER\Desktop\chat-app\src\pages\OutlierBook.jsx
+  91:13  error  'order' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\src\pages\PaymentStatus.jsx
+  11:10  error  'busy' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\src\pages\Register.jsx
+   3:10  error  'createUserWithEmailAndPassword' is defined but never used  no-unused-vars
+   4:10  error  'ref' is defined but never used                             no-unused-vars
+   4:15  error  'set' is defined but never used                             no-unused-vars
+   5:10  error  'auth' is defined but never used                            no-unused-vars
+   5:16  error  'database' is defined but never used                        no-unused-vars
+   6:8   error  'authApi' is defined but never used                         no-unused-vars
+  22:10  error  'simulationBusy' is assigned a value but never used         no-unused-vars
+  23:10  error  'simulationMessage' is assigned a value but never used      no-unused-vars
+  36:12  error  'e' is defined but never used                               no-unused-vars
+  80:18  error  'onSimulatePayment' is defined but never used               no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\src\pages\Task.jsx
+  195:13  error  'data' is assigned a value but never used  no-unused-vars
+
+C:\Users\USER\Desktop\chat-app\src\services\questionsService.js
+  424:35  error  'userId' is defined but never used  no-unused-vars
+
+✖ 405 problems (401 errors, 4 warnings)
+
+❌ Linting failed (non-critical, continuing...
+🔨 Building application...
+
+> chat-app@0.0.0 build
+> npm --prefix frontend run build
+
+
+> chat-app-frontend@0.0.0 build
+> vite build
+
+[36mvite v8.0.16 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 76 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                            1.69 kB │ gzip:   0.85 kB
+dist/assets/Payment-BrCXZ9tL.css           2.21 kB │ gzip:   0.76 kB
+dist/assets/Auth-DcVUJDJm.css              2.91 kB │ gzip:   0.99 kB
+dist/assets/Task-tIEVd5N3.css              4.39 kB │ gzip:   1.45 kB
+dist/assets/OutlierBook-XWeAn70b.css       4.55 kB │ gzip:   1.13 kB
+dist/assets/AdminDashboard-D09tiq4O.css    5.70 kB │ gzip:   1.55 kB
+dist/assets/Home-OxEUgCN-.css              6.84 kB │ gzip:   1.85 kB
+dist/assets/index-BXZwL626.css             9.57 kB │ gzip:   2.67 kB
+dist/assets/Dashboard-KiWCKP-Q.css        11.38 kB │ gzip:   2.55 kB
+dist/assets/paymentApi-C4ipdh5L.js         0.95 kB │ gzip:   0.37 kB
+dist/assets/PaymentStatus-DDA9RB98.js      1.89 kB │ gzip:   0.87 kB
+dist/assets/Login-CJFdRfui.js              2.42 kB │ gzip:   1.04 kB
+dist/assets/OutlierBook-QeYC2BVn.js        3.34 kB │ gzip:   1.45 kB
+dist/assets/Payment-BRRr6gQ2.js            4.36 kB │ gzip:   1.38 kB
+dist/assets/Register-CwdMDEFx.js           4.67 kB │ gzip:   1.63 kB
+dist/assets/Home-BnhxVCfL.js               4.70 kB │ gzip:   1.52 kB
+dist/assets/AdminDashboard-CQ-rDQiR.js    10.17 kB │ gzip:   2.44 kB
+dist/assets/Dashboard-CukVQJ_4.js         14.21 kB │ gzip:   3.62 kB
+dist/assets/Task-qIwTZ_EP.js              24.04 kB │ gzip:   7.78 kB
+dist/assets/index-Cm7gOAZ_.js            467.72 kB │ gzip: 144.05 kB
+
+[32m✓ built in 657ms[39m
+✅ Frontend build successful!
+📁 Build output is in the 'dist' directory
+
+Next steps:
+1. Ensure .env.production variables are set correctly
+2. Push to GitHub: git push
+3. Vercel will automatically deploy
+
+To deploy manually to Vercel:
+  npm install -g vercel
+  vercel --prod
