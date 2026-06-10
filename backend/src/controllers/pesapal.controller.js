@@ -38,6 +38,24 @@ function getPesapalCallbackUrl(req) {
   return `${protocol}://${host}/api/payments/pesapal/webhook`;
 }
 
+function getPesapalApiBaseUrls() {
+  const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
+  if (env === 'production') {
+    return [
+      'https://pay.pesapal.com/v3/api',
+      'https://pay.pesapal.com/pesapalv3/api',
+    ];
+  }
+  return ['https://cybjqa.pesapal.com/pesapalv3/api'];
+}
+
+function buildPesapalApiUrls(path) {
+  return getPesapalApiBaseUrls().flatMap((base) => [
+    `${base}${path}`,
+    `${base}${path}/`,
+  ]);
+}
+
 // Pesapal v3 API uses JWT tokens. Generate one using the consumer credentials.
 function generatePesapalJWT() {
   const { key, secret } = validateConfig();
@@ -65,39 +83,48 @@ function generatePesapalJWT() {
 async function getPesapalToken() {
   const { key, secret } = validateConfig();
   const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
-  const tokenUrl = env === 'production'
-    ? 'https://pay.pesapal.com/v3/api/Auth/RequestToken'
-    : 'https://cybjqa.pesapal.com/pesapalv3/api/Auth/RequestToken';
-
+  const tokenUrls = buildPesapalApiUrls('/Auth/RequestToken');
   const jwt = generatePesapalJWT();
 
   try {
     console.log(`[Pesapal] Requesting token from ${env} environment`);
-    const response = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        consumer_key: key,
-        consumer_secret: secret,
-      }),
-    });
+    let lastError = null;
+    for (const tokenUrl of tokenUrls) {
+      try {
+        const response = await fetch(tokenUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            consumer_key: key,
+            consumer_secret: secret,
+          }),
+        });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      const statusText = response.statusText || `HTTP ${response.status}`;
-      console.error(`[Pesapal] Token request failed: ${statusText}`, errorText);
-      throw new Error(`Pesapal token request failed: ${statusText} - ${errorText.substring(0, 100)}`);
-    }
+        if (!response.ok) {
+          const errorText = await response.text();
+          const statusText = response.statusText || `HTTP ${response.status}`;
+          console.error(`[Pesapal] Token request failed for ${tokenUrl}: ${statusText}`, errorText);
+          lastError = new Error(`Pesapal token request failed: ${statusText} - ${errorText.substring(0, 100)}`);
+          continue;
+        }
 
-    const data = await response.json();
-    if (!data.token) {
-      console.error('[Pesapal] No token in response', data);
-      throw new Error('Pesapal API returned no token');
+        const data = await response.json();
+        if (!data.token) {
+          console.error('[Pesapal] No token in response', data);
+          lastError = new Error('Pesapal API returned no token');
+          continue;
+        }
+
+        console.log(`[Pesapal] Successfully obtained access token from ${tokenUrl}`);
+        return data.token;
+      } catch (err) {
+        lastError = err;
+        console.error(`[Pesapal] Token request error for ${tokenUrl}:`, err.message);
+      }
     }
-    console.log('[Pesapal] Successfully obtained access token');
-    return data.token;
+    throw lastError;
   } catch (err) {
     console.error('[Pesapal] getPesapalToken error:', err.message);
     throw err;
@@ -114,57 +141,64 @@ async function submitPesapalOrder({
   callbackUrl,
 }) {
   const token = await getPesapalToken();
-  const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
-  const orderUrl = env === 'production'
-    ? 'https://pay.pesapal.com/v3/api/Transactions/InitiateTransaction'
-    : 'https://cybjqa.pesapal.com/pesapalv3/api/Transactions/InitiateTransaction';
+  const orderUrls = buildPesapalApiUrls('/Transactions/InitiateTransaction');
 
   try {
-    console.log(`[Pesapal] Submitting order ${reference} for amount ${amount} KES to ${orderUrl}`);
-    const response = await fetch(orderUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        reference,
-        amount,
-        description: 'Payment for account creation',
-        currency: 'KES',
-        buyer_email: email || 'customer@pesapal.com',
-        buyer_first_name: firstName || 'Customer',
-        buyer_last_name: lastName || '',
-        buyer_phone: '',
-        redirect_mode: 'IFRAME',
-        callback_url: callbackUrl,
-        billing_address: {
-          email_address: email || 'customer@pesapal.com',
-          phone_number: '',
-          country_code: 'KE',
-          first_name: firstName || 'Customer',
-          last_name: lastName || '',
-        },
-      }),
-    });
+    let lastError = null;
+    for (const orderUrl of orderUrls) {
+      try {
+        console.log(`[Pesapal] Submitting order ${reference} for amount ${amount} KES to ${orderUrl}`);
+        const response = await fetch(orderUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            reference,
+            amount,
+            description: 'Payment for account creation',
+            currency: 'KES',
+            buyer_email: email || 'customer@pesapal.com',
+            buyer_first_name: firstName || 'Customer',
+            buyer_last_name: lastName || '',
+            buyer_phone: '',
+            redirect_mode: 'IFRAME',
+            callback_url: callbackUrl,
+            billing_address: {
+              email_address: email || 'customer@pesapal.com',
+              phone_number: '',
+              country_code: 'KE',
+              first_name: firstName || 'Customer',
+              last_name: lastName || '',
+            },
+          }),
+        });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      const statusText = response.statusText || `HTTP ${response.status}`;
-      console.error(`[Pesapal] Order submission failed: ${statusText}`, errorText);
-      throw new Error(`Pesapal order submission failed: ${statusText} - ${errorText.substring(0, 200)}`);
-    }
+        if (!response.ok) {
+          const errorText = await response.text();
+          const statusText = response.statusText || `HTTP ${response.status}`;
+          console.error(`[Pesapal] Order submission failed for ${orderUrl}: ${statusText}`, errorText);
+          lastError = new Error(`Pesapal order submission failed: ${statusText} - ${errorText.substring(0, 200)}`);
+          continue;
+        }
 
-    const data = await response.json();
-    if (!data.order_tracking_id) {
-      console.error('[Pesapal] No order_tracking_id in response', data);
-      throw new Error('Pesapal did not return an order tracking ID');
+        const data = await response.json();
+        if (!data.order_tracking_id) {
+          console.error('[Pesapal] No order_tracking_id in response', data);
+          throw new Error('Pesapal did not return an order tracking ID');
+        }
+        console.log(`[Pesapal] Order ${reference} submitted successfully. Tracking ID: ${data.order_tracking_id}`);
+        return {
+          orderTrackingId: data.order_tracking_id,
+          redirectUrl: data.redirect_url,
+        };
+      } catch (err) {
+        lastError = err;
+        console.error(`[Pesapal] submitPesapalOrder attempt error for ${orderUrl}:`, err.message);
+      }
     }
-    console.log(`[Pesapal] Order ${reference} submitted successfully. Tracking ID: ${data.order_tracking_id}`);
-    return {
-      orderTrackingId: data.order_tracking_id,
-      redirectUrl: data.redirect_url,
-    };
+    throw lastError;
   } catch (err) {
     console.error('[Pesapal] submitPesapalOrder error:', err.message);
     throw err;
@@ -174,41 +208,47 @@ async function submitPesapalOrder({
 // Query Pesapal for payment status
 async function getPesapalPaymentStatus(orderTrackingId) {
   const token = await getPesapalToken();
-  const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
-  const statusUrl = env === 'production'
-    ? `https://pay.pesapal.com/v3/api/Transactions/GetTransactionStatus?order_tracking_id=${orderTrackingId}`
-    : `https://cybjqa.pesapal.com/pesapalv3/api/Transactions/GetTransactionStatus?order_tracking_id=${orderTrackingId}`;
+  const statusUrls = buildPesapalApiUrls(`/Transactions/GetTransactionStatus?order_tracking_id=${orderTrackingId}`);
 
   try {
-    console.log(`[Pesapal] Querying status for order ${orderTrackingId}`);
-    const response = await fetch(statusUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    let lastError = null;
+    for (const statusUrl of statusUrls) {
+      try {
+        console.log(`[Pesapal] Querying status for order ${orderTrackingId} on ${statusUrl}`);
+        const response = await fetch(statusUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      const statusText = response.statusText || `HTTP ${response.status}`;
-      console.error(`[Pesapal] Status query failed: ${statusText}`, errorText);
-      throw new Error(`Pesapal status query failed: ${statusText}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          const statusText = response.statusText || `HTTP ${response.status}`;
+          console.error(`[Pesapal] Status query failed for ${statusUrl}: ${statusText}`, errorText);
+          lastError = new Error(`Pesapal status query failed: ${statusText}`);
+          continue;
+        }
+
+        const data = await response.json();
+        console.log(`[Pesapal] Status for ${orderTrackingId}: ${data.payment_status_description}`);
+        return {
+          orderTrackingId: data.order_tracking_id,
+          status: data.payment_status_description,
+          paymentMethod: data.payment_method,
+          amount: data.amount,
+        };
+      } catch (err) {
+        lastError = err;
+        console.error(`[Pesapal] getPesapalPaymentStatus attempt error for ${statusUrl}:`, err.message);
+      }
     }
-
-    const data = await response.json();
-    console.log(`[Pesapal] Status for ${orderTrackingId}: ${data.payment_status_description}`);
-    return {
-      orderTrackingId: data.order_tracking_id,
-      status: data.payment_status_description,
-      paymentMethod: data.payment_method,
-      amount: data.amount,
-    };
+    throw lastError;
   } catch (err) {
     console.error('[Pesapal] getPesapalPaymentStatus error:', err.message);
     throw err;
   }
 }
-
 
 // No longer using old OAuth 1.0 methods - using v3 API with JWT tokens instead
 
