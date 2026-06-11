@@ -12,17 +12,24 @@ function getConsumerSecret() {
   return process.env.PESAPAL_CONSUMER_SECRET || process.env.PESAPAL_SECRET || process.env.PESAPAL_API_SECRET;
 }
 
+function getPesapalIpnId() {
+  return process.env.PESAPAL_IPN_ID || null;
+}
+
+function ensurePesapalIpnId() {
+  const ipnId = getPesapalIpnId();
+  if (!ipnId) {
+    throw new Error('Missing Pesapal IPN ID: set PESAPAL_IPN_ID with your registered Pesapal ipn_id');
+  }
+  return ipnId;
+}
+
 function validateConfig() {
   const key = getConsumerKey();
   const secret = getConsumerSecret();
   const missing = [];
   if (!key) missing.push('PESAPAL_CONSUMER_KEY / PESAPAL_KEY / PESAPAL_API_KEY');
   if (!secret) missing.push('PESAPAL_CONSUMER_SECRET / PESAPAL_SECRET / PESAPAL_API_SECRET');
-  // If running in production, ensure callback URL is provided so Pesapal can POST webhooks
-  const env = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
-  if (env === 'production' && !process.env.PESAPAL_CALLBACK_URL) {
-    missing.push('PESAPAL_CALLBACK_URL');
-  }
 
   if (missing.length) throw new Error(`Missing Pesapal configuration: ${missing.join(', ')}`);
   return { key, secret };
@@ -59,6 +66,63 @@ async function parsePesapalErrorResponse(response) {
     return { statusText: response.statusText || `HTTP ${response.status}`, body: JSON.parse(text) };
   } catch {
     return { statusText: response.statusText || `HTTP ${response.status}`, body: text };
+  }
+}
+
+async function registerPesapalIpn(req, res) {
+  try {
+    validateConfig();
+    const targetUrl = req.body?.url || getPesapalCallbackUrl(req);
+    if (!targetUrl) {
+      return res.status(400).json({ ok: false, error: 'callback_url_required' });
+    }
+
+    const token = await getPesapalToken();
+    const registerUrls = buildPesapalApiUrls('/URLSetup/RegisterIPN');
+    let lastError = null;
+
+    for (const registerUrl of registerUrls) {
+      try {
+        console.log(`[Pesapal] Registering IPN URL at ${registerUrl} -> ${targetUrl}`);
+        const response = await fetch(registerUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            url: targetUrl,
+            ipn_notification_type: 'GET',
+          }),
+        });
+
+        if (!response.ok) {
+          const { statusText, body } = await parsePesapalErrorResponse(response);
+          console.error(`[Pesapal] IPN registration failed for ${registerUrl}: ${statusText}`, body);
+          lastError = new Error(`Pesapal IPN registration failed: ${statusText} - ${JSON.stringify(body).substring(0, 200)}`);
+          continue;
+        }
+
+        const data = await response.json();
+        const ipnId = data.ipn_id || data.ipnId || data.notification_id;
+        if (!ipnId) {
+          console.error('[Pesapal] IPN registration returned no ipn_id', data);
+          throw new Error('Pesapal IPN registration did not return an ipn_id');
+        }
+
+        console.log('[Pesapal] IPN registered successfully', data);
+        return res.json({ ok: true, ipnId, data });
+      } catch (err) {
+        lastError = err;
+        console.error(`[Pesapal] registerPesapalIpn attempt error for ${registerUrl}:`, err.message);
+      }
+    }
+
+    throw lastError;
+  } catch (err) {
+    console.error('[Pesapal] registerPesapalIpn error:', err.message);
+    return res.status(500).json({ ok: false, error: err.message || 'IPN_REGISTRATION_FAILED' });
   }
 }
 
@@ -123,6 +187,7 @@ async function submitPesapalOrder({
   callbackUrl,
 }) {
   const token = await getPesapalToken();
+  const ipnId = ensurePesapalIpnId();
   const orderUrls = buildPesapalApiUrls('/Transactions/SubmitOrderRequest');
 
   try {
@@ -143,7 +208,7 @@ async function submitPesapalOrder({
             amount,
             description: 'Payment for account creation',
             callback_url: callbackUrl,
-            notification_id: reference,
+            notification_id: ipnId,
             billing_address: {
               email_address: email || 'customer@pesapal.com',
               phone_number: '',
@@ -516,4 +581,4 @@ function webhookHealth(req, res) {
   return res.json({ ok: true, message: 'Pesapal webhook endpoint is available' });
 }
 
-export default { initPesapal, initPesapalGuest, checkPaymentStatus, webhook, webhookHealth, simulateWebhook };
+export default { initPesapal, initPesapalGuest, registerPesapalIpn, checkPaymentStatus, webhook, webhookHealth, simulateWebhook };
