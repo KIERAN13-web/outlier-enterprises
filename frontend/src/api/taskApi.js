@@ -1,10 +1,10 @@
 import client from './client';
 
-const submitTask = (token, { orderId, question, imageCount, research, recommendations, keywords, speechText }) =>
+const submitTask = (token, body) =>
   client.request('/tasks/submit', {
     method: 'POST',
     token,
-    body: { orderId, question, imageCount, research, recommendations, keywords, speechText },
+    body,
   });
 
 const getTask = (token, taskId) =>
