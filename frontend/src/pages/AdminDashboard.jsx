@@ -54,7 +54,9 @@ export default function AdminDashboard() {
       setStats(result.stats);
     } catch (err) {
       console.error('fetchStats error:', err);
-      setError(err?.data?.error || err.message || 'Failed to load stats');
+      setError(
+        err?.data?.message || err?.data?.error || err.message || 'Failed to load stats'
+      );
     }
   };
 
@@ -73,7 +75,9 @@ export default function AdminDashboard() {
       setPendingRegistrations(result.pendingRegistrations || []);
     } catch (err) {
       console.error('Failed to load pending registrations:', err);
-      setError('Failed to load pending registrations');
+      setError(
+        err?.data?.message || err?.data?.error || err.message || 'Failed to load pending registrations'
+      );
     }
   };
 

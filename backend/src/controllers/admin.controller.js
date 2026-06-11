@@ -144,26 +144,34 @@ async function getPendingRegistrations(req, res) {
       return res.json({ ok: true, pendingRegistrations: [] });
     }
 
-    const pendingRegistrations = Object.entries(snap.val()).map(([pendingId, data]) => ({
-      pendingId,
-      email: data.email,
-      name: data.name || null,
-      phoneNumber: data.phoneNumber || null,
-      country: data.country || null,
-      idNumber: data.idNumber || null,
-      status: data.status,
-      paymentMethod: data.paymentMethod || 'unknown',
-      tillNumber: data.tillNumber || null,
-      paymentCode: data.paymentCode || null,
-      referralCode: data.referralCode || null,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-    })).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const rawValue = snap.val();
+    if (!rawValue || typeof rawValue !== 'object') {
+      return res.json({ ok: true, pendingRegistrations: [] });
+    }
+
+    const pendingRegistrations = Object.entries(rawValue)
+      .filter(([, data]) => data && typeof data === 'object')
+      .map(([pendingId, data]) => ({
+        pendingId,
+        email: data.email,
+        name: data.name || null,
+        phoneNumber: data.phoneNumber || null,
+        country: data.country || null,
+        idNumber: data.idNumber || null,
+        status: data.status || 'unknown',
+        paymentMethod: data.paymentMethod || 'unknown',
+        tillNumber: data.tillNumber || null,
+        paymentCode: data.paymentCode || null,
+        referralCode: data.referralCode || null,
+        createdAt: data.createdAt || null,
+        updatedAt: data.updatedAt || null,
+      }))
+      .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
 
     return res.json({ ok: true, pendingRegistrations });
   } catch (err) {
     console.error('getPendingRegistrations error', err);
-    return res.status(500).json({ ok: false, error: 'GET_PENDING_REGISTRATIONS_FAILED' });
+    return res.status(500).json({ ok: false, error: 'GET_PENDING_REGISTRATIONS_FAILED', message: err.message });
   }
 }
 
@@ -481,25 +489,30 @@ async function getDashboardStats(req, res) {
     }
 
     const pendingUsersSnap = await rdb.ref('pendingUsers').orderByChild('status').equalTo('PENDING').get();
-    const pendingRegistrationsCount = pendingUsersSnap.exists() ? Object.keys(pendingUsersSnap.val()).length : 0;
+    const pendingRegistrationsCount = pendingUsersSnap.exists() && pendingUsersSnap.val() && typeof pendingUsersSnap.val() === 'object'
+      ? Object.keys(pendingUsersSnap.val()).length
+      : 0;
 
     const allUsers = usersSnap.val();
+    const usersObject = allUsers && typeof allUsers === 'object' ? allUsers : {};
+
     let totalUsers = 0;
     let paidUsers = 0;
     let totalEarnings = 0;
     let pendingWithdrawals = 0;
     let pendingWithdrawalAmount = 0;
 
-    for (const userData of Object.values(allUsers)) {
+    for (const userData of Object.values(usersObject)) {
+      if (!userData || typeof userData !== 'object') continue;
       totalUsers++;
       if (userData.isPaid) paidUsers++;
-      if (userData.wallet) {
-        totalEarnings += userData.wallet.totalEarnings || 0;
-        if (userData.wallet.withdrawals) {
+      if (userData.wallet && typeof userData.wallet === 'object') {
+        totalEarnings += Number(userData.wallet.totalEarnings || 0);
+        if (userData.wallet.withdrawals && typeof userData.wallet.withdrawals === 'object') {
           for (const withdrawal of Object.values(userData.wallet.withdrawals)) {
-            if (withdrawal.status === 'pending') {
+            if (withdrawal && withdrawal.status === 'pending') {
               pendingWithdrawals++;
-              pendingWithdrawalAmount += withdrawal.amount || 0;
+              pendingWithdrawalAmount += Number(withdrawal.amount || 0);
             }
           }
         }
@@ -519,7 +532,7 @@ async function getDashboardStats(req, res) {
     });
   } catch (err) {
     console.error('getDashboardStats error', err);
-    return res.status(500).json({ ok: false, error: 'STATS_FAILED' });
+    return res.status(500).json({ ok: false, error: 'STATS_FAILED', message: err.message });
   }
 }
 
