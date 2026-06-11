@@ -214,8 +214,24 @@ async function approvePendingRegistration(req, res) {
       return res.status(400).json({ ok: false, error: 'pending_user_missing_email', message: 'Pending registration missing email' });
     }
 
-    const result = await paymentController.approvePendingUserRegistration(pendingId);
-    return res.json({ ok: true, pendingId, status: result.status, uid: result.uid || null });
+    // Log who is approving and the pending entry for easier debugging
+    console.log(`[approvePendingRegistration] admin=${req.adminUid || 'unknown'} pendingId=${pendingId} email=${pendingData.email}`);
+
+    try {
+      const result = await paymentController.approvePendingUserRegistration(pendingId);
+      return res.json({ ok: true, pendingId, status: result.status, uid: result.uid || null });
+    } catch (err) {
+      console.error(`[approvePendingRegistration] error approving pendingId=${pendingId}`, err?.message || err);
+      const msg = err?.message || '';
+      if (msg === 'PENDING_USER_NOT_FOUND') {
+        return res.status(404).json({ ok: false, error: msg });
+      }
+      if (msg === 'pending_user_missing_email') {
+        return res.status(400).json({ ok: false, error: msg, message: 'Pending registration missing email' });
+      }
+      // Unknown error - include message for debugging but avoid stack traces in production
+      return res.status(500).json({ ok: false, error: 'APPROVAL_FAILED', message: msg || 'Approval process failed' });
+    }
   } catch (err) {
     console.error('approvePendingRegistration error', err);
     return res.status(500).json({ ok: false, error: 'APPROVAL_FAILED', message: err.message });
