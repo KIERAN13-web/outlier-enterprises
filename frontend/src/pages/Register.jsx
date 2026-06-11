@@ -45,7 +45,7 @@ export default function Register() {
   const [country, setCountry] = useState('Kenya');
   const [idNumber, setIdNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [provider, setProvider] = useState('pesapal');
+  const [provider, setProvider] = useState('manual');
   const [referralCode, setReferralCode] = useState(() => {
     try {
       const search = window.location.search || '';
@@ -83,6 +83,7 @@ export default function Register() {
   // Handle payment method selection - show warning for unavailable methods
   const handlePaymentMethodChange = (method) => {
     if (method === 'mpesa' || method === 'pesapal') {
+      setError('Pesapal is currently unavailable. Please use the Pay with Till option.');
       setShowUnavailableModal(true);
       return;
     }
@@ -116,6 +117,14 @@ export default function Register() {
     setBusy(true);
     setError('');
     setSimulationMessage('');
+
+    if (provider === 'mpesa' || provider === 'pesapal') {
+      setError('Pesapal is currently unavailable. Please use the Pay with Till option.');
+      setShowUnavailableModal(true);
+      setBusy(false);
+      return;
+    }
+
     let popup;
     try {
       if (provider === 'mpesa' || provider === 'pesapal') {
