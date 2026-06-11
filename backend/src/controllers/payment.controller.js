@@ -434,89 +434,111 @@ async function approvePendingUserRegistration(pendingId) {
   }
 
   let uid;
-  try {
-    const userRecord = await firebaseAdmin.auth().createUser({
-      email,
-      password: data.password || `Manual${Date.now()}!`,
-      displayName: data.name || null,
-    });
-    uid = userRecord.uid;
-  } catch (err) {
-    if (err.code === 'auth/email-already-exists') {
-      const existing = await firebaseAdmin.auth().getUserByEmail(email);
-      uid = existing.uid;
-    } else {
-      throw err;
-    }
-  }
-
-  const userRef = rdb.ref(`users/${uid}`);
-  const existingUserSnap = await userRef.get();
-  const existingUser = existingUserSnap.exists() ? existingUserSnap.val() : {};
   const now = new Date().toISOString();
 
-  let referralCodeForNewUser = existingUser.referralCode;
-  if (!referralCodeForNewUser) {
+  try {
+    // Create or find auth user
     try {
-      referralCodeForNewUser = await referralService.generateUniqueReferralCode(rdb);
+      const userRecord = await firebaseAdmin.auth().createUser({
+        email,
+        password: data.password || `Manual${Date.now()}!`,
+        displayName: data.name || null,
+      });
+      uid = userRecord.uid;
+      console.log(`[approvePendingUserRegistration] created auth user uid=${uid} email=${email}`);
     } catch (err) {
-      referralCodeForNewUser = `R${uid.slice(0, 8)}`;
+      if (err.code === 'auth/email-already-exists') {
+        const existing = await firebaseAdmin.auth().getUserByEmail(email);
+        uid = existing.uid;
+        console.log(`[approvePendingUserRegistration] found existing auth user uid=${uid} email=${email}`);
+      } else {
+        throw err;
+      }
     }
-  }
 
-  const updates = {
-    email,
-    fullName: data.name || existingUser.fullName || null,
-    country: data.country || existingUser.country || null,
-    idNumber: data.idNumber || existingUser.idNumber || null,
-    phoneNumber: data.phoneNumber || existingUser.phoneNumber || null,
-    isPaid: true,
-    paidAt: now,
-    referralCode: referralCodeForNewUser,
-    updatedAt: now,
-  };
+    const userRef = rdb.ref(`users/${uid}`);
+    const existingUserSnap = await userRef.get();
+    const existingUser = existingUserSnap.exists() ? existingUserSnap.val() : {};
 
-  if (!existingUser.createdAt) {
-    updates.createdAt = now;
-  }
+    // Ensure referral code exists for the new user (generate if missing)
+    let referralCodeForNewUser = existingUser.referralCode;
+    if (!referralCodeForNewUser) {
+      try {
+        referralCodeForNewUser = await referralService.generateUniqueReferralCode(rdb);
+      } catch (err) {
+        referralCodeForNewUser = `R${(uid || '').slice(0, 8)}`;
+      }
+    }
 
-  if (existingUser.isAdmin === undefined) {
-    updates.isAdmin = false;
-  }
+    const updates = {
+      email,
+      fullName: data.name || existingUser.fullName || null,
+      country: data.country || existingUser.country || null,
+      idNumber: data.idNumber || existingUser.idNumber || null,
+      phoneNumber: data.phoneNumber || existingUser.phoneNumber || null,
+      isPaid: true,
+      paidAt: now,
+      referralCode: referralCodeForNewUser,
+      updatedAt: now,
+    };
 
-  await userRef.update(updates);
+    if (!existingUser.createdAt) updates.createdAt = now;
+    if (existingUser.isAdmin === undefined) updates.isAdmin = false;
 
-  // Initialize wallet if not already present
-  const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
-  if (!walletSnap.exists()) {
-    await rdb.ref(`users/${uid}/wallet`).set({
-      taskBalance: 0,
-      referralBalance: 0,
-      totalEarnings: 0,
-      updatedAt: new Date().toISOString(),
+    await userRef.update(updates);
+
+    // Initialize wallet if not already present
+    const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
+    if (!walletSnap.exists()) {
+      await rdb.ref(`users/${uid}/wallet`).set({
+        taskBalance: 0,
+        referralBalance: 0,
+        totalEarnings: 0,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    // Credit referrer if a referral code was provided; absence is fine
+    if (data.referralCode) {
+      try {
+        console.log(`[approvePendingUserRegistration] crediting referrer for pendingId=${pendingId} using code=${data.referralCode} email=${data.email}`);
+        await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
+      } catch (err) {
+        console.error('creditReferralBonus during manual approval failed:', err);
+      }
+    } else {
+      console.log(`[approvePendingUserRegistration] no referralCode provided for pendingId=${pendingId} email=${data.email}; continuing`);
+    }
+
+    // Mark pending user as completed
+    await rdb.ref(`pendingUsers/${pendingId}`).update({
+      status: 'COMPLETED',
+      uid,
+      isPaid: true,
+      paidAt: now,
+      updatedAt: now,
     });
-  }
 
-  if (data.referralCode) {
-    try {
-      console.log(`[approvePendingUserRegistration] crediting referrer for pendingId=${pendingId} using code=${data.referralCode} email=${data.email}`);
-      await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
-    } catch (err) {
-      console.error('creditReferralBonus during manual approval failed:', err);
+    return { status: 'COMPLETED', uid };
+  } catch (err) {
+    console.error('[approvePendingUserRegistration] error', err?.message || err);
+    // If we managed to create/find an auth user, ensure pendingUsers is updated to avoid stuck state
+    if (uid) {
+      try {
+        await rdb.ref(`pendingUsers/${pendingId}`).update({
+          status: 'COMPLETED',
+          uid,
+          isPaid: true,
+          paidAt: now,
+          updatedAt: now,
+        });
+        return { status: 'COMPLETED', uid };
+      } catch (innerErr) {
+        console.error('[approvePendingUserRegistration] failed to mark pending as completed after error', innerErr);
+      }
     }
-  } else {
-    console.warn(`[approvePendingUserRegistration] no referralCode found for pendingId=${pendingId} email=${data.email}`);
+    throw err;
   }
-
-  await rdb.ref(`pendingUsers/${pendingId}`).update({
-    status: 'COMPLETED',
-    uid,
-    isPaid: true,
-    paidAt: now,
-    updatedAt: now,
-  });
-
-  return { status: 'COMPLETED', uid };
 }
 
 async function mpesaWebhook(req, res) {
