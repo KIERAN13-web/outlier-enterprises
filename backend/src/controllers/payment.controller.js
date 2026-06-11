@@ -336,6 +336,15 @@ async function processPendingPayment({ pendingKey, data, status }) {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+        
+        // Initialize wallet for new user
+        await rdb.ref(`users/${newUid}/wallet`).set({
+          taskBalance: 0,
+          referralBalance: 0,
+          totalEarnings: 0,
+          updatedAt: new Date().toISOString(),
+        });
+
         // Credit referral bonus if present (uses referralService)
         if (data.referralCode) {
           try {
@@ -368,6 +377,18 @@ async function processPendingPayment({ pendingKey, data, status }) {
           referralCode: referralCodeForExisting,
           updatedAt: new Date().toISOString(),
         });
+        
+        // Ensure wallet exists for existing user
+        const walletSnap = await rdb.ref(`users/${existingUid}/wallet`).get();
+        if (!walletSnap.exists()) {
+          await rdb.ref(`users/${existingUid}/wallet`).set({
+            taskBalance: 0,
+            referralBalance: 0,
+            totalEarnings: 0,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+
         if (data.referralCode) {
           try {
             const referralService = (await import('../services/referralService.js')).default;
@@ -464,6 +485,17 @@ async function approvePendingUserRegistration(pendingId) {
   }
 
   await userRef.update(updates);
+
+  // Initialize wallet if not already present
+  const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
+  if (!walletSnap.exists()) {
+    await rdb.ref(`users/${uid}/wallet`).set({
+      taskBalance: 0,
+      referralBalance: 0,
+      totalEarnings: 0,
+      updatedAt: new Date().toISOString(),
+    });
+  }
 
   if (data.referralCode) {
     try {
