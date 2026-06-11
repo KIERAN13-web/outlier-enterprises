@@ -82,7 +82,7 @@ export default function Footer() {
           </div>
 
           <div className="footer-right">
-            <a href="mailto:outlierenterprises254@gmail.com" className="contact-email">✉️ outlierenterprises254@gmail.com</a>
+            <a href="mailto:outlierenterprises77@gmail.com" className="contact-email">✉️ outlierenterprises77@gmail.com</a>
           </div>
         </div>
       </div>

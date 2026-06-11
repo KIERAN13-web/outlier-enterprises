@@ -88,7 +88,7 @@ async function withdraw(req, res) {
     }
 
     // Set minimum based on earning type
-    const MIN_WITHDRAWAL = earningType === 'task' ? 10000 : 1;
+    const MIN_WITHDRAWAL = earningType === 'task' ? 5000 : 1;
     if (amount < MIN_WITHDRAWAL) {
       return res.status(400).json({
         ok: false,

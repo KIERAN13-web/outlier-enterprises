@@ -47,7 +47,7 @@ export default function EarningsCard() {
   const referralBalance = wallet.referralBalance || 0;
   const totalBalance = taskBalance + referralBalance;
 
-  const MIN_TASK_WITHDRAWAL = 10000;
+  const MIN_TASK_WITHDRAWAL = 5000;
   const MIN_REFERRAL_WITHDRAWAL = 1;
   
   const canWithdrawTask = taskBalance >= MIN_TASK_WITHDRAWAL;
