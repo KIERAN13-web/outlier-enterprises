@@ -123,7 +123,7 @@ async function submitPesapalOrder({
   callbackUrl,
 }) {
   const token = await getPesapalToken();
-  const orderUrls = buildPesapalApiUrls('/Transactions/InitiateTransaction');
+  const orderUrls = buildPesapalApiUrls('/Transactions/SubmitOrderRequest');
 
   try {
     let lastError = null;
@@ -255,6 +255,8 @@ function verifyWebhookSignature(body, signature, secret) {
 
 async function initPesapal(req, res) {
   try {
+    validateConfig();
+
     const { uid, email } = req.user || {};
     if (!uid) {
       console.warn('[Pesapal] Init request without authenticated user');
@@ -311,6 +313,8 @@ async function initPesapal(req, res) {
 
 async function initPesapalGuest(req, res) {
   try {
+    validateConfig();
+
     const { email, password, name, country, idNumber, phoneNumber, referralCode } = req.body;
 
     if (!email || !password) {
@@ -372,6 +376,7 @@ async function initPesapalGuest(req, res) {
     console.log(`[Pesapal] Guest payment initialized successfully. Pending ID: ${pendingId}`);
     return res.json({ ok: true, pendingId, iframeUrl: orderData.redirectUrl });
   } catch (err) {
+    console.error('Pesapal Init Error:', err);
     console.error('[Pesapal] initPesapalGuest error:', err.message);
     return res.status(500).json({ ok: false, error: err.message || 'PESAPAL_INIT_FAILED' });
   }

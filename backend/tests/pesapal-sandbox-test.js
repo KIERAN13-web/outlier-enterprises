@@ -141,7 +141,7 @@ async function initiateTransaction() {
     log(`    Reference: ${reference}`, 'cyan');
     log(`    Amount: 200 KES`, 'cyan');
 
-    const response = await fetch(`${config.apiBaseUrl}/Transactions/InitiateTransaction`, {
+    const response = await fetch(`${config.apiBaseUrl}/Transactions/SubmitOrderRequest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
