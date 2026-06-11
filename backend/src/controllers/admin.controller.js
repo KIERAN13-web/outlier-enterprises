@@ -202,6 +202,18 @@ async function approvePendingRegistration(req, res) {
       return res.status(400).json({ ok: false, error: 'pendingId_required' });
     }
 
+    const rdb = firebaseAdmin.database();
+    const pendingSnap = await rdb.ref(`pendingUsers/${pendingId}`).get();
+    if (!pendingSnap.exists()) {
+      return res.status(404).json({ ok: false, error: 'PENDING_USER_NOT_FOUND' });
+    }
+
+    const pendingData = pendingSnap.val() || {};
+    // Basic validation: ensure email is present before attempting approval
+    if (!pendingData.email) {
+      return res.status(400).json({ ok: false, error: 'pending_user_missing_email', message: 'Pending registration missing email' });
+    }
+
     const result = await paymentController.approvePendingUserRegistration(pendingId);
     return res.json({ ok: true, pendingId, status: result.status, uid: result.uid || null });
   } catch (err) {
