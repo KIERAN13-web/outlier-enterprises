@@ -431,6 +431,7 @@ async function initPesapalGuest(req, res) {
       name: name || null,
       country: country || null,
       idNumber: idNumber || null,
+      referralCode: referralCode || null,
       status: 'PENDING',
       provider: 'pesapal',
       orderTrackingId: orderData.orderTrackingId,

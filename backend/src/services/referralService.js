@@ -27,26 +27,35 @@ async function generateUniqueReferralCode(rdb, length = 6, maxAttempts = 8) {
 }
 
 async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = undefined) {
-  if (!referralCode) return null;
+  if (!referralCode) {
+    console.warn('creditReferralBonus skipped: missing referralCode');
+    return null;
+  }
   const configured = Number(process.env.REFERRAL_BONUS) || 50;
   const reward = typeof bonus === 'number' ? bonus : configured;
 
   try {
     const refSnap = await rdb.ref('users').orderByChild('referralCode').equalTo(referralCode).limitToFirst(1).get();
-    if (!refSnap.exists()) return null;
+    if (!refSnap.exists()) {
+      console.warn(`creditReferralBonus skipped: no referrer found for code ${referralCode}`);
+      return null;
+    }
 
     const entries = Object.entries(refSnap.val());
     const [refUid, refUser] = entries[0];
 
     // Prevent self-referral
-    if (refUser?.email && referredEmail && refUser.email === referredEmail) return null;
+    if (refUser?.email && referredEmail && refUser.email === referredEmail) {
+      console.warn(`creditReferralBonus skipped: self-referral prevented for ${referredEmail}`);
+      return null;
+    }
 
     // Check if this referredEmail was already used to credit this referrer
     const txSnap = await rdb.ref(`users/${refUid}/wallet/transactions`).get();
     const txs = txSnap.exists() ? txSnap.val() : {};
     for (const t of Object.values(txs || {})) {
       if (t?.type === 'referral' && referredEmail && String(t.description || '').includes(referredEmail)) {
-        // already credited for this referred email
+        console.warn(`creditReferralBonus skipped: duplicate referral credit for ${referredEmail}`);
         return null;
       }
     }
