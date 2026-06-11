@@ -102,7 +102,7 @@ export default function Register() {
     let popup;
     try {
       if (provider === 'manual' && !paymentCode) {
-        throw new Error('Please enter your M-Pesa payment code before submitting manual payment.');
+        throw new Error('Please enter your M-Pesa payment code before submitting your till payment.');
       }
 
       if (provider === 'pesapal') {
@@ -296,7 +296,7 @@ export default function Register() {
           <form onSubmit={onPay} className="auth-form">
             {success && (
               <div className="success-message">
-                ✓ {provider === 'manual' ? 'Manual payment request recorded. Wait for admin approval.' : 'Payment request sent! Redirecting...'}
+                ✓ {provider === 'manual' ? 'Till payment request recorded. Wait for admin approval.' : 'Payment request sent! Redirecting...'}
               </div>
             )}
 
@@ -310,13 +310,17 @@ export default function Register() {
                   <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => setProvider('pesapal')} /> Pesapal
                 </label>
                 <label>
-                  <input type="radio" name="provider" value="manual" checked={provider === 'manual'} onChange={() => setProvider('manual')} /> Manual
+                  <input type="radio" name="provider" value="manual" checked={provider === 'manual'} onChange={() => setProvider('manual')} /> Pay with Till
                 </label>
               </div>
             </div>
 
             <div className="form-group">
-              <label htmlFor="phone">Phone Number</label>
+              <label htmlFor="phone">
+                {provider === 'manual'
+                  ? 'Phone Number Used for Payment'
+                  : 'Phone Number'}
+              </label>
               <input
                 id="phone"
                 type="tel"
@@ -330,13 +334,17 @@ export default function Register() {
                 {provider === 'mpesa'
                   ? 'Enter your M-Pesa registered phone number'
                   : provider === 'manual'
-                    ? 'Use till number 3480163 to complete manual payment'
+                    ? 'Enter the phone number you used to pay via till 3480163'
                     : 'Optional for Pesapal payment'}
               </small>
             </div>
 
             {provider === 'manual' && (
               <>
+                <div className="till-payment-info card">
+                  <h4>Pay with Till</h4>
+                  <p>Pay KES 200 using till number <strong>3480163</strong>.</p>
+                </div>
                 <div className="form-group">
                   <label htmlFor="paymentCode">M-Pesa Payment Code</label>
                   <input
@@ -350,10 +358,8 @@ export default function Register() {
                   />
                   <small>Enter the M-Pesa payment/reference code shown after your payment.</small>
                 </div>
-                <div className="manual-payment-card card">
-                  <h4>Manual Payment</h4>
-                  <p>Pay KES 200 using till number <strong>3480163</strong>.</p>
-                  <p>Then enter the payment code above and submit your request. Admins will review it for approval.</p>
+                <div className="till-submission-info card">
+                  <p>Submit your payment code and phone number. Admins will review and approve your account.</p>
                 </div>
               </>
             )}
@@ -364,17 +370,17 @@ export default function Register() {
                   ? 'Processing...'
                   : provider === 'pesapal'
                     ? 'Initializing Pesapal...'
-                    : 'Saving manual request...'
+                    : 'Saving till payment request...'
                 : provider === 'mpesa'
                   ? 'Pay KES 200'
                   : provider === 'pesapal'
                     ? 'Pay with Pesapal'
-                    : 'Submit manual payment request'}
+                    : 'Submit till payment request'}
             </button>
 
             {success && provider === 'manual' && (
               <div className="manual-login-cta" style={{ marginTop: '16px' }}>
-                <p>Your manual payment request is submitted. Admins will review the code and approve your account.</p>
+                <p>Your till payment request is submitted. Admins will review the code and approve your account.</p>
                 <Link to="/login" className="btn btn-secondary btn-full">Back to Login</Link>
               </div>
             )}
