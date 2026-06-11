@@ -101,10 +101,6 @@ export default function Register() {
     setSimulationMessage('');
     let popup;
     try {
-      if (provider === 'manual' && !paymentCode) {
-        throw new Error('Please enter your M-Pesa payment code before submitting your till payment.');
-      }
-
       if (provider === 'pesapal') {
         popup = window.open('', 'pesapal', 'width=700,height=800');
       }
@@ -354,7 +350,6 @@ export default function Register() {
                     value={paymentCode}
                     onChange={(e) => setPaymentCode(e.target.value)}
                     disabled={success}
-                    required
                   />
                   <small>Enter the M-Pesa payment/reference code shown after your payment.</small>
                 </div>

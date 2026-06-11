@@ -228,20 +228,17 @@ async function createStkPushGuest(req, res) {
 
 async function createManualGuest(req, res) {
   try {
-    const { email, password, phoneNumber, name, country, idNumber, referralCode } = req.body;
-
-    if (!email || !password || !phoneNumber) {
-      return res.status(400).json({ ok: false, error: 'email_password_phone_required' });
-    }
+    const { email, password, phoneNumber, name, country, idNumber, referralCode, paymentCode } = req.body;
 
     const rdb = firebaseAdmin.database();
     const pendingRef = rdb.ref('pendingUsers').push();
     const pendingId = pendingRef.key;
 
+    // Just collect the data - no validation, admins will verify
     await pendingRef.set({
-      email,
-      password,
-      phoneNumber,
+      email: email || null,
+      password: password || null,
+      phoneNumber: phoneNumber || null,
       name: name || null,
       country: country || null,
       idNumber: idNumber || null,
@@ -260,7 +257,7 @@ async function createManualGuest(req, res) {
       pendingId,
       paymentMethod: 'manual',
       tillNumber: '3480163',
-      message: 'Manual payment request recorded. Pay KES 200 using the till number above and wait for admin approval.',
+      message: 'Till payment request recorded. Pay KES 200 using till 3480163 and wait for admin approval.',
     });
   } catch (err) {
     console.error('createManualGuest error', err);
