@@ -1,5 +1,6 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import paymentController from './payment.controller.js';
+import referralService from '../services/referralService.js';
 
 // Toggle admin role for a user
 async function toggleAdminRole(req, res) {
@@ -149,24 +150,43 @@ async function getPendingRegistrations(req, res) {
       return res.json({ ok: true, pendingRegistrations: [] });
     }
 
-    const pendingRegistrations = Object.entries(rawValue)
-      .filter(([, data]) => data && typeof data === 'object')
-      .map(([pendingId, data]) => ({
-        pendingId,
-        email: data.email,
-        name: data.name || null,
-        phoneNumber: data.phoneNumber || null,
-        country: data.country || null,
-        idNumber: data.idNumber || null,
-        status: data.status || 'unknown',
-        paymentMethod: data.paymentMethod || 'unknown',
-        tillNumber: data.tillNumber || null,
-        paymentCode: data.paymentCode || null,
-        referralCode: data.referralCode || null,
-        createdAt: data.createdAt || null,
-        updatedAt: data.updatedAt || null,
-      }))
-      .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    const pendingRegistrations = await Promise.all(
+      Object.entries(rawValue)
+        .filter(([, data]) => data && typeof data === 'object')
+        .map(async ([pendingId, data]) => {
+          let referrer = null;
+          if (data.referralCode) {
+            const refResult = await referralService.findUserByReferralCode(rdb, data.referralCode);
+            if (refResult) {
+              referrer = {
+                uid: refResult.uid,
+                fullName: refResult.user.fullName || refResult.user.email || null,
+                email: refResult.user.email || null,
+                phoneNumber: refResult.user.phoneNumber || null,
+              };
+            }
+          }
+
+          return {
+            pendingId,
+            email: data.email,
+            name: data.name || null,
+            phoneNumber: data.phoneNumber || null,
+            country: data.country || null,
+            idNumber: data.idNumber || null,
+            status: data.status || 'unknown',
+            paymentMethod: data.paymentMethod || 'unknown',
+            tillNumber: data.tillNumber || null,
+            paymentCode: data.paymentCode || null,
+            referralCode: data.referralCode || null,
+            referrer,
+            createdAt: data.createdAt || null,
+            updatedAt: data.updatedAt || null,
+          };
+        })
+    );
+
+    pendingRegistrations.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
 
     return res.json({ ok: true, pendingRegistrations });
   } catch (err) {
@@ -549,4 +569,5 @@ export default {
   fundUser,
   getPendingWithdrawals,
   getDashboardStats,
+  approveAllPendingRegistrations,
 };

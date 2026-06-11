@@ -97,6 +97,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const onApproveAllPendingRegistrations = async () => {
+    if (!window.confirm('Approve all pending registrations?')) return;
+    if (!idToken) return;
+    setBusy(true);
+    setError('');
+    try {
+      const result = await adminApi.approveAllPendingRegistrations(idToken);
+      await fetchPendingRegistrations(idToken);
+      fetchStats(idToken);
+      alert(`Approved ${result.approvedCount || 0} registrations.`);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Bulk approval failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim() || !idToken) return;
@@ -416,7 +434,18 @@ export default function AdminDashboard() {
       {/* Registrations Tab */}
       {activeTab === 'registrations' && (
         <div className="admin-section">
-          <h2>Pending Registrations</h2>
+          <div className="registrations-header-row">
+            <h2>Pending Registrations</h2>
+            {pendingRegistrations.filter((r) => r.status === 'PENDING').length > 0 && (
+              <button
+                onClick={onApproveAllPendingRegistrations}
+                disabled={busy}
+                className="btn btn-success btn-sm"
+              >
+                Approve All
+              </button>
+            )}
+          </div>
           {pendingRegistrations.length > 0 ? (
             <div className="pending-registrations-list">
               {pendingRegistrations.map((registration) => (
@@ -431,6 +460,17 @@ export default function AdminDashboard() {
                     {registration.tillNumber && <div>Till: {registration.tillNumber}</div>}
                     {registration.paymentCode && <div>Payment Code: {registration.paymentCode}</div>}
                     <div>Status: {registration.status}</div>
+                    {registration.referralCode && (
+                      <div>
+                        <strong>Referral code:</strong> {registration.referralCode}
+                      </div>
+                    )}
+                    {registration.referrer && (
+                      <div className="referrer-info">
+                        <strong>Referrer:</strong> {registration.referrer.fullName || registration.referrer.email}
+                        {registration.referrer.email ? ` (${registration.referrer.email})` : ''}
+                      </div>
+                    )}
                     <small>{new Date(registration.createdAt).toLocaleString()}</small>
                   </div>
                   <div className="registration-actions">

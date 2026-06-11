@@ -5,6 +5,15 @@ async function codeExists(rdb, code) {
   return snap.exists();
 }
 
+async function findUserByReferralCode(rdb, code) {
+  if (!code) return null;
+  const snap = await rdb.ref('users').orderByChild('referralCode').equalTo(code).limitToFirst(1).get();
+  if (!snap.exists()) return null;
+  const entries = Object.entries(snap.val());
+  const [uid, user] = entries[0];
+  return { uid, user };
+}
+
 function generateCandidate(length = 6) {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // avoid ambiguous chars
   let out = '';
@@ -94,4 +103,4 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
   }
 }
 
-export default { generateUniqueReferralCode, creditReferralBonus };
+export default { generateUniqueReferralCode, creditReferralBonus, findUserByReferralCode };

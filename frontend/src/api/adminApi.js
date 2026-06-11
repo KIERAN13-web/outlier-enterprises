@@ -69,6 +69,12 @@ const approvePendingRegistration = (idToken, pendingId) =>
     token: idToken,
   });
 
+const approveAllPendingRegistrations = (idToken) =>
+  client.request('/admin/pending-registrations/approve-all', {
+    method: 'PUT',
+    token: idToken,
+  });
+
 const getDashboardStats = (idToken) =>
   client.request('/admin/stats', {
     method: 'GET',
@@ -87,5 +93,6 @@ export default {
   getPendingWithdrawals,
   getPendingRegistrations,
   approvePendingRegistration,
+  approveAllPendingRegistrations,
   getDashboardStats,
 };
