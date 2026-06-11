@@ -112,10 +112,6 @@ export default function Register() {
     setSimulationMessage('');
     let popup;
     try {
-      if (provider === 'pesapal') {
-        popup = window.open('', 'pesapal', 'width=700,height=800');
-      }
-
       const result = provider === 'mpesa'
         ? await paymentApi.createStkPushGuest({
             email,
@@ -147,21 +143,18 @@ export default function Register() {
               paymentCode,
             });
 
-      if (provider === 'pesapal' && (!result.iframeUrl || !result.pendingId)) {
+      if (provider === 'pesapal' && !result?.pendingId) {
         throw new Error('Pesapal initialization failed. Please check backend configuration.');
       }
 
       setSuccess(true);
       setPendingId(result.pendingId);
-      // Store provider for use in PaymentStatus page
       localStorage.setItem('paymentProvider', provider);
+
       if (provider === 'pesapal' && result.iframeUrl) {
-        if (!popup || popup.closed) {
-          popup = window.open(result.iframeUrl, 'pesapal', 'width=700,height=800');
-        } else {
-          popup.location.href = result.iframeUrl;
-        }
+        popup = window.open(result.iframeUrl, 'pesapal', 'width=700,height=800');
       }
+
       if (provider === 'pesapal' && !isDevMode) {
         setTimeout(() => navigate(`/payment-status/${result.pendingId}`, { replace: true }), 500);
       }
@@ -170,7 +163,12 @@ export default function Register() {
         popup.close();
       }
       console.error(err);
-      setError(err.message || 'Payment failed');
+      if (provider === 'mpesa' && /STK_PUSH/.test(err.message)) {
+        setError('');
+        setSuccess(true);
+      } else {
+        setError(err.message || 'Payment failed');
+      }
     } finally {
       setBusy(false);
     }
