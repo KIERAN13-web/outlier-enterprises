@@ -249,6 +249,7 @@ async function createManualGuest(req, res) {
       type: 'GUEST',
       paymentMethod: 'manual',
       tillNumber: '3480163',
+      paymentCode: paymentCode || null,
       referralCode: referralCode || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

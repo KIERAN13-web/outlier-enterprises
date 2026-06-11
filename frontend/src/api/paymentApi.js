@@ -26,10 +26,10 @@ const createPesapalGuest = ({ name, email, password, phoneNumber, country, idNum
     body: { name, email, password, phoneNumber, country, idNumber, referralCode },
   });
 
-const createManualGuest = ({ name, email, password, phoneNumber, country, idNumber, referralCode = null }) =>
+const createManualGuest = ({ name, email, password, phoneNumber, country, idNumber, referralCode = null, paymentCode }) =>
   client.request('/payments/manual/guest', {
     method: 'POST',
-    body: { name, email, password, phoneNumber, country, idNumber, referralCode },
+    body: { name, email, password, phoneNumber, country, idNumber, referralCode, paymentCode },
   });
 
 const getPaymentStatus = (pendingId) =>

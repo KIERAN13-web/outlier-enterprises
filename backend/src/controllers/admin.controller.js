@@ -154,6 +154,7 @@ async function getPendingRegistrations(req, res) {
       status: data.status,
       paymentMethod: data.paymentMethod || 'unknown',
       tillNumber: data.tillNumber || null,
+      paymentCode: data.paymentCode || null,
       referralCode: data.referralCode || null,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,

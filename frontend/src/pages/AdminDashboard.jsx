@@ -425,6 +425,7 @@ export default function AdminDashboard() {
                     <div>ID: {registration.idNumber || 'N/A'}</div>
                     <div>Method: {registration.paymentMethod}</div>
                     {registration.tillNumber && <div>Till: {registration.tillNumber}</div>}
+                    {registration.paymentCode && <div>Payment Code: {registration.paymentCode}</div>}
                     <div>Status: {registration.status}</div>
                     <small>{new Date(registration.createdAt).toLocaleString()}</small>
                   </div>

@@ -53,6 +53,7 @@ export default function Register() {
   const [showLoginLink, setShowLoginLink] = useState(false);
   const [success, setSuccess] = useState(false);
   const [pendingId, setPendingId] = useState(null);
+  const [paymentCode, setPaymentCode] = useState('');
   const [simulationBusy, setSimulationBusy] = useState(false);
   const [simulationMessage, setSimulationMessage] = useState('');
   const isDevMode = import.meta.env.MODE !== 'production';
@@ -100,6 +101,10 @@ export default function Register() {
     setSimulationMessage('');
     let popup;
     try {
+      if (provider === 'manual' && !paymentCode) {
+        throw new Error('Please enter your M-Pesa payment code before submitting manual payment.');
+      }
+
       if (provider === 'pesapal') {
         popup = window.open('', 'pesapal', 'width=700,height=800');
       }
@@ -132,6 +137,7 @@ export default function Register() {
               country,
               idNumber,
               referralCode: initialReferral,
+              paymentCode,
             });
 
       if (provider === 'pesapal' && (!result.iframeUrl || !result.pendingId)) {
@@ -330,11 +336,26 @@ export default function Register() {
             </div>
 
             {provider === 'manual' && (
-              <div className="manual-payment-card card">
-                <h4>Manual Payment</h4>
-                <p>Pay KES 200 using till number <strong>3480163</strong>.</p>
-                <p>After payment, return here and wait for admin approval before logging in.</p>
-              </div>
+              <>
+                <div className="form-group">
+                  <label htmlFor="paymentCode">M-Pesa Payment Code</label>
+                  <input
+                    id="paymentCode"
+                    type="text"
+                    placeholder="Enter your MPESA code (e.g. QAZ12345)"
+                    value={paymentCode}
+                    onChange={(e) => setPaymentCode(e.target.value)}
+                    disabled={success}
+                    required
+                  />
+                  <small>Enter the M-Pesa payment/reference code shown after your payment.</small>
+                </div>
+                <div className="manual-payment-card card">
+                  <h4>Manual Payment</h4>
+                  <p>Pay KES 200 using till number <strong>3480163</strong>.</p>
+                  <p>Then enter the payment code above and submit your request. Admins will review it for approval.</p>
+                </div>
+              </>
             )}
 
             <button disabled={busy || success} type="submit" className="btn btn-primary btn-full">
@@ -353,7 +374,7 @@ export default function Register() {
 
             {success && provider === 'manual' && (
               <div className="manual-login-cta" style={{ marginTop: '16px' }}>
-                <p>Your manual payment request is submitted. Once approved, you can log in immediately.</p>
+                <p>Your manual payment request is submitted. Admins will review the code and approve your account.</p>
                 <Link to="/login" className="btn btn-secondary btn-full">Back to Login</Link>
               </div>
             )}
