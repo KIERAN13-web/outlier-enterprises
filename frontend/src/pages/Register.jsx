@@ -45,7 +45,26 @@ export default function Register() {
   const [country, setCountry] = useState('Kenya');
   const [idNumber, setIdNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [provider, setProvider] = useState('mpesa');
+  const [provider, setProvider] = useState('pesapal');
+  const [referralCode, setReferralCode] = useState(() => {
+    try {
+      const search = window.location.search || '';
+      if (search) {
+        const params = new URLSearchParams(search);
+        const ref = params.get('ref');
+        if (ref) return ref;
+      }
+      const hash = window.location.hash || '';
+      const qIndex = hash.indexOf('?');
+      if (qIndex !== -1) {
+        const params = new URLSearchParams(hash.slice(qIndex + 1));
+        return params.get('ref');
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  });
 
   const [step, setStep] = useState(1); // 1=profile, 2=payment
   const [busy, setBusy] = useState(false);
@@ -63,25 +82,12 @@ export default function Register() {
   
   // Handle payment method selection - show warning for unavailable methods
   const handlePaymentMethodChange = (method) => {
-    if (method === 'mpesa' || method === 'pesapal') {
+    if (method === 'mpesa') {
       setShowUnavailableModal(true);
       return;
     }
     setProvider(method);
   };
-
-  // capture referral code from hash (#/register?ref=...)
-  let initialReferral = null;
-  try {
-    const hash = window.location.hash || '';
-    const qIndex = hash.indexOf('?');
-    if (qIndex !== -1) {
-      const params = new URLSearchParams(hash.slice(qIndex + 1));
-      initialReferral = params.get('ref');
-    }
-  } catch (e) {
-    initialReferral = null;
-  }
 
   async function onCreateAccount(e) {
     e.preventDefault();
@@ -129,7 +135,7 @@ export default function Register() {
             name: fullName,
             country,
             idNumber,
-            referralCode: initialReferral,
+            referralCode,
           })
         : provider === 'pesapal'
           ? await paymentApi.createPesapalGuest({
@@ -139,7 +145,7 @@ export default function Register() {
               phoneNumber,
               country,
               idNumber,
-              referralCode: initialReferral,
+              referralCode,
             })
           : await paymentApi.createManualGuest({
               name: fullName,
@@ -148,7 +154,7 @@ export default function Register() {
               phoneNumber,
               country,
               idNumber,
-              referralCode: initialReferral,
+              referralCode,
               paymentCode,
             });
 
@@ -323,12 +329,15 @@ export default function Register() {
               </div>
             )}
 
+            {referralCode && (
+              <div className="info-message">
+                Referral code <strong>{referralCode}</strong> is applied. The referrer will earn KES 50 once your account is approved.
+              </div>
+            )}
+
             <div className="form-group">
               <label>Payment Method</label>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <label>
-                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => handlePaymentMethodChange('mpesa')} /> M-Pesa
-                </label>
                 <label>
                   <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => handlePaymentMethodChange('pesapal')} /> Pesapal
                 </label>

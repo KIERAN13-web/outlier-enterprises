@@ -476,6 +476,7 @@ async function approvePendingUserRegistration(pendingId) {
   await rdb.ref(`pendingUsers/${pendingId}`).update({
     status: 'COMPLETED',
     uid,
+    isPaid: true,
     paidAt: now,
     updatedAt: now,
   });

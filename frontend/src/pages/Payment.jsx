@@ -6,7 +6,7 @@ import './Payment.css';
 
 export default function Payment() {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [provider, setProvider] = useState('mpesa');
+  const [provider, setProvider] = useState('pesapal');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -102,9 +102,6 @@ export default function Payment() {
             <div className="form-group">
               <label>Payment Method</label>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <label>
-                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => setProvider('mpesa')} /> M-Pesa
-                </label>
                 <label>
                   <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => setProvider('pesapal')} /> Pesapal
                 </label>
