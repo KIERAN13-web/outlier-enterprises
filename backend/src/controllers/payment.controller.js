@@ -467,10 +467,13 @@ async function approvePendingUserRegistration(pendingId) {
 
   if (data.referralCode) {
     try {
+      console.log(`[approvePendingUserRegistration] crediting referrer for pendingId=${pendingId} using code=${data.referralCode} email=${data.email}`);
       await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
     } catch (err) {
       console.error('creditReferralBonus during manual approval failed:', err);
     }
+  } else {
+    console.warn(`[approvePendingUserRegistration] no referralCode found for pendingId=${pendingId} email=${data.email}`);
   }
 
   await rdb.ref(`pendingUsers/${pendingId}`).update({
