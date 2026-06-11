@@ -56,9 +56,20 @@ export default function Register() {
   const [paymentCode, setPaymentCode] = useState('');
   const [simulationBusy, setSimulationBusy] = useState(false);
   const [simulationMessage, setSimulationMessage] = useState('');
+  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
   const isDevMode = import.meta.env.MODE !== 'production';
 
   const navigate = useNavigate();
+  
+  // Handle payment method selection - show warning for unavailable methods
+  const handlePaymentMethodChange = (method) => {
+    if (method === 'mpesa' || method === 'pesapal') {
+      setShowUnavailableModal(true);
+      return;
+    }
+    setProvider(method);
+  };
+
   // capture referral code from hash (#/register?ref=...)
   let initialReferral = null;
   try {
@@ -300,13 +311,13 @@ export default function Register() {
               <label>Payment Method</label>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <label>
-                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => setProvider('mpesa')} /> M-Pesa
+                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => handlePaymentMethodChange('mpesa')} /> M-Pesa
                 </label>
                 <label>
-                  <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => setProvider('pesapal')} /> Pesapal
+                  <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => handlePaymentMethodChange('pesapal')} /> Pesapal
                 </label>
                 <label>
-                  <input type="radio" name="provider" value="manual" checked={provider === 'manual'} onChange={() => setProvider('manual')} /> Pay with Till
+                  <input type="radio" name="provider" value="manual" checked={provider === 'manual'} onChange={() => handlePaymentMethodChange('manual')} /> Pay with Till
                 </label>
               </div>
             </div>
@@ -393,6 +404,45 @@ export default function Register() {
           <Link to="/">Back to Home</Link>
         </div>
       </div>
+
+      {/* Unavailable Methods Modal */}
+      {showUnavailableModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '24px',
+            borderRadius: '8px',
+            maxWidth: '400px',
+            textAlign: 'center',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+          }}>
+            <h3 style={{ marginTop: 0, color: '#d32f2f' }}>Technical Issues</h3>
+            <p style={{ fontSize: '16px', marginBottom: '24px' }}>
+              We are experiencing technical issues. Kindly use the <strong>Pay with Till</strong> option.
+            </p>
+            <button
+              onClick={() => {
+                setShowUnavailableModal(false);
+                setProvider('manual');
+              }}
+              className="btn btn-primary btn-full"
+            >
+              Use Pay with Till
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
