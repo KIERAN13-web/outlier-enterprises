@@ -245,7 +245,7 @@ async function createManualGuest(req, res) {
       status: 'PENDING',
       type: 'GUEST',
       paymentMethod: 'manual',
-      tillNumber: '3480163',
+      tillNumber: '3124553',
       paymentCode: paymentCode || null,
       referralCode: referralCode || null,
       createdAt: new Date().toISOString(),
@@ -256,8 +256,8 @@ async function createManualGuest(req, res) {
       ok: true,
       pendingId,
       paymentMethod: 'manual',
-      tillNumber: '3480163',
-      message: 'Till payment request recorded. Pay KES 200 using till 3480163 and wait for admin approval.',
+      tillNumber: '3124553',
+      message: 'Till payment request recorded. Pay KES 200 using till 3124553 and wait for admin approval.',
     });
   } catch (err) {
     console.error('createManualGuest error', err);

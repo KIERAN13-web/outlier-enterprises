@@ -366,7 +366,7 @@ export default function Register() {
                 {provider === 'mpesa'
                   ? 'Enter your M-Pesa registered phone number'
                   : provider === 'manual'
-                    ? 'Enter the phone number you used to pay via till 3480163'
+                    ? 'Enter the phone number you used to pay via till 3124553'
                     : 'Optional for Pesapal payment'}
               </small>
             </div>
@@ -375,7 +375,7 @@ export default function Register() {
               <>
                 <div className="till-payment-info card">
                   <h4>Pay with Till</h4>
-                  <p>Pay KES 200 using till number <strong>3480163</strong>.</p>
+                  <p>Pay KES 200 using till number <strong>3124553</strong>.</p>
                 </div>
                 <div className="form-group">
                   <label htmlFor="paymentCode">M-Pesa Payment Code</label>
