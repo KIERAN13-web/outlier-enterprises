@@ -16,6 +16,7 @@ export default function Payment() {
     e.preventDefault();
     setBusy(true);
     setError('');
+    let popup;
     try {
       const user = auth.currentUser;
       if (!user) {
@@ -23,9 +24,22 @@ export default function Payment() {
         return;
       }
       const token = await user.getIdToken();
+
       if (provider === 'mpesa') {
+        popup = window.open('', 'mpesa', 'width=500,height=600');
+        if (popup) {
+          popup.document.write('<html><head><title>M-Pesa STK Push</title></head><body style="font-family: sans-serif; padding: 24px;"><h2>Sending M-Pesa STK push</h2><p>Please approve the payment prompt on your phone.</p></body></html>');
+          popup.document.close();
+        }
+
         await paymentApi.createStkPush(token, phoneNumber);
         setSuccess(true);
+
+        if (popup && !popup.closed) {
+          popup.document.body.innerHTML = '<h2>STK push sent</h2><p>Approve the prompt on your phone. This window will close automatically.</p>';
+          setTimeout(() => popup.close(), 5000);
+        }
+
         setTimeout(() => navigate('/dashboard'), 2000);
       } else {
         const resp = await paymentApi.createPesapalInit(token);
@@ -40,6 +54,9 @@ export default function Payment() {
       }
     } catch (err) {
       console.error(err);
+      if (popup && !popup.closed) {
+        popup.close();
+      }
       if (provider === 'mpesa' && /STK_PUSH/.test(err.message)) {
         setError('');
         setSuccess(true);

@@ -112,6 +112,15 @@ export default function Register() {
     setSimulationMessage('');
     let popup;
     try {
+      if (provider === 'mpesa' || provider === 'pesapal') {
+        popup = window.open('', provider, 'width=700,height=800');
+      }
+
+      if (provider === 'mpesa' && popup) {
+        popup.document.write('<html><head><title>M-Pesa STK Push</title></head><body style="font-family: sans-serif; padding: 24px;"><h2>Sending M-Pesa STK push</h2><p>Please approve the payment prompt on your phone.</p></body></html>');
+        popup.document.close();
+      }
+
       const result = provider === 'mpesa'
         ? await paymentApi.createStkPushGuest({
             email,
@@ -147,12 +156,21 @@ export default function Register() {
         throw new Error('Pesapal initialization failed. Please check backend configuration.');
       }
 
+      if (provider === 'mpesa' && popup && !popup.closed) {
+        popup.document.body.innerHTML = '<h2>STK push sent</h2><p>Approve the payment prompt on your phone. This window will close automatically.</p>';
+        setTimeout(() => popup.close(), 5000);
+      }
+
       setSuccess(true);
       setPendingId(result.pendingId);
       localStorage.setItem('paymentProvider', provider);
 
       if (provider === 'pesapal' && result.iframeUrl) {
-        popup = window.open(result.iframeUrl, 'pesapal', 'width=700,height=800');
+        if (!popup || popup.closed) {
+          popup = window.open(result.iframeUrl, 'pesapal', 'width=700,height=800');
+        } else {
+          popup.location.href = result.iframeUrl;
+        }
       }
 
       if (provider === 'pesapal' && !isDevMode) {
