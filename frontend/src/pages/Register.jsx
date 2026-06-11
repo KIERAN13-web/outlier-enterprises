@@ -82,7 +82,7 @@ export default function Register() {
   
   // Handle payment method selection - show warning for unavailable methods
   const handlePaymentMethodChange = (method) => {
-    if (method === 'mpesa') {
+    if (method === 'mpesa' || method === 'pesapal') {
       setShowUnavailableModal(true);
       return;
     }
