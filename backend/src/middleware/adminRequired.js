@@ -52,7 +52,7 @@ async function adminRequired(req, res, next) {
     next();
   } catch (err) {
     console.error('adminRequired error', err);
-    return res.status(401).json({ ok: false, error: 'ADMIN_AUTH_FAILED' });
+    return res.status(401).json({ ok: false, error: 'ADMIN_AUTH_FAILED', message: err.message });
   }
 }
 

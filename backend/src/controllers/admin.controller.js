@@ -50,7 +50,7 @@ async function toggleAdminRole(req, res) {
     });
   } catch (err) {
     console.error('toggleAdminRole error', err);
-    return res.status(500).json({ ok: false, error: 'TOGGLE_FAILED' });
+    return res.status(500).json({ ok: false, error: 'TOGGLE_FAILED', message: err.message });
   }
 }
 
@@ -88,7 +88,7 @@ async function searchUsers(req, res) {
     });
   } catch (err) {
     console.error('searchUsers error', err);
-    return res.status(500).json({ ok: false, error: 'SEARCH_FAILED' });
+    return res.status(500).json({ ok: false, error: 'SEARCH_FAILED', message: err.message });
   }
 }
 
@@ -131,7 +131,7 @@ async function getUserDetails(req, res) {
     });
   } catch (err) {
     console.error('getUserDetails error', err);
-    return res.status(500).json({ ok: false, error: 'GET_DETAILS_FAILED' });
+    return res.status(500).json({ ok: false, error: 'GET_DETAILS_FAILED', message: err.message });
   }
 }
 
@@ -243,7 +243,7 @@ async function updateWithdrawal(req, res) {
     return res.json({ ok: true, status: 'updated' });
   } catch (err) {
     console.error('updateWithdrawal error', err);
-    return res.status(500).json({ ok: false, error: 'UPDATE_FAILED' });
+    return res.status(500).json({ ok: false, error: 'UPDATE_FAILED', message: err.message });
   }
 }
 
@@ -276,7 +276,7 @@ async function approveWithdrawal(req, res) {
     return res.json({ ok: true, status: 'approved' });
   } catch (err) {
     console.error('approveWithdrawal error', err);
-    return res.status(500).json({ ok: false, error: 'APPROVE_FAILED' });
+    return res.status(500).json({ ok: false, error: 'APPROVE_FAILED', message: err.message });
   }
 }
 
@@ -426,7 +426,7 @@ async function getPendingWithdrawals(req, res) {
     });
   } catch (err) {
     console.error('getPendingWithdrawals error', err);
-    return res.status(500).json({ ok: false, error: 'GET_PENDING_FAILED' });
+    return res.status(500).json({ ok: false, error: 'GET_PENDING_FAILED', message: err.message });
   }
 }
 
@@ -464,7 +464,7 @@ async function getAllWithdrawals(req, res) {
     });
   } catch (err) {
     console.error('getAllWithdrawals error', err);
-    return res.status(500).json({ ok: false, error: 'GET_ALL_WITHDRAWALS_FAILED' });
+    return res.status(500).json({ ok: false, error: 'GET_ALL_WITHDRAWALS_FAILED', message: err.message });
   }
 }
 
