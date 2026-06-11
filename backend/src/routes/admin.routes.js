@@ -10,6 +10,8 @@ router.post('/toggle-role', adminRequired, adminController.toggleAdminRole);
 // All other routes require admin token
 router.get('/users/search', adminRequired, adminController.searchUsers);
 router.get('/users/:uid', adminRequired, adminController.getUserDetails);
+router.get('/pending-registrations', adminRequired, adminController.getPendingRegistrations);
+router.put('/pending-registrations/:pendingId/approve', adminRequired, adminController.approvePendingRegistration);
 router.post('/withdrawals/update', adminRequired, adminController.updateWithdrawal);
 router.put('/withdrawals/:uid/:withdrawalId/approve', adminRequired, adminController.approveWithdrawal);
 router.put('/withdrawals/:uid/:withdrawalId/paid', adminRequired, adminController.markWithdrawalPaid);

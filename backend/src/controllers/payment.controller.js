@@ -1,5 +1,6 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import paymentProvider from '../services/paymentProvider.js';
+import referralService from '../services/referralService.js';
 import { parseAmount, validateOrderAmount } from '../utils/orderValidation.js';
 
 const PAID_AMOUNT = 200;
@@ -211,6 +212,8 @@ async function createStkPushGuest(req, res) {
       idNumber: idNumber || null,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
+      type: 'GUEST',
+      paymentMethod: 'mpesa',
       referralCode: referralCode || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -220,6 +223,47 @@ async function createStkPushGuest(req, res) {
   } catch (err) {
     console.error('createStkPushGuest error', err);
     return res.status(500).json({ ok: false, error: 'STK_PUSH_GUEST_FAILED' });
+  }
+}
+
+async function createManualGuest(req, res) {
+  try {
+    const { email, password, phoneNumber, name, country, idNumber, referralCode } = req.body;
+
+    if (!email || !password || !phoneNumber) {
+      return res.status(400).json({ ok: false, error: 'email_password_phone_required' });
+    }
+
+    const rdb = firebaseAdmin.database();
+    const pendingRef = rdb.ref('pendingUsers').push();
+    const pendingId = pendingRef.key;
+
+    await pendingRef.set({
+      email,
+      password,
+      phoneNumber,
+      name: name || null,
+      country: country || null,
+      idNumber: idNumber || null,
+      status: 'PENDING',
+      type: 'GUEST',
+      paymentMethod: 'manual',
+      tillNumber: '3480163',
+      referralCode: referralCode || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    return res.json({
+      ok: true,
+      pendingId,
+      paymentMethod: 'manual',
+      tillNumber: '3480163',
+      message: 'Manual payment request recorded. Pay KES 200 using the till number above and wait for admin approval.',
+    });
+  } catch (err) {
+    console.error('createManualGuest error', err);
+    return res.status(500).json({ ok: false, error: 'MANUAL_GUEST_FAILED' });
   }
 }
 
@@ -347,6 +391,98 @@ async function processPendingPayment({ pendingKey, data, status }) {
   if (pendingUserRef) {
     await pendingUserRef.update({ status: 'FAILED', updatedAt: new Date().toISOString() });
   }
+}
+
+async function approvePendingUserRegistration(pendingId) {
+  if (!pendingId) {
+    throw new Error('pendingId_required');
+  }
+
+  const rdb = firebaseAdmin.database();
+  const pendingSnap = await rdb.ref(`pendingUsers/${pendingId}`).get();
+  if (!pendingSnap.exists()) {
+    throw new Error('PENDING_USER_NOT_FOUND');
+  }
+
+  const data = pendingSnap.val();
+  if (data.status === 'COMPLETED') {
+    return { status: 'COMPLETED', uid: data.uid || null };
+  }
+
+  const email = data.email;
+  if (!email) {
+    throw new Error('pending_user_missing_email');
+  }
+
+  let uid;
+  try {
+    const userRecord = await firebaseAdmin.auth().createUser({
+      email,
+      password: data.password || `Manual${Date.now()}!`,
+      displayName: data.name || null,
+    });
+    uid = userRecord.uid;
+  } catch (err) {
+    if (err.code === 'auth/email-already-exists') {
+      const existing = await firebaseAdmin.auth().getUserByEmail(email);
+      uid = existing.uid;
+    } else {
+      throw err;
+    }
+  }
+
+  const userRef = rdb.ref(`users/${uid}`);
+  const existingUserSnap = await userRef.get();
+  const existingUser = existingUserSnap.exists() ? existingUserSnap.val() : {};
+  const now = new Date().toISOString();
+
+  let referralCodeForNewUser = existingUser.referralCode;
+  if (!referralCodeForNewUser) {
+    try {
+      referralCodeForNewUser = await referralService.generateUniqueReferralCode(rdb);
+    } catch (err) {
+      referralCodeForNewUser = `R${uid.slice(0, 8)}`;
+    }
+  }
+
+  const updates = {
+    email,
+    fullName: data.name || existingUser.fullName || null,
+    country: data.country || existingUser.country || null,
+    idNumber: data.idNumber || existingUser.idNumber || null,
+    phoneNumber: data.phoneNumber || existingUser.phoneNumber || null,
+    isPaid: true,
+    paidAt: now,
+    referralCode: referralCodeForNewUser,
+    updatedAt: now,
+  };
+
+  if (!existingUser.createdAt) {
+    updates.createdAt = now;
+  }
+
+  if (existingUser.isAdmin === undefined) {
+    updates.isAdmin = false;
+  }
+
+  await userRef.update(updates);
+
+  if (data.referralCode) {
+    try {
+      await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
+    } catch (err) {
+      console.error('creditReferralBonus during manual approval failed:', err);
+    }
+  }
+
+  await rdb.ref(`pendingUsers/${pendingId}`).update({
+    status: 'COMPLETED',
+    uid,
+    paidAt: now,
+    updatedAt: now,
+  });
+
+  return { status: 'COMPLETED', uid };
 }
 
 async function mpesaWebhook(req, res) {
@@ -549,5 +685,5 @@ async function getUserOrders(req, res) {
   }
 }
 
-export default { createStkPush, createStkPushGuest, mpesaWebhook, simulateMpesaWebhook, bypassGuestPayment, getPaymentStatus, getUserOrders, placeOrder };
+export default { createStkPush, createStkPushGuest, createManualGuest, mpesaWebhook, simulateMpesaWebhook, bypassGuestPayment, getPaymentStatus, getUserOrders, placeOrder, approvePendingUserRegistration };
 

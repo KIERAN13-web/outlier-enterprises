@@ -9,6 +9,7 @@ router.post('/mpesa/stk-push', authRequired, paymentController.createStkPush);
 
 // Guest STK push: accept email/password/phone for users who haven't been created yet.
 router.post('/mpesa/stk-push/guest', paymentController.createStkPushGuest);
+router.post('/manual/guest', paymentController.createManualGuest);
 
 // Webhook/callback endpoint from M-Pesa.
 // Payment provider will POST payment result here.

@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userDetails, setUserDetails] = useState(null);
   const [withdrawals, setWithdrawals] = useState([]);
+  const [pendingRegistrations, setPendingRegistrations] = useState([]);
   const [fundAmount, setFundAmount] = useState('');
   const [fundReason, setFundReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -37,6 +38,7 @@ export default function AdminDashboard() {
         setIdToken(token);
         fetchStats(token);
         fetchWithdrawals(token);
+        fetchPendingRegistrations(token);
       } catch (err) {
         console.error('Failed to get token:', err);
         navigate('/login', { replace: true });
@@ -62,6 +64,32 @@ export default function AdminDashboard() {
       setWithdrawals(result.withdrawals || []);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchPendingRegistrations = async (token) => {
+    try {
+      const result = await adminApi.getPendingRegistrations(token);
+      setPendingRegistrations(result.pendingRegistrations || []);
+    } catch (err) {
+      console.error('Failed to load pending registrations:', err);
+      setError('Failed to load pending registrations');
+    }
+  };
+
+  const onApprovePendingRegistration = async (pendingId) => {
+    if (!window.confirm('Approve this registration?') || !idToken) return;
+    setBusy(true);
+    setError('');
+    try {
+      await adminApi.approvePendingRegistration(idToken, pendingId);
+      await fetchPendingRegistrations(idToken);
+      fetchStats(idToken);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Registration approval failed');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -206,6 +234,12 @@ export default function AdminDashboard() {
           Users & Transactions
         </button>
         <button
+          className={`tab-btn ${activeTab === 'registrations' ? 'active' : ''}`}
+          onClick={() => setActiveTab('registrations')}
+        >
+          Registrations ({pendingRegistrations.filter(r => r.status === 'PENDING').length})
+        </button>
+        <button
           className={`tab-btn ${activeTab === 'withdrawals' ? 'active' : ''}`}
           onClick={() => setActiveTab('withdrawals')}
         >
@@ -238,7 +272,19 @@ export default function AdminDashboard() {
               <div className="stat-label">Pending Amount</div>
               <div className="stat-value">KES {(stats.pendingWithdrawalAmount || 0).toLocaleString()}</div>
             </div>
+            <div className="stat-card">
+              <div className="stat-label">Pending Registrations</div>
+              <div className="stat-value">{stats.pendingRegistrations || 0}</div>
+            </div>
           </div>
+          {stats.pendingRegistrations > 0 && (
+            <div className="dashboard-callout">
+              <p>There are pending registrations waiting for approval.</p>
+              <button className="btn btn-primary" onClick={() => setActiveTab('registrations')}>
+                Review Pending Registrations
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -359,6 +405,47 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Registrations Tab */}
+      {activeTab === 'registrations' && (
+        <div className="admin-section">
+          <h2>Pending Registrations</h2>
+          {pendingRegistrations.length > 0 ? (
+            <div className="pending-registrations-list">
+              {pendingRegistrations.map((registration) => (
+                <div key={registration.pendingId} className="registration-item">
+                  <div className="registration-info">
+                    <strong>{registration.name || registration.email}</strong>
+                    <small>{registration.email}</small>
+                    <div>Phone: {registration.phoneNumber || 'N/A'}</div>
+                    <div>Country: {registration.country || 'N/A'}</div>
+                    <div>ID: {registration.idNumber || 'N/A'}</div>
+                    <div>Method: {registration.paymentMethod}</div>
+                    {registration.tillNumber && <div>Till: {registration.tillNumber}</div>}
+                    <div>Status: {registration.status}</div>
+                    <small>{new Date(registration.createdAt).toLocaleString()}</small>
+                  </div>
+                  <div className="registration-actions">
+                    {registration.status === 'PENDING' ? (
+                      <button
+                        onClick={() => onApprovePendingRegistration(registration.pendingId)}
+                        disabled={busy}
+                        className="btn btn-success btn-sm"
+                      >
+                        Approve
+                      </button>
+                    ) : (
+                      <span className="status-label">No action available</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No pending registrations found.</p>
           )}
         </div>
       )}

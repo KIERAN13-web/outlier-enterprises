@@ -114,15 +114,25 @@ export default function Register() {
             idNumber,
             referralCode: initialReferral,
           })
-        : await paymentApi.createPesapalGuest({
-            name: fullName,
-            email,
-            password,
-            phoneNumber,
-            country,
-            idNumber,
-            referralCode: initialReferral,
-          });
+        : provider === 'pesapal'
+          ? await paymentApi.createPesapalGuest({
+              name: fullName,
+              email,
+              password,
+              phoneNumber,
+              country,
+              idNumber,
+              referralCode: initialReferral,
+            })
+          : await paymentApi.createManualGuest({
+              name: fullName,
+              email,
+              password,
+              phoneNumber,
+              country,
+              idNumber,
+              referralCode: initialReferral,
+            });
 
       if (provider === 'pesapal' && (!result.iframeUrl || !result.pendingId)) {
         throw new Error('Pesapal initialization failed. Please check backend configuration.');
@@ -139,7 +149,7 @@ export default function Register() {
           popup.location.href = result.iframeUrl;
         }
       }
-      if (!isDevMode) {
+      if (provider === 'pesapal' && !isDevMode) {
         setTimeout(() => navigate(`/payment-status/${result.pendingId}`, { replace: true }), 500);
       }
     } catch (err) {
@@ -278,7 +288,11 @@ export default function Register() {
 
         {step === 2 && (
           <form onSubmit={onPay} className="auth-form">
-            {success && <div className="success-message">✓ Payment request sent! Redirecting...</div>}
+            {success && (
+              <div className="success-message">
+                ✓ {provider === 'manual' ? 'Manual payment request recorded. Wait for admin approval.' : 'Payment request sent! Redirecting...'}
+              </div>
+            )}
 
             <div className="form-group">
               <label>Payment Method</label>
@@ -288,6 +302,9 @@ export default function Register() {
                 </label>
                 <label>
                   <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => setProvider('pesapal')} /> Pesapal
+                </label>
+                <label>
+                  <input type="radio" name="provider" value="manual" checked={provider === 'manual'} onChange={() => setProvider('manual')} /> Manual
                 </label>
               </div>
             </div>
@@ -301,14 +318,45 @@ export default function Register() {
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={success}
-                required={provider === 'mpesa'}
+                required={provider !== 'pesapal'}
               />
-              <small>{provider === 'mpesa' ? 'Enter your M-Pesa registered phone number' : 'Optional for Pesapal payment'}</small>
+              <small>
+                {provider === 'mpesa'
+                  ? 'Enter your M-Pesa registered phone number'
+                  : provider === 'manual'
+                    ? 'Use till number 3480163 to complete manual payment'
+                    : 'Optional for Pesapal payment'}
+              </small>
             </div>
 
+            {provider === 'manual' && (
+              <div className="manual-payment-card card">
+                <h4>Manual Payment</h4>
+                <p>Pay KES 200 using till number <strong>3480163</strong>.</p>
+                <p>After payment, return here and wait for admin approval before logging in.</p>
+              </div>
+            )}
+
             <button disabled={busy || success} type="submit" className="btn btn-primary btn-full">
-              {busy ? (provider === 'mpesa' ? 'Processing...' : 'Initializing Pesapal...') : provider === 'mpesa' ? 'Pay KES 200' : 'Pay with Pesapal'}
+              {busy
+                ? provider === 'mpesa'
+                  ? 'Processing...'
+                  : provider === 'pesapal'
+                    ? 'Initializing Pesapal...'
+                    : 'Saving manual request...'
+                : provider === 'mpesa'
+                  ? 'Pay KES 200'
+                  : provider === 'pesapal'
+                    ? 'Pay with Pesapal'
+                    : 'Submit manual payment request'}
             </button>
+
+            {success && provider === 'manual' && (
+              <div className="manual-login-cta" style={{ marginTop: '16px' }}>
+                <p>Your manual payment request is submitted. Once approved, you can log in immediately.</p>
+                <Link to="/login" className="btn btn-secondary btn-full">Back to Login</Link>
+              </div>
+            )}
 
             <div className="auth-footer">
               <p>

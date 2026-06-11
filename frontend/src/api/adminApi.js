@@ -57,6 +57,18 @@ const getPendingWithdrawals = (idToken) =>
     token: idToken,
   });
 
+const getPendingRegistrations = (idToken) =>
+  client.request('/admin/pending-registrations', {
+    method: 'GET',
+    token: idToken,
+  });
+
+const approvePendingRegistration = (idToken, pendingId) =>
+  client.request(`/admin/pending-registrations/${encodeURIComponent(pendingId)}/approve`, {
+    method: 'PUT',
+    token: idToken,
+  });
+
 const getDashboardStats = (idToken) =>
   client.request('/admin/stats', {
     method: 'GET',
@@ -73,5 +85,7 @@ export default {
   getAllWithdrawals,
   fundUser,
   getPendingWithdrawals,
+  getPendingRegistrations,
+  approvePendingRegistration,
   getDashboardStats,
 };

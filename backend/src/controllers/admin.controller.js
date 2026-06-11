@@ -1,4 +1,5 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
+import paymentController from './payment.controller.js';
 
 // Toggle admin role for a user
 async function toggleAdminRole(req, res) {
@@ -131,6 +132,52 @@ async function getUserDetails(req, res) {
   } catch (err) {
     console.error('getUserDetails error', err);
     return res.status(500).json({ ok: false, error: 'GET_DETAILS_FAILED' });
+  }
+}
+
+async function getPendingRegistrations(req, res) {
+  try {
+    const rdb = firebaseAdmin.database();
+    const snap = await rdb.ref('pendingUsers').orderByChild('createdAt').get();
+
+    if (!snap.exists()) {
+      return res.json({ ok: true, pendingRegistrations: [] });
+    }
+
+    const pendingRegistrations = Object.entries(snap.val()).map(([pendingId, data]) => ({
+      pendingId,
+      email: data.email,
+      name: data.name || null,
+      phoneNumber: data.phoneNumber || null,
+      country: data.country || null,
+      idNumber: data.idNumber || null,
+      status: data.status,
+      paymentMethod: data.paymentMethod || 'unknown',
+      tillNumber: data.tillNumber || null,
+      referralCode: data.referralCode || null,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    })).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    return res.json({ ok: true, pendingRegistrations });
+  } catch (err) {
+    console.error('getPendingRegistrations error', err);
+    return res.status(500).json({ ok: false, error: 'GET_PENDING_REGISTRATIONS_FAILED' });
+  }
+}
+
+async function approvePendingRegistration(req, res) {
+  try {
+    const { pendingId } = req.params;
+    if (!pendingId) {
+      return res.status(400).json({ ok: false, error: 'pendingId_required' });
+    }
+
+    const result = await paymentController.approvePendingUserRegistration(pendingId);
+    return res.json({ ok: true, pendingId, status: result.status, uid: result.uid || null });
+  } catch (err) {
+    console.error('approvePendingRegistration error', err);
+    return res.status(500).json({ ok: false, error: 'APPROVAL_FAILED', message: err.message });
   }
 }
 
@@ -426,9 +473,14 @@ async function getDashboardStats(req, res) {
           paidUsers: 0,
           totalEarnings: 0,
           pendingWithdrawals: 0,
+          pendingWithdrawalAmount: 0,
+          pendingRegistrations: 0,
         },
       });
     }
+
+    const pendingUsersSnap = await rdb.ref('pendingUsers').orderByChild('status').equalTo('PENDING').get();
+    const pendingRegistrationsCount = pendingUsersSnap.exists() ? Object.keys(pendingUsersSnap.val()).length : 0;
 
     const allUsers = usersSnap.val();
     let totalUsers = 0;
@@ -461,6 +513,7 @@ async function getDashboardStats(req, res) {
         totalEarnings,
         pendingWithdrawals,
         pendingWithdrawalAmount,
+        pendingRegistrations: pendingRegistrationsCount,
       },
     });
   } catch (err) {
@@ -473,6 +526,8 @@ export default {
   toggleAdminRole,
   searchUsers,
   getUserDetails,
+  getPendingRegistrations,
+  approvePendingRegistration,
   updateWithdrawal,
   approveWithdrawal,
   markWithdrawalPaid,
