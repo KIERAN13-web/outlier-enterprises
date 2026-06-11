@@ -210,6 +210,34 @@ async function approvePendingRegistration(req, res) {
   }
 }
 
+async function approveAllPendingRegistrations(req, res) {
+  try {
+    const rdb = firebaseAdmin.database();
+    const snap = await rdb.ref('pendingUsers').orderByChild('status').equalTo('PENDING').get();
+    if (!snap.exists()) {
+      return res.json({ ok: true, approvedCount: 0, results: [] });
+    }
+
+    const pendingUsers = snap.val();
+    const results = [];
+    for (const [pendingId, data] of Object.entries(pendingUsers || {})) {
+      try {
+        const result = await paymentController.approvePendingUserRegistration(pendingId);
+        results.push({ pendingId, status: 'success', result });
+      } catch (err) {
+        console.error(`approveAllPendingRegistrations failed for ${pendingId}:`, err);
+        results.push({ pendingId, status: 'failed', error: err.message || 'APPROVAL_FAILED' });
+      }
+    }
+
+    const approvedCount = results.filter((item) => item.status === 'success').length;
+    return res.json({ ok: true, approvedCount, results });
+  } catch (err) {
+    console.error('approveAllPendingRegistrations error', err);
+    return res.status(500).json({ ok: false, error: 'APPROVE_ALL_FAILED', message: err.message });
+  }
+}
+
 // Approve or reject withdrawal
 async function updateWithdrawal(req, res) {
   try {
