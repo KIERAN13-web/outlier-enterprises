@@ -119,16 +119,12 @@ async function initiateTransaction() {
 
     const reference = `TEST_${Date.now()}`;
     const payload = {
-      reference,
+      id: reference,
+      currency: 'KES',
       amount: 200,
       description: 'Sandbox Test Payment',
-      currency: 'KES',
-      buyer_email: 'test@sandbox.pesapal.com',
-      buyer_first_name: 'Test',
-      buyer_last_name: 'Sandbox',
-      buyer_phone: '254700000000',
-      redirect_mode: 'IFRAME',
       callback_url: 'https://example.com/callback',
+      notification_id: reference,
       billing_address: {
         email_address: 'test@sandbox.pesapal.com',
         phone_number: '254700000000',
