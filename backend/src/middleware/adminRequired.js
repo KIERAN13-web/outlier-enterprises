@@ -13,18 +13,38 @@ async function adminRequired(req, res, next) {
     // Verify token with Firebase
     const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
     const uid = decodedToken.uid;
+    const tokenIsAdmin = Boolean(decodedToken.isAdmin);
 
-    // Check if user is admin in database
+    // Check if user is admin in database, but allow admin claims when DB flags are missing
     const rdb = firebaseAdmin.database();
-    const userSnap = await rdb.ref(`users/${uid}`).get();
+    const userRef = rdb.ref(`users/${uid}`);
+    const userSnap = await userRef.get();
 
     if (!userSnap.exists()) {
-      return res.status(403).json({ ok: false, error: 'user_not_found' });
+      if (!tokenIsAdmin) {
+        return res.status(403).json({ ok: false, error: 'user_not_found' });
+      }
+
+      const now = new Date().toISOString();
+      await userRef.set({
+        email: decodedToken.email || null,
+        isAdmin: true,
+        isPaid: false,
+        paidAt: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      req.adminUid = uid;
+      return next();
     }
 
     const user = userSnap.val();
     if (!user.isAdmin) {
-      return res.status(403).json({ ok: false, error: 'admin_access_denied' });
+      if (!tokenIsAdmin) {
+        return res.status(403).json({ ok: false, error: 'admin_access_denied' });
+      }
+
+      await userRef.update({ isAdmin: true, updatedAt: new Date().toISOString() });
     }
 
     // Attach uid to request for use in controllers

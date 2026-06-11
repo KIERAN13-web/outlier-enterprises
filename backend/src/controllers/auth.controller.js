@@ -39,9 +39,11 @@ async function syncUser(req, res) {
       if (!existing.createdAt) {
         updates.createdAt = now;
       }
-      // Don't override existing isAdmin - preserve the DB value
+      const tokenIsAdmin = Boolean(req.user?.isAdmin);
       if (existing.isAdmin === undefined) {
-        updates.isAdmin = false;
+        updates.isAdmin = tokenIsAdmin;
+      } else if (tokenIsAdmin && !existing.isAdmin) {
+        updates.isAdmin = true;
       }
       // Generate referral code if missing
       if (!existing.referralCode) {

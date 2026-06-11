@@ -53,8 +53,8 @@ export default function AdminDashboard() {
       const result = await adminApi.getDashboardStats(token);
       setStats(result.stats);
     } catch (err) {
-      console.error(err);
-      setError('Failed to load stats');
+      console.error('fetchStats error:', err);
+      setError(err?.data?.error || err.message || 'Failed to load stats');
     }
   };
 
