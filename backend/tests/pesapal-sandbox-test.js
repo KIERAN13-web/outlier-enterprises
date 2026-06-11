@@ -152,15 +152,16 @@ async function initiateTransaction() {
     }
 
     const data = await response.json();
-    if (!data.order_tracking_id) {
-      throw new Error('No order_tracking_id in response');
+    const orderTrackingId = data.order_tracking_id || data.orderId || data.order_id || data.id || data.transaction_id || data.tracking_id;
+    if (!orderTrackingId) {
+      throw new Error(`No order tracking ID in response: ${JSON.stringify(data)}`);
     }
 
     log(`✅ Transaction Initiated`, 'green');
-    log(`    Order Tracking ID: ${data.order_tracking_id}`, 'green');
-    log(`    Redirect URL: ${data.redirect_url}`, 'green');
+    log(`    Order Tracking ID: ${orderTrackingId}`, 'green');
+    log(`    Redirect URL: ${data.redirect_url || data.checkout_url || data.redirectUrl || data.checkoutUrl}`, 'green');
     
-    return { orderTrackingId: data.order_tracking_id, reference };
+    return { orderTrackingId, reference };
   } catch (error) {
     log(`❌ Failed to initiate transaction: ${error.message}`, 'red');
     throw error;

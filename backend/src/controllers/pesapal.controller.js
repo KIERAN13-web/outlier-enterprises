@@ -162,14 +162,18 @@ async function submitPesapalOrder({
         }
 
         const data = await response.json();
-        if (!data.order_tracking_id) {
-          console.error('[Pesapal] No order_tracking_id in response', data);
-          throw new Error('Pesapal did not return an order tracking ID');
+        const orderTrackingId = data.order_tracking_id || data.orderId || data.order_id || data.id || data.transaction_id || data.tracking_id;
+        const redirectUrl = data.redirect_url || data.checkout_url || data.redirectUrl || data.checkoutUrl;
+
+        if (!orderTrackingId && !redirectUrl) {
+          console.error('[Pesapal] Unexpected order response', data);
+          throw new Error('Pesapal did not return a valid order identifier or redirect URL');
         }
-        console.log(`[Pesapal] Order ${reference} submitted successfully. Tracking ID: ${data.order_tracking_id}`);
+
+        console.log(`[Pesapal] Order ${reference} submitted successfully. Order ID: ${orderTrackingId}`);
         return {
-          orderTrackingId: data.order_tracking_id,
-          redirectUrl: data.redirect_url,
+          orderTrackingId: orderTrackingId || reference,
+          redirectUrl,
         };
       } catch (err) {
         lastError = err;
