@@ -427,6 +427,7 @@ async function initPesapalGuest(req, res) {
 
     await rdb.ref(`pendingUsers/${pendingId}`).set({
       email,
+      password,
       phoneNumber: phoneNumber || null,
       name: name || null,
       country: country || null,

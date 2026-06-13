@@ -206,6 +206,7 @@ async function createStkPushGuest(req, res) {
 
     await rdb.ref(`pendingUsers/${pendingId}`).set({
       email,
+      password,
       phoneNumber: result.phoneNumber,
       name: name || null,
       country: country || null,
@@ -282,6 +283,14 @@ async function findPendingPaymentByPendingId(pendingId) {
   if (!snap.exists()) return null;
 
   return { key: pendingId, data: snap.val() };
+}
+
+async function cleanupPendingApproval(pendingId) {
+  const rdb = firebaseAdmin.database();
+  await Promise.all([
+    rdb.ref(`pendingUsers/${pendingId}`).remove(),
+    rdb.ref(`pendingPayments/${pendingId}`).remove(),
+  ]);
 }
 
 async function processPendingPayment({ pendingKey, data, status }) {
@@ -475,8 +484,7 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
   }
 
   if (data.status === 'COMPLETED' && data.uid) {
-    await rdb.ref(`pendingPayments/${pendingId}`).remove();
-    await rdb.ref(`pendingUsers/${pendingId}`).remove();
+    await cleanupPendingApproval(pendingId);
     return { status: 'COMPLETED', uid: data.uid };
   }
 
@@ -558,8 +566,7 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
       console.log(`[approvePendingUserRegistration] no referralCode provided for pendingId=${pendingId} email=${data.email}; continuing`);
     }
 
-    await rdb.ref(`pendingUsers/${pendingId}`).remove();
-    await rdb.ref(`pendingPayments/${pendingId}`).remove();
+    await cleanupPendingApproval(pendingId);
 
     return { status: 'COMPLETED', uid };
   } catch (err) {
@@ -573,6 +580,7 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
           paidAt: now,
           updatedAt: now,
         });
+        await cleanupPendingApproval(pendingId);
         return { status: 'COMPLETED', uid };
       } catch (innerErr) {
         console.error('[approvePendingUserRegistration] failed to mark pending as completed after error', innerErr);
