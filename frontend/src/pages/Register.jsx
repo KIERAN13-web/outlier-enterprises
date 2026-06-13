@@ -45,7 +45,7 @@ export default function Register() {
   const [country, setCountry] = useState('Kenya');
   const [idNumber, setIdNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [provider, setProvider] = useState('manual');
+  const [provider, setProvider] = useState('pesapal');
   const [referralCode, setReferralCode] = useState(() => {
     try {
       const search = window.location.search || '';
@@ -73,7 +73,6 @@ export default function Register() {
   const [success, setSuccess] = useState(false);
   const [pendingId, setPendingId] = useState(null);
   const [checkoutUrl, setCheckoutUrl] = useState('');
-  const [paymentCode, setPaymentCode] = useState('');
   const [simulationBusy, setSimulationBusy] = useState(false);
   const [simulationMessage, setSimulationMessage] = useState('');
   const isDevMode = import.meta.env.MODE !== 'production';
@@ -115,38 +114,41 @@ export default function Register() {
     setCheckoutUrl('');
 
     try {
-      const result = provider === 'pesapal'
-        ? await paymentApi.createPesapalGuest({
-            name: fullName,
-            email,
-            password,
-            phoneNumber,
-            country,
-            idNumber,
-            referralCode,
-          })
-        : await paymentApi.createManualGuest({
-            name: fullName,
-            email,
-            password,
-            phoneNumber,
-            country,
-            idNumber,
-            referralCode,
-            paymentCode,
-          });
-
-      if (provider === 'pesapal' && !result?.pendingId) {
-        throw new Error('Pesapal initialization failed. Please check backend configuration.');
+      let result;
+      if (provider === 'pesapal') {
+        result = await paymentApi.createPesapalGuest({
+          name: fullName,
+          email,
+          password,
+          phoneNumber,
+          country,
+          idNumber,
+          referralCode,
+        });
+        if (!result?.pendingId) {
+          throw new Error('Pesapal initialization failed. Please check backend configuration.');
+        }
+        setCheckoutUrl(result.iframeUrl || '');
+      } else if (provider === 'mpesa') {
+        result = await paymentApi.createStkPushGuest({
+          name: fullName,
+          email,
+          password,
+          phoneNumber,
+          country,
+          idNumber,
+          referralCode,
+        });
+        if (!result?.pendingId) {
+          throw new Error('M-Pesa STK push initialization failed. Please check your phone number and try again.');
+        }
+      } else {
+        throw new Error('Unsupported payment method');
       }
 
       setSuccess(true);
       setPendingId(result.pendingId);
       localStorage.setItem('paymentProvider', provider);
-
-      if (provider === 'pesapal') {
-        setCheckoutUrl(result.iframeUrl || '');
-      }
     } catch (err) {
       console.error(err);
       setError(err.message || 'Payment failed');
@@ -280,6 +282,16 @@ export default function Register() {
 
         {step === 2 && (
           <form onSubmit={onPay} className="auth-form">
+            {success && provider === 'mpesa' && (
+              <div className="success-message">
+                ✓ M-Pesa STK push initialized. Approve the payment prompt on your phone.
+                {pendingId && (
+                  <p style={{ marginTop: '8px' }}>
+                    You can also check payment status on the <Link to={`/payment-status/${pendingId}`}>status page</Link>.
+                  </p>
+                )}
+              </div>
+            )}
             {success && provider === 'pesapal' && checkoutUrl && (
               <div className="success-message">
                 ✓ Pesapal payment initialized successfully.
@@ -287,15 +299,12 @@ export default function Register() {
                   <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-full">
                     Continue to Pesapal checkout
                   </a>
-                  <p style={{ marginTop: '8px' }}>
-                    After payment, check your payment status on the <Link to={`/payment-status/${pendingId}`}>status page</Link>.
-                  </p>
+                  {pendingId && (
+                    <p style={{ marginTop: '8px' }}>
+                      After payment, check your payment status on the <Link to={`/payment-status/${pendingId}`}>status page</Link>.
+                    </p>
+                  )}
                 </div>
-              </div>
-            )}
-            {success && provider === 'manual' && (
-              <div className="success-message">
-                ✓ Till payment request recorded. Wait for admin approval.
               </div>
             )}
 
@@ -312,16 +321,16 @@ export default function Register() {
                   <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => handlePaymentMethodChange('pesapal')} /> Pesapal
                 </label>
                 <label>
-                  <input type="radio" name="provider" value="manual" checked={provider === 'manual'} onChange={() => handlePaymentMethodChange('manual')} /> Pay with Till
+                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => handlePaymentMethodChange('mpesa')} /> M-Pesa STK
                 </label>
               </div>
             </div>
 
             <div className="form-group">
               <label htmlFor="phone">
-                {provider === 'manual'
-                  ? 'Phone Number Used for Payment'
-                  : 'Phone Number'}
+                {provider === 'mpesa'
+                  ? 'Phone Number'
+                  : 'Phone Number (optional)'}
               </label>
               <input
                 id="phone"
@@ -330,55 +339,24 @@ export default function Register() {
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={success}
-                required={provider !== 'pesapal'}
+                required={provider === 'mpesa'}
               />
               <small>
-                {provider === 'manual'
-                  ? 'Enter the phone number you used to pay via till 3124553'
-                  : 'Optional for Pesapal payment'}
+                {provider === 'mpesa'
+                  ? 'Enter your M-Pesa registered phone number.'
+                  : 'Optional for Pesapal payment.'}
               </small>
             </div>
-
-            {provider === 'manual' && (
-              <>
-                <div className="till-payment-info card">
-                  <h4>Pay with Till</h4>
-                  <p>Pay KES 200 using till number <strong>3124553</strong>.</p>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="paymentCode">M-Pesa Payment Code</label>
-                  <input
-                    id="paymentCode"
-                    type="text"
-                    placeholder="Enter your MPESA code (e.g. QAZ12345)"
-                    value={paymentCode}
-                    onChange={(e) => setPaymentCode(e.target.value)}
-                    disabled={success}
-                  />
-                  <small>Enter the M-Pesa payment/reference code shown after your payment.</small>
-                </div>
-                <div className="till-submission-info card">
-                  <p>Submit your payment code and phone number. Admins will review and approve your account.</p>
-                </div>
-              </>
-            )}
 
             <button disabled={busy || success} type="submit" className="btn btn-primary btn-full">
               {busy
                 ? provider === 'pesapal'
                   ? 'Initializing Pesapal...'
-                  : 'Submitting till payment request...'
+                  : 'Initializing M-Pesa STK...'
                 : provider === 'pesapal'
                   ? 'Pay with Pesapal'
-                  : 'Submit till payment request'}
+                  : 'Pay with M-Pesa STK'}
             </button>
-
-            {success && provider === 'manual' && (
-              <div className="manual-login-cta" style={{ marginTop: '16px' }}>
-                <p>Your till payment request is submitted. Admins will review the code and approve your account.</p>
-                <Link to="/login" className="btn btn-secondary btn-full">Back to Login</Link>
-              </div>
-            )}
 
             <div className="auth-footer">
               <p>

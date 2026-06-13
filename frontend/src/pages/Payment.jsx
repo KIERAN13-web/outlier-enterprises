@@ -101,6 +101,9 @@ export default function Payment() {
                 <label>
                   <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => setProvider('pesapal')} /> Pesapal
                 </label>
+                <label>
+                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => setProvider('mpesa')} /> M-Pesa STK
+                </label>
               </div>
             </div>
 
@@ -125,7 +128,7 @@ export default function Payment() {
               type="submit"
               className="btn btn-primary btn-full"
             >
-              {busy ? (provider === 'mpesa' ? 'Initializing STK...' : 'Initializing Pesapal...') : success ? 'Deployment Started' : provider === 'mpesa' ? 'Initialize License' : 'Pay with Pesapal'}
+              {busy ? (provider === 'mpesa' ? 'Initializing STK...' : 'Initializing Pesapal...') : success ? 'Payment initialized' : provider === 'mpesa' ? 'Pay with M-Pesa STK' : 'Pay with Pesapal'}
             </button>
           </form>
 
