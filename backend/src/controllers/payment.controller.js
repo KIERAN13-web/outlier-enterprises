@@ -510,6 +510,15 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
         const existing = await firebaseAdmin.auth().getUserByEmail(email);
         uid = existing.uid;
         console.log(`[approvePendingUserRegistration] found existing auth user uid=${uid} email=${email}`);
+
+        if (data.password) {
+          try {
+            await firebaseAdmin.auth().updateUser(uid, { password: data.password });
+            console.log(`[approvePendingUserRegistration] updated password for existing auth user uid=${uid}`);
+          } catch (pwErr) {
+            console.error(`[approvePendingUserRegistration] failed to update password for existing auth user uid=${uid}`, pwErr);
+          }
+        }
       } else {
         throw err;
       }
