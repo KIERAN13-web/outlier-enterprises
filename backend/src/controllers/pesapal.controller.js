@@ -50,7 +50,7 @@ function getPesapalApiBaseUrls() {
   if (env === 'production') {
     return ['https://pay.pesapal.com/v3'];
   }
-  return ['https://cybqa.pesapal.com/pesapalv3'];
+  return ['https://cybjqa.pesapal.com/pesapalv3'];
 }
 
 function buildPesapalApiUrls(path) {
@@ -93,7 +93,7 @@ async function registerPesapalIpn(req, res) {
           },
           body: JSON.stringify({
             url: targetUrl,
-            ipn_notification_type: 'GET',
+            ipn_notification_type: 'POST',
           }),
         });
 
