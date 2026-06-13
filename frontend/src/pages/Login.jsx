@@ -35,7 +35,23 @@ export default function Login() {
       navigate(destination, { replace: true });
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Authentication failed');
+      let message = 'Authentication failed';
+      const code = err?.code || err?.message || '';
+      if (typeof code === 'string') {
+        const normalized = code.toLowerCase();
+        if (normalized.includes('wrong-password') || normalized.includes('wrong password')) {
+          message = 'Wrong password';
+        } else if (normalized.includes('user-not-found') || normalized.includes('user does not exist')) {
+          message = 'User does not exist';
+        } else if (normalized.includes('invalid-email') || normalized.includes('invalid email')) {
+          message = 'Invalid email address';
+        } else if (normalized.includes('too-many-requests')) {
+          message = 'Too many login attempts. Please try again later.';
+        } else if (err?.message) {
+          message = err.message;
+        }
+      }
+      setError(message);
       setBusy(false);
     }
   }
