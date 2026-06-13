@@ -237,7 +237,7 @@ async function submitPesapalOrder({
 
         console.log(`[Pesapal] Order ${reference} submitted successfully. Order ID: ${orderTrackingId}`);
         return {
-          orderTrackingId: orderTrackingId || reference,
+          orderTrackingId: reference,
           redirectUrl,
         };
       } catch (err) {
