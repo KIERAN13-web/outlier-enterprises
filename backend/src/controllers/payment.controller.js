@@ -479,7 +479,6 @@ async function approvePendingUserRegistration(pendingId) {
   }
 
   let uid;
-  const now = new Date().toISOString();
 
   try {
     // Create or find auth user

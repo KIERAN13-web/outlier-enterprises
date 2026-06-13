@@ -1,9 +1,26 @@
+# Node.js dependencies
 node_modules
-npm-debug.log
+
+# npm log files
+npm-debug.log*
+*.log
+
+# Git metadata
 .git
 .gitignore
+
+# Local files and secrets
 README.md
 .env
 .env.local
 .env.*.local
 serviceAccountKey.json
+
+# Editor metadata
+.vscode
+.idea
+.DS_Store
+
+# Build/test artifacts
+coverage
+npm-debug.log*
