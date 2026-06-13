@@ -301,7 +301,7 @@ export default function Register() {
                   </a>
                   {pendingId && (
                     <p style={{ marginTop: '8px' }}>
-                      After payment, check your payment status on the <Link to={`/payment-status/${pendingId}`}>status page</Link>.
+                      After payment, check your payment status on the <Link to={`/payment-status/${pendingId}?provider=${provider}`}>status page</Link>.
                     </p>
                   )}
                 </div>

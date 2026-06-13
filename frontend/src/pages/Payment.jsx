@@ -87,7 +87,7 @@ export default function Payment() {
                   </a>
                   {pendingId && (
                     <p style={{ marginTop: '8px' }}>
-                      After payment, check status on the <Link to={`/payment-status/${pendingId}`}>payment status page</Link>.
+                      After payment, check status on the <Link to={`/payment-status/${pendingId}?provider=${provider}`}>payment status page</Link>.
                     </p>
                   )}
                 </div>

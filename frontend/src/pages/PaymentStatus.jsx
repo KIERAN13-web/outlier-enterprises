@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import paymentApi from '../api/paymentApi';
 import './Auth.css';
 
 export default function PaymentStatus() {
   const { pendingId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('PENDING');
   const [message, setMessage] = useState('Waiting for payment confirmation...');
@@ -12,14 +13,15 @@ export default function PaymentStatus() {
   const [simulationBusy, setSimulationBusy] = useState(false);
   const [error, setError] = useState('');
   const isDevMode = import.meta.env.MODE !== 'production';
-  const provider = localStorage.getItem('paymentProvider') || 'mpesa';
+  const storedProvider = localStorage.getItem('paymentProvider');
+  const queryProvider = searchParams.get('provider');
+  const provider = queryProvider || storedProvider || 'mpesa';
 
   useEffect(() => {
     let intervalId;
 
     async function fetchStatus() {
       try {
-        // Use the stored provider to determine which endpoint to call
         let response;
         if (provider === 'pesapal') {
           response = await paymentApi.getPesapalPaymentStatus(pendingId);
