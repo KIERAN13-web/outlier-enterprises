@@ -414,8 +414,10 @@ async function updateWithdrawalTransactionStatus(uid, withdrawalId, status) {
 async function fundUser(req, res) {
   try {
     const { uid, amount, reason } = req.body;
+    const earningType = reason === 'task' ? 'task' : 'referral';
+    const parsedAmount = Number(amount);
 
-    if (!uid || !amount || amount <= 0) {
+    if (!uid || !parsedAmount || parsedAmount <= 0) {
       return res.status(400).json({ ok: false, error: 'invalid_amount' });
     }
 
@@ -431,10 +433,12 @@ async function fundUser(req, res) {
       transactions: [],
     };
 
-    const newReferralBalance = (wallet.referralBalance || 0) + amount;
-    const newTotalEarnings = (wallet.totalEarnings || 0) + amount;
+    const newTaskBalance = (wallet.taskBalance || 0) + (earningType === 'task' ? parsedAmount : 0);
+    const newReferralBalance = (wallet.referralBalance || 0) + (earningType === 'referral' ? parsedAmount : 0);
+    const newTotalEarnings = (wallet.totalEarnings || 0) + parsedAmount;
 
     await rdb.ref(`users/${uid}/wallet`).update({
+      taskBalance: newTaskBalance,
       referralBalance: newReferralBalance,
       totalEarnings: newTotalEarnings,
       updatedAt: new Date().toISOString(),
@@ -444,9 +448,9 @@ async function fundUser(req, res) {
     const transactionRef = rdb.ref(`users/${uid}/wallet/transactions`).push();
     await transactionRef.set({
       type: 'admin_fund',
-      amount,
-      description: reason || 'Admin funding',
-      earningType: 'referral',
+      amount: parsedAmount,
+      description: reason === 'task' ? 'Admin funding to tasks' : 'Admin funding to referrals',
+      earningType,
       status: 'completed',
       fundedAt: new Date().toISOString(),
       fundedBy: 'admin',

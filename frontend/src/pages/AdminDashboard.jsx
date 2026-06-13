@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const [withdrawals, setWithdrawals] = useState([]);
   const [pendingRegistrations, setPendingRegistrations] = useState([]);
   const [fundAmount, setFundAmount] = useState('');
-  const [fundReason, setFundReason] = useState('');
+  const [fundReason, setFundReason] = useState('referral');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -410,12 +410,13 @@ export default function AdminDashboard() {
                   </div>
                   <div className="form-group">
                     <label>Reason</label>
-                    <input
-                      type="text"
+                    <select
                       value={fundReason}
                       onChange={(e) => setFundReason(e.target.value)}
-                      placeholder="e.g., Referral bonus"
-                    />
+                    >
+                      <option value="referral">Referral</option>
+                      <option value="task">Task</option>
+                    </select>
                   </div>
                   <button
                     onClick={onFundUser}
