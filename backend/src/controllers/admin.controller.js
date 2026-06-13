@@ -669,6 +669,7 @@ export default {
   getUserDetails,
   getPendingRegistrations,
   approvePendingRegistration,
+  forceApprovePendingRegistration,
   updateWithdrawal,
   approveWithdrawal,
   markWithdrawalPaid,
