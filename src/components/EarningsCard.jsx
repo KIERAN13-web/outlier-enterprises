@@ -42,7 +42,7 @@ export default function EarningsCard() {
     return null;
   }
 
-  const MIN_WITHDRAWAL = 15000;
+  const MIN_WITHDRAWAL = 1000;
   const canWithdraw = wallet.availableBalance >= MIN_WITHDRAWAL;
 
   return (
@@ -136,18 +136,11 @@ export default function EarningsCard() {
           {/* Withdrawal Section */}
           {wallet.availableBalance > 0 ? (
             <div className="withdrawal-section">
-              {!canWithdraw && (
-                <p className="withdrawal-notice">
-                  Minimum withdrawal: KES {MIN_WITHDRAWAL}
-                </p>
-              )}
-
               <button
                 onClick={() => setShowWithdrawalModal(true)}
-                disabled={!canWithdraw}
-                className={`btn-withdraw ${!canWithdraw ? 'disabled' : ''}`}
+                className="btn-withdraw"
               >
-                {canWithdraw ? 'Withdraw Funds' : 'Need More Balance'}
+                Withdraw Funds
               </button>
             </div>
           ) : (
@@ -163,6 +156,8 @@ export default function EarningsCard() {
         onClose={() => setShowWithdrawalModal(false)}
         availableBalance={wallet.availableBalance || 0}
         userPhone={user?.phoneNumber || ''}
+        minWithdrawal={MIN_WITHDRAWAL}
+        earningType="task"
       />
     </>
   );

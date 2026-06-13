@@ -1,17 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { auth } from '../firebase/client';
 import walletApi from '../api/walletApi';
 import './WithdrawalModal.css';
 
-export default function WithdrawalModal({ isOpen, onClose, availableBalance, userPhone }) {
+export default function WithdrawalModal({ isOpen, onClose, availableBalance, userPhone, minWithdrawal = 1000, earningType = 'task', onWithdrawSuccess }) {
   const [amount, setAmount] = useState('');
   const [phoneNumber, setPhoneNumber] = useState(userPhone || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const MIN_WITHDRAWAL = 15000;
-  const isValidAmount = amount && parseInt(amount) >= MIN_WITHDRAWAL && parseInt(amount) <= availableBalance;
+  useEffect(() => {
+    setPhoneNumber(userPhone || '');
+  }, [userPhone]);
+
+  const isValidAmount = amount && parseInt(amount) >= minWithdrawal && parseInt(amount) <= availableBalance;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +40,7 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
       await walletApi.withdraw(token, {
         amount: parseInt(amount),
         phoneNumber,
+        earningType,
       });
 
       setSuccess(true);
@@ -44,7 +48,11 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
         setAmount('');
         setPhoneNumber(userPhone || '');
         onClose();
-        window.location.reload(); // Refresh to get updated balance
+        if (onWithdrawSuccess) {
+          onWithdrawSuccess();
+        } else {
+          window.location.reload(); // Refresh to get updated balance
+        }
       }, 2000);
     } catch (err) {
       setError(err.message || 'Withdrawal failed');

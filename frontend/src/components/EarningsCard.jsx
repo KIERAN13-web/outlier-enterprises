@@ -47,7 +47,7 @@ export default function EarningsCard() {
   const referralBalance = wallet.referralBalance || 0;
   const totalBalance = taskBalance + referralBalance;
 
-  const MIN_TASK_WITHDRAWAL = 5000;
+  const MIN_TASK_WITHDRAWAL = 1000;
   const MIN_REFERRAL_WITHDRAWAL = 1;
   
   const canWithdrawTask = taskBalance >= MIN_TASK_WITHDRAWAL;
@@ -147,14 +147,12 @@ export default function EarningsCard() {
               <span className="label">Available Balance</span>
               <span className="amount">KES {taskBalance.toLocaleString()}</span>
             </div>
-            <div className="min-withdrawal-note">Min withdrawal: KES {MIN_TASK_WITHDRAWAL}</div>
             {taskBalance > 0 ? (
               <button
                 onClick={() => setShowTaskWithdrawal(true)}
-                disabled={!canWithdrawTask}
-                className={`btn-withdraw ${!canWithdrawTask ? 'disabled' : ''}`}
+                className="btn-withdraw"
               >
-                {canWithdrawTask ? 'Withdraw from Tasks' : `Need KES ${MIN_TASK_WITHDRAWAL - taskBalance} more`}
+                Withdraw from Tasks
               </button>
             ) : (
               <p className="no-balance-text">Complete tasks to earn money</p>
