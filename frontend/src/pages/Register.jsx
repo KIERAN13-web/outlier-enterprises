@@ -72,21 +72,16 @@ export default function Register() {
   const [showLoginLink, setShowLoginLink] = useState(false);
   const [success, setSuccess] = useState(false);
   const [pendingId, setPendingId] = useState(null);
+  const [checkoutUrl, setCheckoutUrl] = useState('');
   const [paymentCode, setPaymentCode] = useState('');
   const [simulationBusy, setSimulationBusy] = useState(false);
   const [simulationMessage, setSimulationMessage] = useState('');
-  const [showUnavailableModal, setShowUnavailableModal] = useState(false);
   const isDevMode = import.meta.env.MODE !== 'production';
 
   const navigate = useNavigate();
   
-  // Handle payment method selection - show warning for unavailable methods
   const handlePaymentMethodChange = (method) => {
-    if (method === 'mpesa' || method === 'pesapal') {
-      setError('Pesapal is currently unavailable. Please use the Pay with Till option.');
-      setShowUnavailableModal(true);
-      return;
-    }
+    setError('');
     setProvider(method);
   };
 
@@ -117,91 +112,44 @@ export default function Register() {
     setBusy(true);
     setError('');
     setSimulationMessage('');
+    setCheckoutUrl('');
 
-    if (provider === 'mpesa' || provider === 'pesapal') {
-      setError('Pesapal is currently unavailable. Please use the Pay with Till option.');
-      setShowUnavailableModal(true);
-      setBusy(false);
-      return;
-    }
-
-    let popup;
     try {
-      if (provider === 'mpesa' || provider === 'pesapal') {
-        popup = window.open('', provider, 'width=700,height=800');
-      }
-
-      if (provider === 'mpesa' && popup) {
-        popup.document.write('<html><head><title>M-Pesa STK Push</title></head><body style="font-family: sans-serif; padding: 24px;"><h2>Sending M-Pesa STK push</h2><p>Please approve the payment prompt on your phone.</p></body></html>');
-        popup.document.close();
-      }
-
-      const result = provider === 'mpesa'
-        ? await paymentApi.createStkPushGuest({
+      const result = provider === 'pesapal'
+        ? await paymentApi.createPesapalGuest({
+            name: fullName,
             email,
             password,
             phoneNumber,
-            name: fullName,
             country,
             idNumber,
             referralCode,
           })
-        : provider === 'pesapal'
-          ? await paymentApi.createPesapalGuest({
-              name: fullName,
-              email,
-              password,
-              phoneNumber,
-              country,
-              idNumber,
-              referralCode,
-            })
-          : await paymentApi.createManualGuest({
-              name: fullName,
-              email,
-              password,
-              phoneNumber,
-              country,
-              idNumber,
-              referralCode,
-              paymentCode,
-            });
+        : await paymentApi.createManualGuest({
+            name: fullName,
+            email,
+            password,
+            phoneNumber,
+            country,
+            idNumber,
+            referralCode,
+            paymentCode,
+          });
 
       if (provider === 'pesapal' && !result?.pendingId) {
         throw new Error('Pesapal initialization failed. Please check backend configuration.');
-      }
-
-      if (provider === 'mpesa' && popup && !popup.closed) {
-        popup.document.body.innerHTML = '<h2>STK push sent</h2><p>Approve the payment prompt on your phone. This window will close automatically.</p>';
-        setTimeout(() => popup.close(), 5000);
       }
 
       setSuccess(true);
       setPendingId(result.pendingId);
       localStorage.setItem('paymentProvider', provider);
 
-      if (provider === 'pesapal' && result.iframeUrl) {
-        if (!popup || popup.closed) {
-          popup = window.open(result.iframeUrl, 'pesapal', 'width=700,height=800');
-        } else {
-          popup.location.href = result.iframeUrl;
-        }
-      }
-
-      if (provider === 'pesapal' && !isDevMode) {
-        setTimeout(() => navigate(`/payment-status/${result.pendingId}`, { replace: true }), 500);
+      if (provider === 'pesapal') {
+        setCheckoutUrl(result.iframeUrl || '');
       }
     } catch (err) {
-      if (popup && !popup.closed) {
-        popup.close();
-      }
       console.error(err);
-      if (provider === 'mpesa' && /STK_PUSH/.test(err.message)) {
-        setError('');
-        setSuccess(true);
-      } else {
-        setError(err.message || 'Payment failed');
-      }
+      setError(err.message || 'Payment failed');
     } finally {
       setBusy(false);
     }
@@ -332,9 +280,22 @@ export default function Register() {
 
         {step === 2 && (
           <form onSubmit={onPay} className="auth-form">
-            {success && (
+            {success && provider === 'pesapal' && checkoutUrl && (
               <div className="success-message">
-                ✓ {provider === 'manual' ? 'Till payment request recorded. Wait for admin approval.' : 'Payment request sent! Redirecting...'}
+                ✓ Pesapal payment initialized successfully.
+                <div style={{ marginTop: '12px' }}>
+                  <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-full">
+                    Continue to Pesapal checkout
+                  </a>
+                  <p style={{ marginTop: '8px' }}>
+                    After payment, check your payment status on the <Link to={`/payment-status/${pendingId}`}>status page</Link>.
+                  </p>
+                </div>
+              </div>
+            )}
+            {success && provider === 'manual' && (
+              <div className="success-message">
+                ✓ Till payment request recorded. Wait for admin approval.
               </div>
             )}
 
@@ -372,11 +333,9 @@ export default function Register() {
                 required={provider !== 'pesapal'}
               />
               <small>
-                {provider === 'mpesa'
-                  ? 'Enter your M-Pesa registered phone number'
-                  : provider === 'manual'
-                    ? 'Enter the phone number you used to pay via till 3124553'
-                    : 'Optional for Pesapal payment'}
+                {provider === 'manual'
+                  ? 'Enter the phone number you used to pay via till 3124553'
+                  : 'Optional for Pesapal payment'}
               </small>
             </div>
 
@@ -406,16 +365,12 @@ export default function Register() {
 
             <button disabled={busy || success} type="submit" className="btn btn-primary btn-full">
               {busy
-                ? provider === 'mpesa'
-                  ? 'Processing...'
-                  : provider === 'pesapal'
-                    ? 'Initializing Pesapal...'
-                    : 'Saving till payment request...'
-                : provider === 'mpesa'
-                  ? 'Pay KES 200'
-                  : provider === 'pesapal'
-                    ? 'Pay with Pesapal'
-                    : 'Submit till payment request'}
+                ? provider === 'pesapal'
+                  ? 'Initializing Pesapal...'
+                  : 'Submitting till payment request...'
+                : provider === 'pesapal'
+                  ? 'Pay with Pesapal'
+                  : 'Submit till payment request'}
             </button>
 
             {success && provider === 'manual' && (
@@ -439,44 +394,6 @@ export default function Register() {
         </div>
       </div>
 
-      {/* Unavailable Methods Modal */}
-      {showUnavailableModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '8px',
-            maxWidth: '400px',
-            textAlign: 'center',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}>
-            <h3 style={{ marginTop: 0, color: '#d32f2f' }}>Technical Issues</h3>
-            <p style={{ fontSize: '16px', marginBottom: '24px' }}>
-              We are experiencing technical issues. Kindly use the <strong>Pay with Till</strong> option.
-            </p>
-            <button
-              onClick={() => {
-                setShowUnavailableModal(false);
-                setProvider('manual');
-              }}
-              className="btn btn-primary btn-full"
-            >
-              Use Pay with Till
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

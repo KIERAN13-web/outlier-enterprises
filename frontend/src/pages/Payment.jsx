@@ -10,13 +10,15 @@ export default function Payment() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [pendingId, setPendingId] = useState(null);
+  const [checkoutUrl, setCheckoutUrl] = useState('');
   const navigate = useNavigate();
 
   async function onPay(e) {
     e.preventDefault();
     setBusy(true);
     setError('');
-    let popup;
+    setCheckoutUrl('');
     try {
       const user = auth.currentUser;
       if (!user) {
@@ -26,44 +28,23 @@ export default function Payment() {
       const token = await user.getIdToken();
 
       if (provider === 'mpesa') {
-        popup = window.open('', 'mpesa', 'width=500,height=600');
-        if (popup) {
-          popup.document.write('<html><head><title>M-Pesa STK Push</title></head><body style="font-family: sans-serif; padding: 24px;"><h2>Sending M-Pesa STK push</h2><p>Please approve the payment prompt on your phone.</p></body></html>');
-          popup.document.close();
-        }
-
-        await paymentApi.createStkPush(token, phoneNumber);
+        const resp = await paymentApi.createStkPush(token, phoneNumber);
         setSuccess(true);
-
-        if (popup && !popup.closed) {
-          popup.document.body.innerHTML = '<h2>STK push sent</h2><p>Approve the prompt on your phone. This window will close automatically.</p>';
-          setTimeout(() => popup.close(), 5000);
-        }
-
         setTimeout(() => navigate('/dashboard'), 2000);
       } else {
         const resp = await paymentApi.createPesapalInit(token);
         if (resp && resp.pendingId) {
-          if (resp.iframeUrl) {
-            window.open(resp.iframeUrl, 'pesapal', 'width=700,height=800');
-          }
-          navigate(`/payment-status/${resp.pendingId}`);
+          setPendingId(resp.pendingId);
+          setCheckoutUrl(resp.iframeUrl || '');
+          localStorage.setItem('paymentProvider', provider);
+          setSuccess(true);
         } else {
           setError('Failed to initialize Pesapal payment');
         }
       }
     } catch (err) {
       console.error(err);
-      if (popup && !popup.closed) {
-        popup.close();
-      }
-      if (provider === 'mpesa' && /STK_PUSH/.test(err.message)) {
-        setError('');
-        setSuccess(true);
-        setTimeout(() => navigate('/dashboard'), 2000);
-      } else {
-        setError(err.message || 'Payment failed');
-      }
+      setError(err.message || 'Payment failed');
     } finally {
       setBusy(false);
     }
@@ -97,7 +78,22 @@ export default function Payment() {
 
           <form onSubmit={onPay} className="payment-form">
             {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message"><i className="ti ti-check"></i> Transaction initialized. Check your device.</div>}
+            {success && provider === 'pesapal' && checkoutUrl && (
+              <div className="success-message">
+                <i className="ti ti-check"></i> Pesapal payment initialized successfully.
+                <div style={{ marginTop: '12px' }}>
+                  <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-full">
+                    Continue to Pesapal checkout
+                  </a>
+                  {pendingId && (
+                    <p style={{ marginTop: '8px' }}>
+                      After payment, check status on the <Link to={`/payment-status/${pendingId}`}>payment status page</Link>.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {success && provider === 'mpesa' && <div className="success-message"><i className="ti ti-check"></i> Transaction initialized. Check your device.</div>}
 
             <div className="form-group">
               <label>Payment Method</label>
