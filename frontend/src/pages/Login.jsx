@@ -47,11 +47,16 @@ export default function Login() {
           message = 'Invalid email address';
         } else if (normalized.includes('too-many-requests')) {
           message = 'Too many login attempts. Please try again later.';
+        } else if (normalized.includes('user-disabled') || normalized.includes('user disabled')) {
+          message = 'This account has been disabled. Contact support.';
+        } else if (normalized.includes('network-request-failed') || normalized.includes('network error')) {
+          message = 'Network error. Please check your internet connection and try again.';
         } else if (err?.message) {
           message = err.message;
         }
       }
       setError(message);
+    } finally {
       setBusy(false);
     }
   }
