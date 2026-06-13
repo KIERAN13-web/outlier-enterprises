@@ -28,7 +28,10 @@ const corsEntries = rawCors
   .map(s => s.trim())
   .filter(Boolean);
 
-const allowedOrigins = [];
+const allowedOrigins = [
+  'https://pay.pesapal.com',     // Pesapal production
+  'https://sandbox.pesapal.com', // Pesapal sandbox (for webhook/redirect callbacks)
+];
 const allowedOriginPatterns = [];
 for (const entry of corsEntries) {
   if (entry.includes('*')) {
