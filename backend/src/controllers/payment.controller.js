@@ -424,8 +424,19 @@ async function approvePendingUserRegistration(pendingId) {
   }
 
   const data = pendingSnap.val();
-  if (data.status === 'COMPLETED') {
-    return { status: 'COMPLETED', uid: data.uid || null };
+  const status = data.status || 'PENDING';
+  const paymentStatus = data.paymentStatus || (status === 'COMPLETED' ? 'COMPLETED' : null);
+  const isManual = data.paymentMethod === 'manual' || data.provider === 'manual';
+  const paymentCompleted = paymentStatus === 'COMPLETED' || status === 'COMPLETED' || !!data.paymentCompletedAt;
+
+  if (!paymentCompleted && !isManual) {
+    throw new Error('payment_not_completed');
+  }
+
+  if (data.status === 'COMPLETED' && data.uid) {
+    await rdb.ref(`pendingPayments/${pendingId}`).remove();
+    await rdb.ref(`pendingUsers/${pendingId}`).remove();
+    return { status: 'COMPLETED', uid: data.uid };
   }
 
   const email = data.email;
@@ -460,7 +471,6 @@ async function approvePendingUserRegistration(pendingId) {
     const existingUserSnap = await userRef.get();
     const existingUser = existingUserSnap.exists() ? existingUserSnap.val() : {};
 
-    // Ensure referral code exists for the new user (generate if missing)
     let referralCodeForNewUser = existingUser.referralCode;
     if (!referralCodeForNewUser) {
       try {
@@ -487,18 +497,16 @@ async function approvePendingUserRegistration(pendingId) {
 
     await userRef.update(updates);
 
-    // Initialize wallet if not already present
     const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
     if (!walletSnap.exists()) {
       await rdb.ref(`users/${uid}/wallet`).set({
         taskBalance: 0,
         referralBalance: 0,
         totalEarnings: 0,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       });
     }
 
-    // Credit referrer if a referral code was provided; absence is fine
     if (data.referralCode) {
       try {
         console.log(`[approvePendingUserRegistration] crediting referrer for pendingId=${pendingId} using code=${data.referralCode} email=${data.email}`);
@@ -510,19 +518,12 @@ async function approvePendingUserRegistration(pendingId) {
       console.log(`[approvePendingUserRegistration] no referralCode provided for pendingId=${pendingId} email=${data.email}; continuing`);
     }
 
-    // Mark pending user as completed
-    await rdb.ref(`pendingUsers/${pendingId}`).update({
-      status: 'COMPLETED',
-      uid,
-      isPaid: true,
-      paidAt: now,
-      updatedAt: now,
-    });
+    await rdb.ref(`pendingUsers/${pendingId}`).remove();
+    await rdb.ref(`pendingPayments/${pendingId}`).remove();
 
     return { status: 'COMPLETED', uid };
   } catch (err) {
     console.error('[approvePendingUserRegistration] error', err?.message || err);
-    // If we managed to create/find an auth user, ensure pendingUsers is updated to avoid stuck state
     if (uid) {
       try {
         await rdb.ref(`pendingUsers/${pendingId}`).update({

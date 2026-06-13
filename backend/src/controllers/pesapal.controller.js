@@ -453,129 +453,35 @@ async function processPendingPaymentHelper({ pendingKey, data, status }) {
   const rdb = firebaseAdmin.database();
   const referralService = (await import('../services/referralService.js')).default;
   const docRef = rdb.ref(`pendingPayments/${pendingKey}`);
-  const pendingUserRef = data.type === 'GUEST' ? rdb.ref(`pendingUsers/${pendingKey}`) : null;
+  const pendingUserRef = rdb.ref(`pendingUsers/${pendingKey}`);
+  const now = new Date().toISOString();
 
   if (status === 'SUCCESS') {
-    if (data.type === 'USER' && data.uid) {
-      await rdb.ref(`users/${data.uid}`).update({
-        isPaid: true,
-        paidAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+    await docRef.update({ status: 'COMPLETED', updatedAt: now });
+    await pendingUserRef.update({
+      paymentStatus: 'COMPLETED',
+      paymentCompletedAt: now,
+      updatedAt: now,
+    });
 
-      if (data.orderId) {
-        await rdb.ref(`users/${data.uid}/orders/${data.orderId}`).update({
-          status: 'verified',
-          verifiedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-
-      await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString() });
-      return;
-    }
-
-    if (data.type === 'GUEST') {
-      try {
-        const userRecord = await firebaseAdmin.auth().createUser({ 
-          email: data.email, 
-          password: data.password,
-          displayName: data.name || null,
-        });
-        const newUid = userRecord.uid;
-        const referralCodeForNewUser = data.referralCode || await (async () => {
-          try {
-            return await referralService.generateUniqueReferralCode(rdb);
-          } catch (e) {
-            return `R${newUid.slice(0,8)}`;
-          }
-        })();
-        await rdb.ref(`users/${newUid}`).set({
-          email: data.email || null,
-          fullName: data.name || null,
-          country: data.country || null,
-          idNumber: data.idNumber || null,
-          phoneNumber: data.phoneNumber || null,
-          isPaid: true,
-          paidAt: new Date().toISOString(),
-          referralCode: referralCodeForNewUser,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-        
-        // Initialize wallet for new user
-        await rdb.ref(`users/${newUid}/wallet`).set({
-          taskBalance: 0,
-          referralBalance: 0,
-          totalEarnings: 0,
-          updatedAt: new Date().toISOString(),
-        });
-
-        // Credit referral bonus if present
-        if (data.referralCode) {
-          try {
-            console.log(`[Pesapal webhook] crediting referrer for pendingId=${pendingKey} using code=${data.referralCode} email=${data.email}`);
-            await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
-          } catch (err) {
-            console.error('[Pesapal webhook] Error crediting referrer:', err);
-          }
-        }
-        await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), password: null, uid: newUid });
-        await pendingUserRef?.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), uid: newUid });
-      } catch (e) {
-        console.warn('[Pesapal webhook] createUser failed, trying to update existing user', e?.message || e);
-        const existing = await firebaseAdmin.auth().getUserByEmail(data.email);
-        const existingUid = existing.uid;
-        const referralCodeForExisting = data.referralCode || await (async () => {
-          try {
-            return await referralService.generateUniqueReferralCode(rdb);
-          } catch (e) {
-            return `R${existingUid.slice(0,8)}`;
-          }
-        })();
-        await rdb.ref(`users/${existingUid}`).update({
-          fullName: data.name || null,
-          country: data.country || null,
-          idNumber: data.idNumber || null,
-          phoneNumber: data.phoneNumber || null,
-          isPaid: true,
-          paidAt: new Date().toISOString(),
-          referralCode: referralCodeForExisting,
-          updatedAt: new Date().toISOString(),
-        });
-        
-        // Ensure wallet exists for existing user
-        const walletSnap = await rdb.ref(`users/${existingUid}/wallet`).get();
-        if (!walletSnap.exists()) {
-          await rdb.ref(`users/${existingUid}/wallet`).set({
-            taskBalance: 0,
-            referralBalance: 0,
-            totalEarnings: 0,
-            updatedAt: new Date().toISOString(),
-          });
-        }
-
-        if (data.referralCode) {
-          try {
-            console.log(`[Pesapal webhook] crediting referrer for existing user pendingId=${pendingKey} using code=${data.referralCode} email=${data.email}`);
-            await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
-          } catch (err) {
-            console.error('[Pesapal webhook] Error crediting referrer for existing user:', err);
-          }
-        }
-        await docRef.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), password: null, uid: existingUid });
-        await pendingUserRef?.update({ status: 'COMPLETED', updatedAt: new Date().toISOString(), uid: existingUid });
-      }
-
-      await docRef.remove();
-      return;
-    }
+    // For PayPal-based approvals, actual user activation must happen on admin approval.
+    return;
   }
 
-  await docRef.update({ status: 'FAILED', updatedAt: new Date().toISOString(), password: null });
-  if (pendingUserRef) {
-    await pendingUserRef.update({ status: 'FAILED', updatedAt: new Date().toISOString() });
+  if (status === 'FAILED') {
+    await docRef.update({ status: 'FAILED', updatedAt: now });
+    await pendingUserRef.update({ status: 'FAILED', updatedAt: now });
+    return;
   }
+
+  if (status === 'PENDING') {
+    await docRef.update({ status: 'PENDING', updatedAt: now });
+    await pendingUserRef.update({ status: 'PENDING', updatedAt: now });
+    return;
+  }
+
+  await docRef.update({ status: 'FAILED', updatedAt: now });
+  await pendingUserRef.update({ status: 'FAILED', updatedAt: now });
 }
 
 // In production this would handle Pesapal's callback. For now we accept a payload

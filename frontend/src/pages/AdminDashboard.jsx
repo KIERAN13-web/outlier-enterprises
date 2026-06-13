@@ -115,6 +115,32 @@ export default function AdminDashboard() {
     }
   };
 
+  const getPaymentStatusBadgeClass = (status) => {
+    if (!status) return 'pending';
+    const normalized = status.toString().toUpperCase();
+    if (normalized.includes('COMPLETED') || normalized.includes('SUCCESS')) return 'success';
+    if (normalized.includes('FAILED') || normalized.includes('ERROR')) return 'failed';
+    if (normalized.includes('MANUAL')) return 'manual';
+    return 'pending';
+  };
+
+  const getPaymentStatusLabel = (registration) => {
+    const status = registration.paymentStatus || 'PENDING';
+    if (status.toUpperCase() === 'COMPLETED' && registration.status === 'PENDING') {
+      return 'COMPLETED - awaiting approval';
+    }
+    return status;
+  };
+
+  const getRegistrationBadgeClass = (status) => {
+    if (!status) return 'pending';
+    const normalized = status.toString().toUpperCase();
+    if (normalized.includes('COMPLETED') || normalized.includes('APPROVED') || normalized.includes('ACTIVE')) return 'success';
+    if (normalized.includes('REJECT') || normalized.includes('FAILED')) return 'failed';
+    if (normalized.includes('PENDING')) return 'pending';
+    return 'pending';
+  };
+
   const onSearch = async (e) => {
     e.preventDefault();
     if (!searchQuery.trim() || !idToken) return;
@@ -463,6 +489,17 @@ export default function AdminDashboard() {
                     <div>Country: {registration.country || 'N/A'}</div>
                     <div>ID: {registration.idNumber || 'N/A'}</div>
                     <div>Method: {registration.paymentMethod}</div>
+                    <div className="payment-status-row">
+                      <span className={`reg-status-badge ${getRegistrationBadgeClass(registration.status)}`}>
+                        {registration.status || 'PENDING'}
+                      </span>
+                      <span className={`status-badge ${getPaymentStatusBadgeClass(registration.paymentStatus)}`}>
+                        {getPaymentStatusLabel(registration)}
+                      </span>
+                      {registration.paymentCompletedAt && (
+                        <span className="payment-time">Paid at: {new Date(registration.paymentCompletedAt).toLocaleString()}</span>
+                      )}
+                    </div>
                     {registration.tillNumber && <div>Till: {registration.tillNumber}</div>}
                     {registration.paymentCode && <div>Payment Code: {registration.paymentCode}</div>}
                     <div>Status: {registration.status}</div>
