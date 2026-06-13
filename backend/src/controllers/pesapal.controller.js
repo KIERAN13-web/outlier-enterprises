@@ -590,12 +590,19 @@ async function checkPaymentStatus(req, res) {
 
     const rdb = firebaseAdmin.database();
     const pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
-    if (!pendingSnap.exists()) {
-      console.warn(`[Pesapal] Status check for non-existent pendingId: ${pendingId}`);
-      return res.status(404).json({ ok: false, error: 'PENDING_NOT_FOUND' });
-    }
+    let pending;
 
-    const pending = pendingSnap.val();
+    if (!pendingSnap.exists()) {
+      const pendingUserSnap = await rdb.ref(`pendingUsers/${pendingId}`).get();
+      if (!pendingUserSnap.exists()) {
+        console.warn(`[Pesapal] Status check for non-existent pendingId: ${pendingId}`);
+        return res.status(404).json({ ok: false, error: 'PENDING_NOT_FOUND' });
+      }
+      pending = pendingUserSnap.val();
+      console.log(`[Pesapal] Status check fallback to pendingUsers for pendingId=${pendingId}`);
+    } else {
+      pending = pendingSnap.val();
+    }
 
     // If no orderTrackingId (shouldn't happen with new integration), return current status
     if (!pending.orderTrackingId) {

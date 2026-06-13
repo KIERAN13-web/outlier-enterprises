@@ -326,13 +326,15 @@ async function processPendingPayment({ pendingKey, data, status }) {
           displayName: data.name || null,
         });
         const newUid = userRecord.uid;
-        const referralCodeForNewUser = data.referralCode || await (async () => {
+        const referrerCode = data.referralCode || null;
+        const referralCodeForNewUser = await (async () => {
           try {
             return await (await import('../services/referralService.js')).default.generateUniqueReferralCode(rdb);
           } catch (e) {
             return `R${newUid.slice(0,8)}`;
           }
         })();
+
         await rdb.ref(`users/${newUid}`).set({
           email: data.email || null,
           fullName: data.name || null,
@@ -354,11 +356,11 @@ async function processPendingPayment({ pendingKey, data, status }) {
           updatedAt: new Date().toISOString(),
         });
 
-        // Credit referral bonus if present (uses referralService)
-        if (data.referralCode) {
+        // Credit referral bonus if a referrer code was provided
+        if (referrerCode) {
           try {
             const referralService = (await import('../services/referralService.js')).default;
-            await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
+            await referralService.creditReferralBonus(rdb, referrerCode, data.email);
           } catch (err) {
             console.error('Error crediting referrer:', err);
           }
@@ -369,7 +371,8 @@ async function processPendingPayment({ pendingKey, data, status }) {
         console.warn('createUser during webhook failed, trying to update existing user', e?.message || e);
         const existing = await firebaseAdmin.auth().getUserByEmail(data.email);
         const existingUid = existing.uid;
-        const referralCodeForExisting = data.referralCode || await (async () => {
+        const referrerCode = data.referralCode || null;
+        const referralCodeForExisting = await (async () => {
           try {
             return await (await import('../services/referralService.js')).default.generateUniqueReferralCode(rdb);
           } catch (e) {
@@ -398,10 +401,10 @@ async function processPendingPayment({ pendingKey, data, status }) {
           });
         }
 
-        if (data.referralCode) {
+        if (referrerCode) {
           try {
             const referralService = (await import('../services/referralService.js')).default;
-            await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
+            await referralService.creditReferralBonus(rdb, referrerCode, data.email);
           } catch (err) {
             console.error('Error crediting referrer for existing user path:', err);
           }
@@ -528,6 +531,7 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
     const existingUserSnap = await userRef.get();
     const existingUser = existingUserSnap.exists() ? existingUserSnap.val() : {};
 
+    const referrerCode = data.referralCode || null;
     let referralCodeForNewUser = existingUser.referralCode;
     if (!referralCodeForNewUser) {
       try {
@@ -564,10 +568,10 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
       });
     }
 
-    if (data.referralCode) {
+    if (referrerCode) {
       try {
-        console.log(`[approvePendingUserRegistration] crediting referrer for pendingId=${pendingId} using code=${data.referralCode} email=${data.email}`);
-        await referralService.creditReferralBonus(rdb, data.referralCode, data.email);
+        console.log(`[approvePendingUserRegistration] crediting referrer for pendingId=${pendingId} using code=${referrerCode} email=${data.email}`);
+        await referralService.creditReferralBonus(rdb, referrerCode, data.email);
       } catch (err) {
         console.error('creditReferralBonus during manual approval failed:', err);
       }
