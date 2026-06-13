@@ -492,7 +492,7 @@ async function webhook(req, res) {
 
     // Accept multiple possible identifier fields from Pesapal payloads
     const body = req.body || {};
-    let pendingId = body.pendingId || body.pending_id || body.reference || body.order_tracking_id || body.orderTrackingId || body.orderId || body.id || body.transaction_id || null;
+    let pendingId = body.pendingId || body.pending_id || body.reference || body.merchant_reference || body.order_tracking_id || body.orderTrackingId || body.orderId || body.id || body.transaction_id || null;
 
     // Verify signature in production
     if (process.env.NODE_ENV === 'production') {
@@ -611,13 +611,14 @@ async function checkPaymentStatus(req, res) {
       return res.json({ ok: true, pendingId, status: pending.status, warning: 'Status from cache (API unavailable)' });
     }
 
-    // Map Pesapal status to our status
+    // Normalize Pesapal status
+    const rawStatus = String(pesapalStatus.status || '').toUpperCase();
     let mappedStatus = pending.status;
-    if (pesapalStatus.status === 'COMPLETED') {
+    if (rawStatus.includes('COMPLETED') || rawStatus.includes('PAID') || rawStatus.includes('SUCCESS')) {
       mappedStatus = 'COMPLETED';
-    } else if (pesapalStatus.status === 'FAILED') {
+    } else if (rawStatus.includes('FAILED') || rawStatus.includes('DECLINED') || rawStatus.includes('ERROR')) {
       mappedStatus = 'FAILED';
-    } else if (pesapalStatus.status === 'PENDING') {
+    } else if (rawStatus.includes('PENDING') || rawStatus.includes('AWAITING') || rawStatus.includes('PROCESSING')) {
       mappedStatus = 'PENDING';
     }
 
@@ -645,4 +646,4 @@ function webhookHealth(req, res) {
   return res.json({ ok: true, message: 'Pesapal webhook endpoint is available' });
 }
 
-export default { initPesapal, initPesapalGuest, registerPesapalIpn, checkPaymentStatus, webhook, webhookHealth, simulateWebhook };
+export default { initPesapal, initPesapalGuest, registerPesapalIpn, checkPaymentStatus, webhook, webhookHealth, simulateWebhook, getPesapalPaymentStatus };

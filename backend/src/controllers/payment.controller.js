@@ -427,7 +427,41 @@ async function approvePendingUserRegistration(pendingId) {
   const status = data.status || 'PENDING';
   const paymentStatus = data.paymentStatus || (status === 'COMPLETED' ? 'COMPLETED' : null);
   const isManual = data.paymentMethod === 'manual' || data.provider === 'manual';
-  const paymentCompleted = paymentStatus === 'COMPLETED' || status === 'COMPLETED' || !!data.paymentCompletedAt;
+  const now = new Date().toISOString();
+  let paymentCompleted = paymentStatus === 'COMPLETED' || status === 'COMPLETED' || !!data.paymentCompletedAt;
+
+  if (!paymentCompleted && data.provider === 'pesapal' && data.orderTrackingId) {
+    try {
+      const pesapalController = await import('./pesapal.controller.js');
+      const pesapalStatus = await pesapalController.getPesapalPaymentStatus(data.orderTrackingId);
+      if (pesapalStatus?.status === 'COMPLETED') {
+        paymentCompleted = true;
+        await rdb.ref(`pendingPayments/${pendingId}`).update({
+          status: 'COMPLETED',
+          updatedAt: now,
+        });
+        await rdb.ref(`pendingUsers/${pendingId}`).update({
+          status: 'COMPLETED',
+          paymentStatus: 'COMPLETED',
+          paymentCompletedAt: now,
+          updatedAt: now,
+        });
+        console.log(`[approvePendingUserRegistration] Pesapal status confirmed completed for pendingId=${pendingId} orderTrackingId=${data.orderTrackingId}`);
+      } else if (pesapalStatus?.status === 'FAILED') {
+        await rdb.ref(`pendingPayments/${pendingId}`).update({
+          status: 'FAILED',
+          updatedAt: now,
+        });
+        await rdb.ref(`pendingUsers/${pendingId}`).update({
+          status: 'FAILED',
+          paymentStatus: 'FAILED',
+          updatedAt: now,
+        });
+      }
+    } catch (statusErr) {
+      console.warn(`[approvePendingUserRegistration] failed to verify Pesapal status for pendingId=${pendingId}`, statusErr?.message || statusErr);
+    }
+  }
 
   if (!paymentCompleted && !isManual) {
     throw new Error('payment_not_completed');

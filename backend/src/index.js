@@ -58,6 +58,7 @@ app.use(
 );
 
 app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Temporary setup endpoint - SET UP ADMIN USERS
 // Place after express.json() so req.body is available
