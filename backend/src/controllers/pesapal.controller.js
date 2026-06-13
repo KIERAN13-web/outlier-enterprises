@@ -602,6 +602,8 @@ async function checkPaymentStatus(req, res) {
       return res.json({ ok: true, pendingId, status: pending.status });
     }
 
+    console.log(`[Pesapal] checkPaymentStatus for pendingId=${pendingId} orderTrackingId=${pending.orderTrackingId}`);
+
     // Query Pesapal for actual payment status
     let pesapalStatus;
     try {
