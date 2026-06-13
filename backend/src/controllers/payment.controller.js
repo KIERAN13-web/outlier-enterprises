@@ -430,6 +430,7 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
   const now = new Date().toISOString();
   let paymentCompleted = paymentStatus === 'COMPLETED' || status === 'COMPLETED' || !!data.paymentCompletedAt;
   if (force) {
+    console.log(`[approvePendingUserRegistration] force approval enabled for pendingId=${pendingId} email=${data.email}`);
     paymentCompleted = true;
     data.paymentStatus = 'COMPLETED';
     data.status = 'COMPLETED';
