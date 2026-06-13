@@ -457,30 +457,38 @@ async function processPendingPaymentHelper({ pendingKey, data, status }) {
   const pendingUserRef = rdb.ref(`pendingUsers/${pendingKey}`);
   const now = new Date().toISOString();
 
+  console.log(`[processPendingPaymentHelper] Processing pendingKey=${pendingKey} status=${status} type=${data.type}`);
+
   if (status === 'SUCCESS') {
+    console.log(`[processPendingPaymentHelper] Marking payment as completed for pendingKey=${pendingKey}`);
     await docRef.update({ status: 'COMPLETED', updatedAt: now });
     await pendingUserRef.update({
+      status: 'COMPLETED',
       paymentStatus: 'COMPLETED',
       paymentCompletedAt: now,
       updatedAt: now,
     });
 
     // For PayPal-based approvals, actual user activation must happen on admin approval.
+    console.log(`[processPendingPaymentHelper] Completed payment processing for pendingKey=${pendingKey}`);
     return;
   }
 
   if (status === 'FAILED') {
+    console.log(`[processPendingPaymentHelper] Marking payment as failed for pendingKey=${pendingKey}`);
     await docRef.update({ status: 'FAILED', updatedAt: now });
     await pendingUserRef.update({ status: 'FAILED', updatedAt: now });
     return;
   }
 
   if (status === 'PENDING') {
+    console.log(`[processPendingPaymentHelper] Marking payment as pending for pendingKey=${pendingKey}`);
     await docRef.update({ status: 'PENDING', updatedAt: now });
     await pendingUserRef.update({ status: 'PENDING', updatedAt: now });
     return;
   }
 
+  console.warn(`[processPendingPaymentHelper] Unknown status '${status}' for pendingKey=${pendingKey}, marking as failed`);
   await docRef.update({ status: 'FAILED', updatedAt: now });
   await pendingUserRef.update({ status: 'FAILED', updatedAt: now });
 }
@@ -490,10 +498,39 @@ async function processPendingPaymentHelper({ pendingKey, data, status }) {
 async function webhook(req, res) {
   try {
     const signature = req.headers['x-pesapal-signature'];
-
-    // Accept multiple possible identifier fields from Pesapal payloads
     const body = req.body || {};
-    let pendingId = body.pendingId || body.pending_id || body.reference || body.merchant_reference || body.order_tracking_id || body.orderTrackingId || body.orderId || body.id || body.transaction_id || null;
+
+    // Log full payload for debugging
+    console.log('[Pesapal] Webhook received. Full payload:', JSON.stringify(body, null, 2));
+    console.log('[Pesapal] Webhook headers:', JSON.stringify(req.headers, null, 2));
+
+    // Try to extract pendingId from multiple possible fields in order of preference
+    let pendingId = null;
+    const identifierFields = [
+      'pendingId',
+      'pending_id',
+      'reference',
+      'merchant_reference',
+      'order_id',
+      'orderId',
+      'id',
+      'transaction_id',
+      'order_tracking_id',
+      'orderTrackingId',
+    ];
+
+    for (const field of identifierFields) {
+      if (body[field]) {
+        pendingId = body[field];
+        console.log(`[Pesapal] Extracted pendingId from field '${field}': ${pendingId}`);
+        break;
+      }
+    }
+
+    if (!pendingId) {
+      console.warn('[Pesapal] Webhook received but no pending identifier found in payload');
+      return res.status(400).json({ ok: false, error: 'NO_PENDING_IDENTIFIER' });
+    }
 
     // Verify signature in production
     if (process.env.NODE_ENV === 'production') {
@@ -507,30 +544,34 @@ async function webhook(req, res) {
     const rdb = firebaseAdmin.database();
     let pendingSnap = null;
 
-    if (pendingId) {
-      pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
-    }
+    // Try direct lookup first
+    console.log(`[Pesapal] Attempting direct lookup for pendingPayments/${pendingId}`);
+    pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
 
-    // If no pendingId provided or not found, try to lookup by orderTrackingId stored on pendingPayments
-    if ((!pendingSnap || !pendingSnap.exists()) && (body.order_tracking_id || body.orderTrackingId || body.orderId || body.id)) {
+    // If not found, try to lookup by orderTrackingId
+    if (!pendingSnap || !pendingSnap.exists()) {
       const orderTrackingId = body.order_tracking_id || body.orderTrackingId || body.orderId || body.id;
-      console.log(`[Pesapal] Trying to resolve pending payment by orderTrackingId=${orderTrackingId}`);
-      const snaps = await rdb.ref('pendingPayments').orderByChild('orderTrackingId').equalTo(orderTrackingId).limitToFirst(1).get();
-      if (snaps.exists()) {
-        const val = snaps.val();
-        const keys = Object.keys(val);
-        pendingId = keys[0];
-        pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
+      if (orderTrackingId) {
+        console.log(`[Pesapal] Direct lookup failed. Trying to resolve by orderTrackingId=${orderTrackingId}`);
+        const snaps = await rdb.ref('pendingPayments').orderByChild('orderTrackingId').equalTo(orderTrackingId).limitToFirst(1).get();
+        if (snaps.exists()) {
+          const val = snaps.val();
+          const keys = Object.keys(val);
+          const resolvedPendingId = keys[0];
+          console.log(`[Pesapal] Resolved pendingId=${resolvedPendingId} from orderTrackingId=${orderTrackingId}`);
+          pendingId = resolvedPendingId;
+          pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
+        }
       }
     }
 
     if (!pendingSnap || !pendingSnap.exists()) {
-      console.warn(`[Pesapal] Webhook received for non-existent pending payment (tried pendingId=${pendingId})`);
+      console.warn(`[Pesapal] Webhook received for non-existent pending payment. Tried pendingId=${pendingId} and orderTrackingId lookup. Payload:`, body);
       return res.status(404).json({ ok: false, error: 'PENDING_NOT_FOUND' });
     }
 
     // Determine status from Pesapal payload fields
-    let incomingStatus = body.status || body.payment_status_description || body.payment_status || body.payment_status_description?.toUpperCase();
+    let incomingStatus = body.status || body.payment_status_description || body.payment_status || (body.payment_status_description ? body.payment_status_description.toUpperCase() : null);
     if (typeof incomingStatus === 'string') incomingStatus = incomingStatus.toUpperCase();
 
     // Map Pesapal statuses to internal statuses expected by processPendingPaymentHelper
@@ -552,7 +593,7 @@ async function webhook(req, res) {
 
     return res.json({ ok: true, pendingId, status: finalStatus });
   } catch (err) {
-    console.error('[Pesapal] Webhook error:', err.message);
+    console.error('[Pesapal] Webhook error:', err.message, err.stack);
     return res.status(500).json({ ok: false, error: 'WEBHOOK_FAILED' });
   }
 }
