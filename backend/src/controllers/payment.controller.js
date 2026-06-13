@@ -412,7 +412,7 @@ async function processPendingPayment({ pendingKey, data, status }) {
   }
 }
 
-async function approvePendingUserRegistration(pendingId) {
+async function approvePendingUserRegistration(pendingId, { force = false } = {}) {
   if (!pendingId) {
     throw new Error('pendingId_required');
   }
@@ -429,6 +429,12 @@ async function approvePendingUserRegistration(pendingId) {
   const isManual = data.paymentMethod === 'manual' || data.provider === 'manual';
   const now = new Date().toISOString();
   let paymentCompleted = paymentStatus === 'COMPLETED' || status === 'COMPLETED' || !!data.paymentCompletedAt;
+  if (force) {
+    paymentCompleted = true;
+    data.paymentStatus = 'COMPLETED';
+    data.status = 'COMPLETED';
+    data.paymentCompletedAt = now;
+  }
 
   if (!paymentCompleted && data.provider === 'pesapal' && data.orderTrackingId) {
     try {
@@ -573,6 +579,10 @@ async function approvePendingUserRegistration(pendingId) {
     }
     throw err;
   }
+}
+
+async function forceApprovePendingUserRegistration(pendingId) {
+  return approvePendingUserRegistration(pendingId, { force: true });
 }
 
 async function mpesaWebhook(req, res) {
@@ -775,5 +785,5 @@ async function getUserOrders(req, res) {
   }
 }
 
-export default { createStkPush, createStkPushGuest, createManualGuest, mpesaWebhook, simulateMpesaWebhook, bypassGuestPayment, getPaymentStatus, getUserOrders, placeOrder, approvePendingUserRegistration };
+export default { createStkPush, createStkPushGuest, createManualGuest, mpesaWebhook, simulateMpesaWebhook, bypassGuestPayment, getPaymentStatus, getUserOrders, placeOrder, approvePendingUserRegistration, forceApprovePendingUserRegistration };
 

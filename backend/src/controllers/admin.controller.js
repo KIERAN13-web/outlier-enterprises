@@ -241,6 +241,46 @@ async function approvePendingRegistration(req, res) {
   }
 }
 
+async function forceApprovePendingRegistration(req, res) {
+  try {
+    const { pendingId } = req.params;
+    if (!pendingId) {
+      return res.status(400).json({ ok: false, error: 'pendingId_required' });
+    }
+
+    const rdb = firebaseAdmin.database();
+    const pendingSnap = await rdb.ref(`pendingUsers/${pendingId}`).get();
+    if (!pendingSnap.exists()) {
+      return res.status(404).json({ ok: false, error: 'PENDING_USER_NOT_FOUND' });
+    }
+
+    const pendingData = pendingSnap.val() || {};
+    if (!pendingData.email) {
+      return res.status(400).json({ ok: false, error: 'pending_user_missing_email', message: 'Pending registration missing email' });
+    }
+
+    console.log(`[forceApprovePendingRegistration] admin=${req.adminUid || 'unknown'} pendingId=${pendingId} email=${pendingData.email}`);
+
+    try {
+      const result = await paymentController.forceApprovePendingUserRegistration(pendingId);
+      return res.json({ ok: true, pendingId, status: result.status, uid: result.uid || null });
+    } catch (err) {
+      console.error(`[forceApprovePendingRegistration] error approving pendingId=${pendingId}`, err?.message || err);
+      const msg = err?.message || '';
+      if (msg === 'PENDING_USER_NOT_FOUND') {
+        return res.status(404).json({ ok: false, error: msg });
+      }
+      if (msg === 'pending_user_missing_email') {
+        return res.status(400).json({ ok: false, error: msg, message: 'Pending registration missing email' });
+      }
+      return res.status(500).json({ ok: false, error: 'FORCE_APPROVAL_FAILED', message: msg || 'Forced approval failed' });
+    }
+  } catch (err) {
+    console.error('forceApprovePendingRegistration error', err);
+    return res.status(500).json({ ok: false, error: 'FORCE_APPROVAL_FAILED', message: err.message });
+  }
+}
+
 async function approveAllPendingRegistrations(req, res) {
   try {
     const rdb = firebaseAdmin.database();

@@ -97,6 +97,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const onForceApprovePendingRegistration = async (pendingId) => {
+    if (!window.confirm('Force approve this registration? This will bypass normal payment verification.') || !idToken) return;
+    setBusy(true);
+    setError('');
+    try {
+      await adminApi.forceApprovePendingRegistration(idToken, pendingId);
+      await fetchPendingRegistrations(idToken);
+      fetchStats(idToken);
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Forced registration approval failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onApproveAllPendingRegistrations = async () => {
     if (!window.confirm('Approve all pending registrations?')) return;
     if (!idToken) return;
@@ -517,18 +533,28 @@ export default function AdminDashboard() {
                     <small>{new Date(registration.createdAt).toLocaleString()}</small>
                   </div>
                   <div className="registration-actions">
-                    {registration.status === 'PENDING' ? (
-                      <button
-                        onClick={() => onApprovePendingRegistration(registration.pendingId)}
-                        disabled={busy}
-                        className="btn btn-success btn-sm"
-                      >
-                        Approve
-                      </button>
-                    ) : (
-                      <span className="status-label">No action available</span>
-                    )}
-                  </div>
+                      {registration.status === 'PENDING' ? (
+                        <>
+                          <button
+                            onClick={() => onApprovePendingRegistration(registration.pendingId)}
+                            disabled={busy}
+                            className="btn btn-success btn-sm"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => onForceApprovePendingRegistration(registration.pendingId)}
+                            disabled={busy}
+                            className="btn btn-warning btn-sm"
+                            style={{ marginLeft: '8px' }}
+                          >
+                            Force Approve
+                          </button>
+                        </>
+                      ) : (
+                        <span className="status-label">No action available</span>
+                      )}
+                    </div>
                 </div>
               ))}
             </div>

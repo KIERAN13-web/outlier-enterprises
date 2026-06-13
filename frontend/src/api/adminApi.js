@@ -69,6 +69,12 @@ const approvePendingRegistration = (idToken, pendingId) =>
     token: idToken,
   });
 
+const forceApprovePendingRegistration = (idToken, pendingId) =>
+  client.request(`/admin/pending-registrations/${encodeURIComponent(pendingId)}/force-approve`, {
+    method: 'PUT',
+    token: idToken,
+  });
+
 const approveAllPendingRegistrations = (idToken) =>
   client.request('/admin/pending-registrations/approve-all', {
     method: 'PUT',
@@ -93,6 +99,7 @@ export default {
   getPendingWithdrawals,
   getPendingRegistrations,
   approvePendingRegistration,
+  forceApprovePendingRegistration,
   approveAllPendingRegistrations,
   getDashboardStats,
 };
