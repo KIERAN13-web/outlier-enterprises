@@ -287,7 +287,7 @@ export default function Register() {
                 ✓ M-Pesa STK push initialized. Approve the payment prompt on your phone.
                 {pendingId && (
                   <p style={{ marginTop: '8px' }}>
-                    You can also check payment status on the <Link to={`/payment-status/${pendingId}`}>status page</Link>.
+                    You can also check payment status on the <Link to={`/payment-status/${pendingId}?provider=${provider}`}>status page</Link>.
                   </p>
                 )}
               </div>
