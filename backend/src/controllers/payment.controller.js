@@ -432,7 +432,7 @@ async function approvePendingUserRegistration(pendingId) {
 
   if (!paymentCompleted && data.provider === 'pesapal' && data.orderTrackingId) {
     try {
-      const pesapalController = await import('./pesapal.controller.js');
+      const { default: pesapalController } = await import('./pesapal.controller.js');
       const pesapalStatus = await pesapalController.getPesapalPaymentStatus(data.orderTrackingId);
       if (pesapalStatus?.status === 'COMPLETED') {
         paymentCompleted = true;

@@ -23,17 +23,25 @@ app.set('trust proxy', true);
 // tolerate values that include a path (e.g. https://host/path) by extracting
 // the origin portion so comparisons match the browser `Origin` header.
 const rawCors = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173';
-const allowedOrigins = rawCors
+const corsEntries = rawCors
   .split(',')
   .map(s => s.trim())
-  .filter(Boolean)
-  .map(v => {
-    try {
-      return new URL(v).origin;
-    } catch {
-      return v;
-    }
-  });
+  .filter(Boolean);
+
+const allowedOrigins = [];
+const allowedOriginPatterns = [];
+for (const entry of corsEntries) {
+  if (entry.includes('*')) {
+    const escaped = entry.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    allowedOriginPatterns.push(new RegExp(`^${escaped}$`));
+    continue;
+  }
+  try {
+    allowedOrigins.push(new URL(entry).origin);
+  } catch {
+    allowedOrigins.push(entry);
+  }
+}
 
 // Debug endpoint to inspect incoming Origin header and allowedOrigins
 app.get('/debug-cors', (req, res) => {
@@ -51,6 +59,8 @@ app.use(
       // allow non-browser requests (curl, server-to-server)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (allowedOriginPatterns.some((pattern) => pattern.test(origin))) return callback(null, true);
+      console.warn(`[CORS] blocked origin=${origin} allowed=${allowedOrigins.join(', ')} patterns=${allowedOriginPatterns.map((r) => r.source).join(', ')}`);
       return callback(new Error('CORS not allowed'));
     },
     credentials: true,
