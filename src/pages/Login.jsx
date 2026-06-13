@@ -46,7 +46,17 @@ export default function Login() {
       navigate(destination, { replace: true });
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Authentication failed');
+      let message = 'Authentication failed';
+      if (err?.code === 'auth/wrong-password') {
+        message = 'Wrong password';
+      } else if (err?.code === 'auth/user-not-found') {
+        message = 'User does not exist';
+      } else if (err?.code === 'auth/invalid-email') {
+        message = 'Invalid email address';
+      } else if (err?.message) {
+        message = err.message;
+      }
+      setError(message);
       setBusy(false);
     }
   }
