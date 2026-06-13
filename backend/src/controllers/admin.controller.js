@@ -1,6 +1,7 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import paymentController from './payment.controller.js';
 import referralService from '../services/referralService.js';
+import pesapalPayoutService from '../services/pesapalPayoutService.js';
 
 // Toggle admin role for a user
 async function toggleAdminRole(req, res) {
@@ -348,6 +349,31 @@ async function approveWithdrawal(req, res) {
       approvedAt: new Date().toISOString(),
     });
     await updateWithdrawalTransactionStatus(uid, withdrawalId, 'approved');
+
+    // If Pesapal payouts are enabled, attempt to initiate a payout automatically
+    try {
+      const payoutsEnabled = (process.env.PESAPAL_PAYOUTS_ENABLED || 'false').toLowerCase() === 'true';
+      if (payoutsEnabled) {
+        const phone = withdrawal.phoneNumber;
+        const amount = Number(withdrawal.amount || 0);
+        const recipientName = withdrawal.recipientName || null;
+        console.log(`[Admin] Initiating Pesapal payout for uid=${uid} withdrawalId=${withdrawalId} phone=${phone} amount=${amount}`);
+        try {
+          const payoutResult = await pesapalPayoutService.sendPayout({ amount, phoneNumber: phone, reference: withdrawalId, recipientName });
+          await withdrawalRef.update({
+            payoutProvider: 'pesapal',
+            payoutId: payoutResult.payoutId || null,
+            payoutResponse: payoutResult.data || null,
+            payoutInitiatedAt: new Date().toISOString(),
+          });
+        } catch (pErr) {
+          console.error('[Admin] Pesapal payout failed:', pErr?.message || pErr);
+          await withdrawalRef.update({ payoutError: String(pErr?.message || pErr) });
+        }
+      }
+    } catch (e) {
+      console.warn('[Admin] Payout initiation check failed', e?.message || e);
+    }
 
     return res.json({ ok: true, status: 'approved' });
   } catch (err) {

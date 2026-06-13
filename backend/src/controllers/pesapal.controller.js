@@ -582,17 +582,15 @@ async function processPendingPaymentHelper({ pendingKey, data, status }) {
 // and mark the corresponding pending payment as completed or failed.
 async function webhook(req, res) {
   try {
-    const { pendingId, status = 'SUCCESS' } = req.body;
     const signature = req.headers['x-pesapal-signature'];
 
-    if (!pendingId) {
-      console.warn('[Pesapal] Webhook received without pendingId');
-      return res.status(400).json({ ok: false, error: 'pendingId_required' });
-    }
+    // Accept multiple possible identifier fields from Pesapal payloads
+    const body = req.body || {};
+    let pendingId = body.pendingId || body.pending_id || body.reference || body.order_tracking_id || body.orderTrackingId || body.orderId || body.id || body.transaction_id || null;
 
     // Verify signature in production
     if (process.env.NODE_ENV === 'production') {
-      const isValid = verifyWebhookSignature(req.body, signature, process.env.PESAPAL_WEBHOOK_SECRET);
+      const isValid = verifyWebhookSignature(body, signature, process.env.PESAPAL_WEBHOOK_SECRET);
       if (!isValid) {
         console.error('[Pesapal] Webhook failed signature verification');
         return res.status(401).json({ ok: false, error: 'INVALID_SIGNATURE' });
@@ -600,17 +598,51 @@ async function webhook(req, res) {
     }
 
     const rdb = firebaseAdmin.database();
-    const pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
-    if (!pendingSnap.exists()) {
-      console.warn(`[Pesapal] Webhook received for non-existent pendingId: ${pendingId}`);
+    let pendingSnap = null;
+
+    if (pendingId) {
+      pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
+    }
+
+    // If no pendingId provided or not found, try to lookup by orderTrackingId stored on pendingPayments
+    if ((!pendingSnap || !pendingSnap.exists()) && (body.order_tracking_id || body.orderTrackingId || body.orderId || body.id)) {
+      const orderTrackingId = body.order_tracking_id || body.orderTrackingId || body.orderId || body.id;
+      console.log(`[Pesapal] Trying to resolve pending payment by orderTrackingId=${orderTrackingId}`);
+      const snaps = await rdb.ref('pendingPayments').orderByChild('orderTrackingId').equalTo(orderTrackingId).limitToFirst(1).get();
+      if (snaps.exists()) {
+        const val = snaps.val();
+        const keys = Object.keys(val);
+        pendingId = keys[0];
+        pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
+      }
+    }
+
+    if (!pendingSnap || !pendingSnap.exists()) {
+      console.warn(`[Pesapal] Webhook received for non-existent pending payment (tried pendingId=${pendingId})`);
       return res.status(404).json({ ok: false, error: 'PENDING_NOT_FOUND' });
     }
 
-    const finalStatus = status === 'SUCCESS' ? 'SUCCESS' : 'FAILED';
-    console.log(`[Pesapal] Webhook processing ${pendingId} with status ${finalStatus}`);
-    
+    // Determine status from Pesapal payload fields
+    let incomingStatus = body.status || body.payment_status_description || body.payment_status || body.payment_status_description?.toUpperCase();
+    if (typeof incomingStatus === 'string') incomingStatus = incomingStatus.toUpperCase();
+
+    // Map Pesapal statuses to internal statuses expected by processPendingPaymentHelper
+    let finalStatus = 'FAILED';
+    if (!incomingStatus) {
+      // Fallback to success if webhook explicitly indicates success via a 'success' boolean
+      if (body.success === true || body.success === 'true') finalStatus = 'SUCCESS';
+    } else if (incomingStatus.includes('COMPLETED') || incomingStatus.includes('SUCCESS')) {
+      finalStatus = 'SUCCESS';
+    } else if (incomingStatus.includes('PENDING')) {
+      finalStatus = 'PENDING';
+    } else {
+      finalStatus = 'FAILED';
+    }
+
+    console.log(`[Pesapal] Webhook processing pendingId=${pendingId} mappedStatus=${finalStatus} incomingStatus=${incomingStatus}`);
+
     await processPendingPaymentHelper({ pendingKey: pendingId, data: pendingSnap.val(), status: finalStatus });
-    
+
     return res.json({ ok: true, pendingId, status: finalStatus });
   } catch (err) {
     console.error('[Pesapal] Webhook error:', err.message);

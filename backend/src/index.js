@@ -121,5 +121,36 @@ app.listen(port, () => {
     : 'https://cybjqa.pesapal.com/pesapalv3/api';
   console.log(`Pesapal mode: ${pesapalEnv}; API base: ${pesapalApiBase}`);
   console.log(`Pesapal callback URL: ${process.env.PESAPAL_CALLBACK_URL || 'not set (will default to runtime host)'}`);
+  // Attempt to auto-register Pesapal IPN on startup if configuration is present and no IPN id is set
+  (async () => {
+    try {
+      const hasKey = !!process.env.PESAPAL_CONSUMER_KEY || !!process.env.PESAPAL_KEY || !!process.env.PESAPAL_API_KEY;
+      const hasSecret = !!process.env.PESAPAL_CONSUMER_SECRET || !!process.env.PESAPAL_SECRET || !!process.env.PESAPAL_API_SECRET;
+      const callbackUrl = process.env.PESAPAL_CALLBACK_URL || null;
+      const alreadySet = !!process.env.PESAPAL_IPN_ID;
+
+      if (hasKey && hasSecret && callbackUrl && !alreadySet) {
+        try {
+          const registerUrl = `http://localhost:${port}/api/payments/pesapal/register-ipn`;
+          console.log(`[Startup] Attempting to register Pesapal IPN at ${registerUrl} -> ${callbackUrl}`);
+          const resp = await fetch(registerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: callbackUrl }),
+          });
+          const data = await resp.json().catch(() => null);
+          console.log('[Startup] Pesapal IPN registration response:', resp.status, data || 'no-json');
+        } catch (err) {
+          console.warn('[Startup] Pesapal IPN registration failed:', err.message || err);
+        }
+      } else {
+        if (!hasKey || !hasSecret) console.log('[Startup] Pesapal credentials not found; skipping IPN registration');
+        else if (!callbackUrl) console.log('[Startup] PESAPAL_CALLBACK_URL not set; skipping IPN registration');
+        else console.log('[Startup] PESAPAL_IPN_ID already set; skipping IPN registration');
+      }
+    } catch (e) {
+      console.warn('[Startup] Pesapal IPN registration check failed', e?.message || e);
+    }
+  })();
 });
 
