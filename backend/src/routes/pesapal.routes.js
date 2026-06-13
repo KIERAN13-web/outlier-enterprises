@@ -12,6 +12,9 @@ router.post('/register-ipn', pesapalController.registerPesapalIpn);
 // Check payment status for a pending payment
 router.get('/status/:pendingId', pesapalController.checkPaymentStatus);
 
+// Debug endpoint (dev mode only) to inspect pending records
+router.get('/debug/:pendingId', pesapalController.debugPendingRecord);
+
 // Pesapal webhook endpoint (Pesapal would POST here in production)
 router.get('/webhook', pesapalController.webhookHealth);
 router.head('/webhook', pesapalController.webhookHealth);

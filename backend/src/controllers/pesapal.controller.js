@@ -459,38 +459,51 @@ async function processPendingPaymentHelper({ pendingKey, data, status }) {
 
   console.log(`[processPendingPaymentHelper] Processing pendingKey=${pendingKey} status=${status} type=${data.type}`);
 
-  if (status === 'SUCCESS') {
-    console.log(`[processPendingPaymentHelper] Marking payment as completed for pendingKey=${pendingKey}`);
-    await docRef.update({ status: 'COMPLETED', updatedAt: now });
-    await pendingUserRef.update({
-      status: 'COMPLETED',
-      paymentStatus: 'COMPLETED',
-      paymentCompletedAt: now,
-      updatedAt: now,
-    });
+  try {
+    if (status === 'SUCCESS') {
+      console.log(`[processPendingPaymentHelper] Updating pendingPayments/${pendingKey} to COMPLETED`);
+      await docRef.update({ status: 'COMPLETED', updatedAt: now });
+      console.log(`[processPendingPaymentHelper] Successfully updated pendingPayments/${pendingKey}`);
+      
+      console.log(`[processPendingPaymentHelper] Updating pendingUsers/${pendingKey} to COMPLETED`);
+      await pendingUserRef.update({
+        status: 'COMPLETED',
+        paymentStatus: 'COMPLETED',
+        paymentCompletedAt: now,
+        updatedAt: now,
+      });
+      console.log(`[processPendingPaymentHelper] Successfully updated pendingUsers/${pendingKey}`);
 
-    // For PayPal-based approvals, actual user activation must happen on admin approval.
-    console.log(`[processPendingPaymentHelper] Completed payment processing for pendingKey=${pendingKey}`);
-    return;
-  }
+      // For PayPal-based approvals, actual user activation must happen on admin approval.
+      console.log(`[processPendingPaymentHelper] Completed payment processing for pendingKey=${pendingKey}`);
+      return;
+    }
 
-  if (status === 'FAILED') {
-    console.log(`[processPendingPaymentHelper] Marking payment as failed for pendingKey=${pendingKey}`);
+    if (status === 'FAILED') {
+      console.log(`[processPendingPaymentHelper] Updating pendingPayments/${pendingKey} to FAILED`);
+      await docRef.update({ status: 'FAILED', updatedAt: now });
+      console.log(`[processPendingPaymentHelper] Updating pendingUsers/${pendingKey} to FAILED`);
+      await pendingUserRef.update({ status: 'FAILED', updatedAt: now });
+      console.log(`[processPendingPaymentHelper] Marked payment as failed for pendingKey=${pendingKey}`);
+      return;
+    }
+
+    if (status === 'PENDING') {
+      console.log(`[processPendingPaymentHelper] Updating pendingPayments/${pendingKey} to PENDING`);
+      await docRef.update({ status: 'PENDING', updatedAt: now });
+      console.log(`[processPendingPaymentHelper] Updating pendingUsers/${pendingKey} to PENDING`);
+      await pendingUserRef.update({ status: 'PENDING', updatedAt: now });
+      console.log(`[processPendingPaymentHelper] Marked payment as pending for pendingKey=${pendingKey}`);
+      return;
+    }
+
+    console.warn(`[processPendingPaymentHelper] Unknown status '${status}' for pendingKey=${pendingKey}, marking as failed`);
     await docRef.update({ status: 'FAILED', updatedAt: now });
     await pendingUserRef.update({ status: 'FAILED', updatedAt: now });
-    return;
+  } catch (err) {
+    console.error(`[processPendingPaymentHelper] Firebase update error for pendingKey=${pendingKey}:`, err.message, err.stack);
+    throw err;
   }
-
-  if (status === 'PENDING') {
-    console.log(`[processPendingPaymentHelper] Marking payment as pending for pendingKey=${pendingKey}`);
-    await docRef.update({ status: 'PENDING', updatedAt: now });
-    await pendingUserRef.update({ status: 'PENDING', updatedAt: now });
-    return;
-  }
-
-  console.warn(`[processPendingPaymentHelper] Unknown status '${status}' for pendingKey=${pendingKey}, marking as failed`);
-  await docRef.update({ status: 'FAILED', updatedAt: now });
-  await pendingUserRef.update({ status: 'FAILED', updatedAt: now });
 }
 
 // In production this would handle Pesapal's callback. For now we accept a payload
@@ -575,16 +588,54 @@ async function webhook(req, res) {
     if (typeof incomingStatus === 'string') incomingStatus = incomingStatus.toUpperCase();
 
     // Map Pesapal statuses to internal statuses expected by processPendingPaymentHelper
-    let finalStatus = 'FAILED';
+    // Pesapal v3 possible status values: PENDING, COMPLETED, FAILED, PARTIAL, WAITING FOR PAYMENT, CANCELLED
+    let finalStatus = null;
+    
     if (!incomingStatus) {
-      // Fallback to success if webhook explicitly indicates success via a 'success' boolean
-      if (body.success === true || body.success === 'true') finalStatus = 'SUCCESS';
-    } else if (incomingStatus.includes('COMPLETED') || incomingStatus.includes('SUCCESS')) {
+      // No status field found - check for alternative indicators
+      console.log(`[Pesapal] No incomingStatus found. Checking alternative fields. Full body:`, JSON.stringify(body, null, 2));
+      
+      // Check various success/completion indicators
+      if (body.success === true || body.success === 'true') {
+        finalStatus = 'SUCCESS';
+        console.log('[Pesapal] Detected success via body.success=true');
+      } else if (body.completed === true || body.payment_completed === true) {
+        finalStatus = 'SUCCESS';
+        console.log('[Pesapal] Detected success via completion flag');
+      } else {
+        // Default to PENDING if truly no status info (webhook callback might not include status yet)
+        finalStatus = 'PENDING';
+        console.log('[Pesapal] No status indicators found, defaulting to PENDING');
+      }
+    } else if (
+      incomingStatus.includes('COMPLETED') || 
+      incomingStatus.includes('SUCCESS') || 
+      incomingStatus.includes('CONFIRMED') ||
+      incomingStatus === 'COMPLETED' ||
+      incomingStatus === 'SUCCESS'
+    ) {
       finalStatus = 'SUCCESS';
-    } else if (incomingStatus.includes('PENDING')) {
+      console.log(`[Pesapal] Detected SUCCESS status from incomingStatus: ${incomingStatus}`);
+    } else if (
+      incomingStatus.includes('PENDING') || 
+      incomingStatus.includes('WAITING') ||
+      incomingStatus === 'PENDING'
+    ) {
       finalStatus = 'PENDING';
-    } else {
+      console.log(`[Pesapal] Detected PENDING status from incomingStatus: ${incomingStatus}`);
+    } else if (
+      incomingStatus.includes('FAILED') || 
+      incomingStatus.includes('CANCELLED') || 
+      incomingStatus.includes('REJECTED') ||
+      incomingStatus === 'FAILED' ||
+      incomingStatus === 'CANCELLED'
+    ) {
       finalStatus = 'FAILED';
+      console.log(`[Pesapal] Detected FAILED status from incomingStatus: ${incomingStatus}`);
+    } else {
+      // Unknown status - log it and default to PENDING to not block the user
+      console.warn(`[Pesapal] Unknown status value: '${incomingStatus}'. Defaulting to PENDING.`);
+      finalStatus = 'PENDING';
     }
 
     console.log(`[Pesapal] Webhook processing pendingId=${pendingId} mappedStatus=${finalStatus} incomingStatus=${incomingStatus}`);
@@ -629,20 +680,23 @@ async function checkPaymentStatus(req, res) {
       return res.status(400).json({ ok: false, error: 'pendingId_required' });
     }
 
+    console.log(`[Pesapal] Status check started for pendingId=${pendingId}`);
     const rdb = firebaseAdmin.database();
     const pendingSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
     let pending;
 
     if (!pendingSnap.exists()) {
+      console.log(`[Pesapal] pendingPayments/${pendingId} does not exist, checking pendingUsers`);
       const pendingUserSnap = await rdb.ref(`pendingUsers/${pendingId}`).get();
       if (!pendingUserSnap.exists()) {
         console.warn(`[Pesapal] Status check for non-existent pendingId: ${pendingId}`);
         return res.status(404).json({ ok: false, error: 'PENDING_NOT_FOUND' });
       }
       pending = pendingUserSnap.val();
-      console.log(`[Pesapal] Status check fallback to pendingUsers for pendingId=${pendingId}`);
+      console.log(`[Pesapal] Status check found in pendingUsers for pendingId=${pendingId}. Full record:`, JSON.stringify(pending, null, 2));
     } else {
       pending = pendingSnap.val();
+      console.log(`[Pesapal] Status check found in pendingPayments for pendingId=${pendingId}. Full record:`, JSON.stringify(pending, null, 2));
     }
 
     // If no orderTrackingId (shouldn't happen with new integration), return current status
@@ -697,4 +751,37 @@ function webhookHealth(req, res) {
   return res.json({ ok: true, message: 'Pesapal webhook endpoint is available' });
 }
 
-export default { initPesapal, initPesapalGuest, registerPesapalIpn, checkPaymentStatus, webhook, webhookHealth, simulateWebhook, getPesapalPaymentStatus };
+// Debug endpoint to inspect database records for a pendingId
+async function debugPendingRecord(req, res) {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ ok: false, error: 'DEBUG_DISABLED_IN_PRODUCTION' });
+    }
+
+    const { pendingId } = req.params;
+    if (!pendingId) {
+      return res.status(400).json({ ok: false, error: 'pendingId_required' });
+    }
+
+    const rdb = firebaseAdmin.database();
+    
+    // Get both records
+    const pendingPaymentSnap = await rdb.ref(`pendingPayments/${pendingId}`).get();
+    const pendingUserSnap = await rdb.ref(`pendingUsers/${pendingId}`).get();
+
+    const result = {
+      pendingId,
+      pendingPayments: pendingPaymentSnap.exists() ? pendingPaymentSnap.val() : null,
+      pendingUsers: pendingUserSnap.exists() ? pendingUserSnap.val() : null,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log('[Debug] Pending record inspection for', pendingId, JSON.stringify(result, null, 2));
+    return res.json(result);
+  } catch (err) {
+    console.error('[Debug] debugPendingRecord error:', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+}
+
+export default { initPesapal, initPesapalGuest, registerPesapalIpn, checkPaymentStatus, webhook, webhookHealth, simulateWebhook, getPesapalPaymentStatus, debugPendingRecord };
