@@ -3,7 +3,7 @@ import paymentProvider from '../services/paymentProvider.js';
 import referralService from '../services/referralService.js';
 import { parseAmount, validateOrderAmount } from '../utils/orderValidation.js';
 
-const PAID_AMOUNT = 200;
+const PAID_AMOUNT = 1;
 const VERIFICATION_TIME = 2 * 60 * 1000; // 2 minutes in milliseconds
 const MAX_ORDERS_PER_WEEK = Number(process.env.MAX_ORDERS_PER_WEEK) || 5;
 const MAX_ORDERS_PER_DAY = Number(process.env.MAX_ORDERS_PER_DAY) || 1;
