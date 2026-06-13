@@ -10,6 +10,8 @@ export default function Payment() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [pendingId, setPendingId] = useState(null);
+  const [checkoutUrl, setCheckoutUrl] = useState('');
   const navigate = useNavigate();
 
   async function onPay(e) {
@@ -35,10 +37,10 @@ export default function Payment() {
         try {
           const resp = await paymentApi.createPesapalInit(token);
           if (resp && resp.pendingId) {
-            if (resp.iframeUrl) {
-              window.open(resp.iframeUrl, 'pesapal', 'width=700,height=800');
-            }
-            navigate(`/payment-status/${resp.pendingId}`);
+            setPendingId(resp.pendingId);
+            setCheckoutUrl(resp.iframeUrl || '');
+            localStorage.setItem('paymentProvider', provider);
+            setSuccess(true);
           } else {
             setError('Failed to initialize Pesapal payment');
           }
@@ -83,7 +85,24 @@ export default function Payment() {
 
           <form onSubmit={onPay} className="payment-form">
             {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">✓ Payment successful! Redirecting...</div>}
+            {success && provider === 'pesapal' && checkoutUrl && (
+              <div className="success-message">
+                ✓ Pesapal payment initialized successfully.
+                <div style={{ marginTop: '12px' }}>
+                  <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-full">
+                    Continue to Pesapal checkout
+                  </a>
+                  {pendingId && (
+                    <p style={{ marginTop: '8px' }}>
+                      View status on the <a href={`/payment-status/${pendingId}`}>payment status page</a>.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {success && provider === 'mpesa' && (
+              <div className="success-message">✓ Payment initiated successfully. Redirecting to dashboard...</div>
+            )}
 
             <div className="form-group">
               <label>Payment Method</label>

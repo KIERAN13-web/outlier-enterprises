@@ -20,6 +20,7 @@ export default function Register() {
   const [showLoginLink, setShowLoginLink] = useState(false);
   const [success, setSuccess] = useState(false);
   const [pendingId, setPendingId] = useState(null);
+  const [checkoutUrl, setCheckoutUrl] = useState('');
   const [simulationBusy, setSimulationBusy] = useState(false);
   const [simulationMessage, setSimulationMessage] = useState('');
   const isDevMode = import.meta.env.MODE !== 'production';
@@ -60,12 +61,9 @@ export default function Register() {
     setBusy(true);
     setError('');
     setSimulationMessage('');
-    let popup;
-    try {
-      if (provider === 'pesapal') {
-        popup = window.open('', 'pesapal', 'width=700,height=800');
-      }
+    setCheckoutUrl('');
 
+    try {
       const result = provider === 'mpesa'
         ? await paymentApi.createStkPushGuest({ name, email, password, phoneNumber, referralCode: initialReferral })
         : await paymentApi.createPesapalGuest({ name, email, password, phoneNumber, country: null, idNumber: null, referralCode: initialReferral });
@@ -78,21 +76,10 @@ export default function Register() {
       setPendingId(result.pendingId);
       // Store provider for use in PaymentStatus page
       localStorage.setItem('paymentProvider', provider);
-      if (provider === 'pesapal' && result.iframeUrl) {
-        if (!popup || popup.closed) {
-          popup = window.open(result.iframeUrl, 'pesapal', 'width=700,height=800');
-        } else {
-          popup.location.href = result.iframeUrl;
-        }
-      }
-
-      if (!isDevMode) {
-        setTimeout(() => navigate(`/payment-status/${result.pendingId}`, { replace: true }), 500);
+      if (provider === 'pesapal') {
+        setCheckoutUrl(result.iframeUrl);
       }
     } catch (err) {
-      if (popup && !popup.closed) {
-        popup.close();
-      }
       console.error(err);
       setError(err.message || 'Payment failed');
     } finally {
@@ -185,7 +172,21 @@ export default function Register() {
 
         {step === 2 && (
           <form onSubmit={onPay} className="auth-form">
-            {success && <div className="success-message">✓ Payment request sent! Redirecting...</div>}
+            {success && (
+          <div className="success-message">
+            ✓ Payment initialized successfully.
+            {provider === 'pesapal' && checkoutUrl && (
+              <div style={{ marginTop: '12px' }}>
+                <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-full">
+                  Continue to Pesapal checkout
+                </a>
+                <p style={{ marginTop: '8px' }}>
+                  After payment, return here and check your payment status on the <a href={`/payment-status/${pendingId}`}>status page</a>.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
             <div className="form-group">
               <label>Payment Method</label>
