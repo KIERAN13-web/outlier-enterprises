@@ -21,33 +21,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!auth) {
-      navigate('/login', { replace: true });
-      return;
-    }
-
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        navigate('/login', { replace: true });
-        return;
-      }
-
-      try {
-        const token = await user.getIdToken();
-        setIdToken(token);
-        fetchStats(token);
-        fetchWithdrawals(token);
-        fetchPendingRegistrations(token);
-      } catch (err) {
-        console.error('Failed to get token:', err);
-        navigate('/login', { replace: true });
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
-
   const fetchStats = async (token) => {
     try {
       const result = await adminApi.getDashboardStats(token);
@@ -80,6 +53,33 @@ export default function AdminDashboard() {
       );
     }
   };
+
+  useEffect(() => {
+    if (!auth) {
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      try {
+        const token = await user.getIdToken();
+        setIdToken(token);
+        fetchStats(token);
+        fetchWithdrawals(token);
+        fetchPendingRegistrations(token);
+      } catch (err) {
+        console.error('Failed to get token:', err);
+        navigate('/login', { replace: true });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   const onApprovePendingRegistration = async (pendingId) => {
     if (!window.confirm('Approve this registration?') || !idToken) return;
@@ -240,6 +240,13 @@ export default function AdminDashboard() {
         <button onClick={onLogout} className="btn btn-secondary">Logout</button>
       </div>
 
+      {stats && !stats.payoutsEnabled && (
+        <div className="admin-banner warning">
+          <strong>Warning:</strong> Pesapal payouts are currently disabled. Automatic withdrawal transfers will not be sent until
+          <code>PESAPAL_PAYOUTS_ENABLED=true</code> is set in the backend environment.
+        </div>
+      )}
+
       {error && <div className="error-message">{error}</div>}
 
       <div className="admin-tabs">
@@ -289,6 +296,14 @@ export default function AdminDashboard() {
             <div className="stat-card">
               <div className="stat-label">Pending Withdrawals</div>
               <div className="stat-value">{stats.pendingWithdrawals}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Payouts Enabled</div>
+              <div className="stat-value">{stats.payoutsEnabled ? 'Yes' : 'No'}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-label">Pesapal Mode</div>
+              <div className="stat-value">{stats.pesapalMode || 'sandbox'}</div>
             </div>
             <div className="stat-card">
               <div className="stat-label">Pending Amount</div>
@@ -510,6 +525,16 @@ export default function AdminDashboard() {
                     <div className="amount">KES {w.amount.toLocaleString()}</div>
                     <div className="earning-type">Type: {w.earningType === 'task' ? '📋 Task' : '👥 Referral'}</div>
                     <div className="status">Status: {w.status}</div>
+                    {w.payoutProvider && <div>Payout Provider: {w.payoutProvider}</div>}
+                    {w.payoutId && <div>Payout ID: {w.payoutId}</div>}
+                    {w.payoutInitiatedAt && <div>Payout Initiated: {new Date(w.payoutInitiatedAt).toLocaleString()}</div>}
+                    {w.payoutError && <div className="error-message">Payout Error: {w.payoutError}</div>}
+                    {w.payoutResponse && (
+                      <div className="withdrawal-response">
+                        <strong>Payout Response:</strong>{' '}
+                        <pre>{JSON.stringify(w.payoutResponse, null, 2)}</pre>
+                      </div>
+                    )}
                     <small className="date">{new Date(w.requestedAt).toLocaleString()}</small>
                   </div>
                   <div className="withdrawal-actions">

@@ -52,36 +52,72 @@ async function getToken() {
   throw lastErr;
 }
 
+function normalizePhoneNumber(phoneNumber) {
+  if (!phoneNumber) return null;
+  const trimmed = phoneNumber.toString().trim();
+  if (trimmed.startsWith('+')) return trimmed.slice(1);
+  if (trimmed.startsWith('0') && trimmed.length === 10) return `254${trimmed.slice(1)}`;
+  return trimmed;
+}
+
 // Send a payout request to Pesapal (best-effort implementation — adapt to real API fields)
 async function sendPayout({ amount, phoneNumber, reference, recipientName }) {
   validateConfig();
   const token = await getToken();
-  const payoutUrls = buildApiUrls('/Payouts/Initiate');
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
+  const payoutPaths = ['/Payouts/Initiate', '/Payouts/InitiatePayment'];
   let lastErr = null;
-  for (const url of payoutUrls) {
-    try {
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          amount: Number(amount),
-          currency: 'KES',
-          recipient_phone: phoneNumber,
-          recipient_name: recipientName || null,
-          reference: reference || `wd_${Date.now()}`,
-        }),
-      });
-      const data = await resp.json().catch(() => null);
-      if (!resp.ok) {
-        lastErr = new Error(`Payout failed: ${resp.status} ${JSON.stringify(data)}`);
-        continue;
+
+  const payload = {
+    amount: Number(amount),
+    currency: 'KES',
+    description: `Withdrawal payout ${reference || Date.now()}`,
+    reference: reference || `wd_${Date.now()}`,
+    recipient_phone: normalizedPhone,
+    recipient_msisdn: normalizedPhone,
+    recipient_mobile: normalizedPhone,
+    recipient_name: recipientName || null,
+    recipient: {
+      msisdn: normalizedPhone,
+      name: recipientName || null,
+    },
+  };
+
+  for (const path of payoutPaths) {
+    const payoutUrls = buildApiUrls(path);
+    for (const url of payoutUrls) {
+      try {
+        console.log(`[Pesapal] Initiating payout to ${normalizedPhone} via ${url}`);
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await resp.json().catch(() => null);
+        if (!resp.ok) {
+          lastErr = new Error(`Payout failed: ${resp.status} ${JSON.stringify(data)}`);
+          console.error('[Pesapal] Payout error response:', data);
+          continue;
+        }
+
+        console.log('[Pesapal] Payout request succeeded', data);
+        return {
+          ok: true,
+          data,
+          payoutId: data.payout_id || data.id || data.payoutId || data.payment_id || null,
+        };
+      } catch (err) {
+        lastErr = err;
+        console.error('[Pesapal] Payout request error:', err?.message || err);
       }
-      // Return payload including raw response for audit
-      return { ok: true, data, payoutId: data.payout_id || data.id || data.payoutId || null };
-    } catch (err) {
-      lastErr = err;
     }
   }
+
   throw lastErr;
 }
 

@@ -9,6 +9,30 @@
   color: #ffffff;
 }
 
+.admin-banner {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.85rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: #f8fafc;
+}
+
+.admin-banner.warning {
+  background: linear-gradient(135deg, #f87171 0%, #fb7185 100%);
+  border: 1px solid rgba(248, 113, 113, 0.6);
+}
+
+.admin-banner code {
+  display: inline-block;
+  margin: 0 0.25rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
 .admin-header {
   display: flex;
   justify-content: space-between;

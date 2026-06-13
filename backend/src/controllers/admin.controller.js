@@ -1,3 +1,4 @@
+/* global process */
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import paymentController from './payment.controller.js';
 import referralService from '../services/referralService.js';
@@ -249,7 +250,7 @@ async function approveAllPendingRegistrations(req, res) {
 
     const pendingUsers = snap.val();
     const results = [];
-    for (const [pendingId, data] of Object.entries(pendingUsers || {})) {
+    for (const [pendingId] of Object.entries(pendingUsers || {})) {
       try {
         const result = await paymentController.approvePendingUserRegistration(pendingId);
         results.push({ pendingId, status: 'success', result });
@@ -625,6 +626,9 @@ async function getDashboardStats(req, res) {
       }
     }
 
+    const payoutsEnabled = (process.env.PESAPAL_PAYOUTS_ENABLED || 'false').toLowerCase() === 'true';
+    const pesapalMode = (process.env.PESAPAL_ENV || 'sandbox').toLowerCase();
+
     return res.json({
       ok: true,
       stats: {
@@ -634,6 +638,8 @@ async function getDashboardStats(req, res) {
         pendingWithdrawals,
         pendingWithdrawalAmount,
         pendingRegistrations: pendingRegistrationsCount,
+        payoutsEnabled,
+        pesapalMode,
       },
     });
   } catch (err) {
