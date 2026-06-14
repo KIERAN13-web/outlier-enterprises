@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import firebaseAdmin from '../services/firebaseAdmin.js';
 
-const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 1);
+const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 200);
 
 // Read from env at runtime (not at module load) so Railway env vars are picked up even if process is already running
 function getConsumerKey() {

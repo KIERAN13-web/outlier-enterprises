@@ -28,15 +28,22 @@ async function submitTask(req, res) {
     await taskRef.set(taskData);
 
     // Update the order status to 'completed'
-    await rdb.ref(`users/${uid}/orders/${orderId}`).update({
+    const orderRef = rdb.ref(`users/${uid}/orders/${orderId}`);
+    await orderRef.update({
       status: 'completed',
       taskId,
       completedAt: completedAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
 
-    // Add earnings to wallet (amount per completed task)
-    const TASK_REWARD = 1000; // KES per task
+    const orderSnap = await orderRef.get();
+    if (!orderSnap.exists()) {
+      return res.status(400).json({ ok: false, error: 'ORDER_NOT_FOUND' });
+    }
+
+    const orderAmount = Number(orderSnap.val().amount) || 1000;
+
+    // Add earnings to wallet using the order amount
     const walletRef = rdb.ref(`users/${uid}/wallet`);
     const walletSnap = await walletRef.get();
     const currentWallet = walletSnap.exists() ? walletSnap.val() : {
@@ -44,8 +51,8 @@ async function submitTask(req, res) {
       availableBalance: 0,
     };
 
-    const newTotalEarnings = (currentWallet.totalEarnings || 0) + TASK_REWARD;
-    const newAvailableBalance = (currentWallet.availableBalance || 0) + TASK_REWARD;
+    const newTotalEarnings = (currentWallet.totalEarnings || 0) + orderAmount;
+    const newAvailableBalance = (currentWallet.availableBalance || 0) + orderAmount;
 
     await walletRef.update({
       totalEarnings: newTotalEarnings,
@@ -57,7 +64,7 @@ async function submitTask(req, res) {
     const transactionRef = rdb.ref(`users/${uid}/wallet/transactions`).push();
     await transactionRef.set({
       type: 'task_completion',
-      amount: TASK_REWARD,
+      amount: orderAmount,
       taskId,
       orderId,
       createdAt: new Date().toISOString(),
