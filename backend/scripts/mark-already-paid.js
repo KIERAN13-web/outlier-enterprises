@@ -1,14 +1,27 @@
 #!/usr/bin/env node
 import firebaseAdmin from '../src/services/firebaseAdmin.js';
+import fs from 'fs';
 
 // One-off admin script to mark existing users as paid/activated
-// Criteria used (best-effort):
-// - user.paidAt or user.paymentCompletedAt exists
-// - OR any order in users/{uid}/orders with amount >= 200 and status indicating success
+// Usage:
+//  - Dry run (default): `node backend/scripts/mark-already-paid.js`
+//  - Apply updates: `node backend/scripts/mark-already-paid.js --apply`
+//  - Save CSV of matches: `--out=matches.csv`
 
 const PAID_AMOUNT = 200;
 
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const opts = { apply: false, out: null };
+  for (const a of args) {
+    if (a === '--apply' || a === '-a') opts.apply = true;
+    if (a.startsWith('--out=')) opts.out = a.split('=')[1];
+  }
+  return opts;
+}
+
 async function main() {
+  const opts = parseArgs();
   try {
     const rdb = firebaseAdmin.database();
     const usersSnap = await rdb.ref('users').get();
@@ -18,16 +31,15 @@ async function main() {
     }
 
     const users = usersSnap.val();
-    const updates = [];
+    const matches = [];
 
     for (const [uid, data] of Object.entries(users)) {
       try {
-        // skip already paid
-        if (data?.isPaid) continue;
+        if (data?.isPaid) continue; // already paid
 
         const hasPaidFlag = data?.paidAt || data?.paymentCompletedAt || data?.paymentCompleted;
         if (hasPaidFlag) {
-          updates.push({ uid, reason: 'paid_flag', paidAt: data.paidAt || data.paymentCompletedAt || new Date().toISOString() });
+          matches.push({ uid, reason: 'paid_flag', paidAt: data.paidAt || data.paymentCompletedAt || new Date().toISOString() });
           continue;
         }
 
@@ -38,8 +50,8 @@ async function main() {
           for (const [oid, order] of Object.entries(orders || {})) {
             const amount = Number(order.amount || 0);
             const status = String(order.status || '').toLowerCase();
-            if (amount >= PAID_AMOUNT && (status === 'verified' || status === 'verified' || status === 'paid' || status === 'completed' || status === 'success')) {
-              updates.push({ uid, reason: `order:${oid}`, paidAt: order.verifiedAt || order.updatedAt || order.createdAt || new Date().toISOString() });
+            if (amount >= PAID_AMOUNT && ['verified', 'paid', 'completed', 'success'].includes(status)) {
+              matches.push({ uid, reason: `order:${oid}`, paidAt: order.verifiedAt || order.updatedAt || order.createdAt || new Date().toISOString() });
               break;
             }
           }
@@ -49,18 +61,34 @@ async function main() {
       }
     }
 
-    if (updates.length === 0) {
+    if (matches.length === 0) {
       console.log('No users matched the paid criteria. Nothing to update.');
       process.exit(0);
     }
 
-    console.log(`Found ${updates.length} users to mark as paid. Applying updates...`);
+    console.log(`Found ${matches.length} users to mark as paid.`);
 
-    for (const u of updates) {
+    if (opts.out) {
+      try {
+        const csv = ['uid,reason,paidAt'].concat(matches.map(m => `${m.uid},${m.reason},${m.paidAt}`)).join('\n');
+        fs.writeFileSync(opts.out, csv, 'utf8');
+        console.log(`Wrote matches CSV to ${opts.out}`);
+      } catch (e) {
+        console.error('Failed to write CSV', e?.message || e);
+      }
+    }
+
+    if (!opts.apply) {
+      console.log('Dry run mode — no changes applied. Rerun with --apply to apply updates.');
+      matches.slice(0, 100).forEach(m => console.log(`- ${m.uid} (${m.reason}) at ${m.paidAt}`));
+      process.exit(0);
+    }
+
+    console.log('Applying updates now...');
+    for (const u of matches) {
       try {
         const now = u.paidAt || new Date().toISOString();
         await rdb.ref(`users/${u.uid}`).update({ isPaid: true, paidAt: now, updatedAt: new Date().toISOString() });
-        // ensure wallet exists
         const walletSnap = await rdb.ref(`users/${u.uid}/wallet`).get();
         if (!walletSnap.exists()) {
           await rdb.ref(`users/${u.uid}/wallet`).set({ taskBalance: 0, referralBalance: 0, totalEarnings: 0, updatedAt: new Date().toISOString() });
