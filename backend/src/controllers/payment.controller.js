@@ -440,6 +440,7 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
   const status = data.status || 'PENDING';
   const paymentStatus = data.paymentStatus || (status === 'COMPLETED' ? 'COMPLETED' : null);
   const isManual = data.paymentMethod === 'manual' || data.provider === 'manual';
+  const allowManualOverride = Boolean(force || isManual || data.provider === 'pesapal');
   const now = new Date().toISOString();
   let paymentCompleted = paymentStatus === 'COMPLETED' || status === 'COMPLETED' || !!data.paymentCompletedAt;
   if (force) {
@@ -483,7 +484,7 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
     }
   }
 
-  if (!paymentCompleted && !isManual) {
+  if (!paymentCompleted && !allowManualOverride) {
     throw new Error('payment_not_completed');
   }
 

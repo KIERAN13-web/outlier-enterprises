@@ -334,6 +334,13 @@ async function initPesapal(req, res) {
     const pendingRef = rdb.ref('pendingPayments').push();
     const pendingId = pendingRef.key;
 
+    const userProfileSnap = await rdb.ref(`users/${uid}`).get();
+    const userProfile = userProfileSnap.exists() ? userProfileSnap.val() : {};
+    const profileName = userProfile.fullName || userProfile.name || null;
+    const profilePhone = userProfile.phoneNumber || null;
+    const profileCountry = userProfile.country || null;
+    const profileIdNumber = userProfile.idNumber || null;
+
     // Submit order to Pesapal
     const callbackUrl = getPesapalCallbackUrl(req);
     console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
@@ -349,6 +356,10 @@ async function initPesapal(req, res) {
     await pendingRef.set({
       uid,
       email: email || null,
+      phoneNumber: profilePhone,
+      name: profileName,
+      country: profileCountry,
+      idNumber: profileIdNumber,
       amount: PAID_AMOUNT,
       provider: 'pesapal',
       status: 'PENDING',
@@ -360,8 +371,10 @@ async function initPesapal(req, res) {
 
     await rdb.ref(`pendingUsers/${pendingId}`).set({
       email: email || null,
-      phoneNumber: null,
-      name: null,
+      phoneNumber: profilePhone,
+      name: profileName,
+      country: profileCountry,
+      idNumber: profileIdNumber,
       status: 'PENDING',
       provider: 'pesapal',
       orderTrackingId: orderData.orderTrackingId,

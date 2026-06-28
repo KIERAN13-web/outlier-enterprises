@@ -168,10 +168,11 @@ async function getPendingRegistrations(req, res) {
             }
           }
 
+          const displayName = data.name || data.fullName || data.displayName || null;
           return {
             pendingId,
             email: data.email,
-            name: data.name || null,
+            name: displayName,
             phoneNumber: data.phoneNumber || null,
             country: data.country || null,
             idNumber: data.idNumber || null,
@@ -222,7 +223,8 @@ async function approvePendingRegistration(req, res) {
     console.log(`[approvePendingRegistration] admin=${req.adminUid || 'unknown'} pendingId=${pendingId} email=${pendingData.email}`);
 
     try {
-      const result = await paymentController.approvePendingUserRegistration(pendingId);
+      const forceApproval = Boolean((req.body && req.body.force) || req.query?.force === 'true' || req.query?.force === '1');
+      const result = await paymentController.approvePendingUserRegistration(pendingId, { force: forceApproval });
       return res.json({ ok: true, pendingId, status: result.status, uid: result.uid || null });
     } catch (err) {
       console.error(`[approvePendingRegistration] error approving pendingId=${pendingId}`, err?.message || err);
@@ -294,7 +296,7 @@ async function approveAllPendingRegistrations(req, res) {
     const results = [];
     for (const [pendingId] of Object.entries(pendingUsers || {})) {
       try {
-        const result = await paymentController.approvePendingUserRegistration(pendingId);
+        const result = await paymentController.approvePendingUserRegistration(pendingId, { force: true });
         results.push({ pendingId, status: 'success', result });
       } catch (err) {
         console.error(`approveAllPendingRegistrations failed for ${pendingId}:`, err);
