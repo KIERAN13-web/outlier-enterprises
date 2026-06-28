@@ -2,6 +2,7 @@ import firebaseAdmin from '../services/firebaseAdmin.js';
 import paymentProvider from '../services/paymentProvider.js';
 import referralService from '../services/referralService.js';
 import { parseAmount, validateOrderAmount } from '../utils/orderValidation.js';
+import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
 const PAID_AMOUNT = 200;
 const VERIFICATION_TIME = 2 * 60 * 1000; // 2 minutes in milliseconds
@@ -496,109 +497,18 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
     throw new Error('pending_user_missing_email');
   }
 
-  let uid;
-
   try {
-    // Create or find auth user
-    try {
-      const userRecord = await firebaseAdmin.auth().createUser({
-        email,
-        password: data.password || `Manual${Date.now()}!`,
-        displayName: data.name || null,
-      });
-      uid = userRecord.uid;
-      console.log(`[approvePendingUserRegistration] created auth user uid=${uid} email=${email}`);
-    } catch (err) {
-      if (err.code === 'auth/email-already-exists') {
-        const existing = await firebaseAdmin.auth().getUserByEmail(email);
-        uid = existing.uid;
-        console.log(`[approvePendingUserRegistration] found existing auth user uid=${uid} email=${email}`);
+    const result = await activatePendingRegistration({
+      rdb,
+      pendingId,
+      pendingData: data,
+      now,
+      cleanupPendingApproval,
+    });
 
-        if (data.password) {
-          try {
-            await firebaseAdmin.auth().updateUser(uid, { password: data.password });
-            console.log(`[approvePendingUserRegistration] updated password for existing auth user uid=${uid}`);
-          } catch (pwErr) {
-            console.error(`[approvePendingUserRegistration] failed to update password for existing auth user uid=${uid}`, pwErr);
-          }
-        }
-      } else {
-        throw err;
-      }
-    }
-
-    const userRef = rdb.ref(`users/${uid}`);
-    const existingUserSnap = await userRef.get();
-    const existingUser = existingUserSnap.exists() ? existingUserSnap.val() : {};
-
-    const referrerCode = data.referralCode || null;
-    let referralCodeForNewUser = existingUser.referralCode;
-    if (!referralCodeForNewUser) {
-      try {
-        referralCodeForNewUser = await referralService.generateUniqueReferralCode(rdb);
-      } catch (err) {
-        referralCodeForNewUser = `R${(uid || '').slice(0, 8)}`;
-      }
-    }
-
-    const updates = {
-      email,
-      fullName: data.name || existingUser.fullName || null,
-      country: data.country || existingUser.country || null,
-      idNumber: data.idNumber || existingUser.idNumber || null,
-      phoneNumber: data.phoneNumber || existingUser.phoneNumber || null,
-      isPaid: true,
-      paidAt: now,
-      referralCode: referralCodeForNewUser,
-      updatedAt: now,
-    };
-
-    if (!existingUser.createdAt) updates.createdAt = now;
-    if (existingUser.isAdmin === undefined) updates.isAdmin = false;
-
-    await userRef.update(updates);
-
-    const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
-    if (!walletSnap.exists()) {
-      await rdb.ref(`users/${uid}/wallet`).set({
-        taskBalance: 0,
-        referralBalance: 0,
-        totalEarnings: 0,
-        updatedAt: now,
-      });
-    }
-
-    if (referrerCode) {
-      try {
-        console.log(`[approvePendingUserRegistration] crediting referrer for pendingId=${pendingId} using code=${referrerCode} email=${data.email}`);
-        await referralService.creditReferralBonus(rdb, referrerCode, data.email);
-      } catch (err) {
-        console.error('creditReferralBonus during manual approval failed:', err);
-      }
-    } else {
-      console.log(`[approvePendingUserRegistration] no referralCode provided for pendingId=${pendingId} email=${data.email}; continuing`);
-    }
-
-    await cleanupPendingApproval(pendingId);
-
-    return { status: 'COMPLETED', uid };
+    return result;
   } catch (err) {
     console.error('[approvePendingUserRegistration] error', err?.message || err);
-    if (uid) {
-      try {
-        await rdb.ref(`pendingUsers/${pendingId}`).update({
-          status: 'COMPLETED',
-          uid,
-          isPaid: true,
-          paidAt: now,
-          updatedAt: now,
-        });
-        await cleanupPendingApproval(pendingId);
-        return { status: 'COMPLETED', uid };
-      } catch (innerErr) {
-        console.error('[approvePendingUserRegistration] failed to mark pending as completed after error', innerErr);
-      }
-    }
     throw err;
   }
 }

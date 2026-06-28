@@ -483,7 +483,7 @@ export default function AdminDashboard() {
       {activeTab === 'registrations' && (
         <div className="admin-section">
           <div className="registrations-header-row">
-            <h2>Pending Registrations</h2>
+            <h2>Pending Activation Payments</h2>
             {pendingRegistrations.filter((r) => r.status === 'PENDING').length > 0 && (
               <button
                 onClick={onApproveAllPendingRegistrations}
@@ -518,6 +518,7 @@ export default function AdminDashboard() {
                     </div>
                     {registration.tillNumber && <div>Till: {registration.tillNumber}</div>}
                     {registration.paymentCode && <div>Payment Code: {registration.paymentCode}</div>}
+                    {registration.orderTrackingId && <div>Payment Ref: {registration.orderTrackingId}</div>}
                     <div>Status: {registration.status}</div>
                     {registration.referralCode && (
                       <div>
@@ -540,7 +541,7 @@ export default function AdminDashboard() {
                             disabled={busy}
                             className="btn btn-success btn-sm"
                           >
-                            Approve
+                            Approve Payment
                           </button>
                           <button
                             onClick={() => onForceApprovePendingRegistration(registration.pendingId)}
@@ -548,7 +549,7 @@ export default function AdminDashboard() {
                             className="btn btn-warning btn-sm"
                             style={{ marginLeft: '8px' }}
                           >
-                            Force Approve
+                            Manual Activate
                           </button>
                         </>
                       ) : (

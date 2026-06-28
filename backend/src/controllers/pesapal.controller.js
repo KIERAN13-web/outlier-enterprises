@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import firebaseAdmin from '../services/firebaseAdmin.js';
+import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
 const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 200);
 
@@ -480,6 +481,18 @@ async function processPendingPaymentHelper({ pendingKey, data, status }) {
           isPaid: true,
           paidAt: now,
           updatedAt: now,
+        });
+      }
+
+      if (data.type === 'GUEST') {
+        await activatePendingRegistration({
+          rdb,
+          pendingId: pendingKey,
+          pendingData: data,
+          now,
+          cleanupPendingApproval: async () => {
+            await Promise.all([docRef.remove(), pendingUserRef.remove()]);
+          },
         });
       }
 
