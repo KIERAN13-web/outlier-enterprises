@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { get, ref } from 'firebase/database';
+import { auth, database } from '../firebase/client';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import paymentApi from '../api/paymentApi';
 import './Auth.css';
@@ -16,18 +18,43 @@ export default function PaymentStatus() {
 
   useEffect(() => {
     let intervalId;
+    let mounted = true;
+
+    async function checkUserPaidStatus() {
+      try {
+        const user = auth.currentUser;
+        if (!user || !database) return false;
+        const paidSnap = await get(ref(database, `users/${user.uid}/isPaid`));
+        if (!mounted) return false;
+        if (paidSnap.exists() && Boolean(paidSnap.val()) === true) {
+          setStatus('PAID');
+          setMessage('Payment confirmed from your account record. Redirecting to dashboard...');
+          setBusy(false);
+          clearInterval(intervalId);
+          setTimeout(() => navigate('/dashboard', { replace: true }), 2000);
+          return true;
+        }
+      } catch (err) {
+        console.error('RTDB status check failed', err);
+      }
+      return false;
+    }
 
     async function fetchStatus() {
       try {
-        let response;
-        response = await paymentApi.getPesapalPaymentStatus(pendingId);
-        setStatus(response.status || 'PENDING');
+        const alreadyPaid = await checkUserPaidStatus();
+        if (alreadyPaid) return;
+
+        const response = await paymentApi.getPesapalPaymentStatus(pendingId);
+        const paymentStatus = response.status || 'PENDING';
+        setStatus(paymentStatus);
         setBusy(false);
-        if (response.status === 'COMPLETED') {
+
+        if (paymentStatus === 'COMPLETED') {
           setMessage('Payment confirmed. Your account is now active and you can withdraw. Redirecting to dashboard...');
           clearInterval(intervalId);
           setTimeout(() => navigate('/dashboard', { replace: true }), 2000);
-        } else if (response.status === 'FAILED') {
+        } else if (paymentStatus === 'FAILED') {
           setMessage('Payment failed or was declined. Please try again.');
           clearInterval(intervalId);
         } else {
@@ -44,7 +71,10 @@ export default function PaymentStatus() {
     fetchStatus();
     intervalId = setInterval(fetchStatus, 3000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
+    };
   }, [navigate, pendingId, provider]);
 
   async function onSimulateWebhook() {
