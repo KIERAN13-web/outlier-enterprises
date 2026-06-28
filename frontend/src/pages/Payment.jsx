@@ -5,8 +5,6 @@ import paymentApi from '../api/paymentApi';
 import './Payment.css';
 
 export default function Payment() {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [provider, setProvider] = useState('pesapal');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -26,21 +24,13 @@ export default function Payment() {
         return;
       }
       const token = await user.getIdToken();
-
-      if (provider === 'mpesa') {
-        const resp = await paymentApi.createStkPush(token, phoneNumber);
+      const resp = await paymentApi.createPesapalInit(token);
+      if (resp && resp.pendingId) {
+        setPendingId(resp.pendingId);
+        setCheckoutUrl(resp.iframeUrl || '');
         setSuccess(true);
-        setTimeout(() => navigate('/dashboard'), 2000);
       } else {
-        const resp = await paymentApi.createPesapalInit(token);
-        if (resp && resp.pendingId) {
-          setPendingId(resp.pendingId);
-          setCheckoutUrl(resp.iframeUrl || '');
-          localStorage.setItem('paymentProvider', provider);
-          setSuccess(true);
-        } else {
-          setError('Failed to initialize Pesapal payment');
-        }
+        setError('Failed to initialize payment. Please try again.');
       }
     } catch (err) {
       console.error(err);
@@ -53,8 +43,8 @@ export default function Payment() {
   return (
     <div className="payment-container container">
       <div className="payment-header">
-        <h1>Transparent Access</h1>
-        <p>Initialize your enterprise auditing environment</p>
+        <h1>Activate Your Account</h1>
+        <p>Pay KES 200 via Pesapal (PayPal) to unlock withdrawals and retain dashboard access.</p>
       </div>
 
       <div className="pricing-grid">
@@ -78,7 +68,7 @@ export default function Payment() {
 
           <form onSubmit={onPay} className="payment-form">
             {error && <div className="error-message">{error}</div>}
-            {success && provider === 'pesapal' && checkoutUrl && (
+            {success && checkoutUrl && (
               <div className="success-message">
                 <i className="ti ti-check"></i> Pesapal payment initialized successfully.
                 <div style={{ marginTop: '12px' }}>
@@ -87,49 +77,34 @@ export default function Payment() {
                   </a>
                   {pendingId && (
                     <p style={{ marginTop: '8px' }}>
-                      After payment, check status on the <Link to={`/payment-status/${pendingId}?provider=${provider}`}>payment status page</Link>.
+                      After payment, check status on the <Link to={`/payment-status/${pendingId}?provider=pesapal`}>payment status page</Link>.
                     </p>
                   )}
                 </div>
               </div>
             )}
-            {success && provider === 'mpesa' && <div className="success-message"><i className="ti ti-check"></i> Transaction initialized. Check your device.</div>}
 
-            <div className="form-group">
-              <label>Payment Method</label>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <label>
-                  <input type="radio" name="provider" value="pesapal" checked={provider === 'pesapal'} onChange={() => setProvider('pesapal')} /> Pesapal
-                </label>
-                <label>
-                  <input type="radio" name="provider" value="mpesa" checked={provider === 'mpesa'} onChange={() => setProvider('mpesa')} /> M-Pesa STK
-                </label>
-              </div>
-            </div>
+            {!success && (
+              <>
+                <div className="form-group">
+                  <label>Payment Method</label>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <label>
+                      <input type="radio" name="provider" value="pesapal" checked readOnly /> Pesapal (PayPal)
+                    </label>
+                  </div>
+                  <small>Only Pesapal is supported for account activation.</small>
+                </div>
 
-            {provider === 'mpesa' && (
-              <div className="form-group">
-                <label htmlFor="phone">M-Pesa Terminal Number</label>
-                <input
-                  id="phone"
-                  type="tel"
-                  placeholder="07XXXXXXXX"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  disabled={success}
-                  required
-                />
-                <small>Registered Safaricom M-Pesa number required</small>
-              </div>
+                <button
+                  disabled={busy}
+                  type="submit"
+                  className="btn btn-primary btn-full"
+                >
+                  {busy ? 'Initializing Pesapal...' : 'Pay with Pesapal'}
+                </button>
+              </>
             )}
-
-            <button
-              disabled={busy || success}
-              type="submit"
-              className="btn btn-primary btn-full"
-            >
-              {busy ? (provider === 'mpesa' ? 'Initializing STK...' : 'Initializing Pesapal...') : success ? 'Payment initialized' : provider === 'mpesa' ? 'Pay with M-Pesa STK' : 'Pay with Pesapal'}
-            </button>
           </form>
 
           <div className="payment-note">

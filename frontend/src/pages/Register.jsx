@@ -128,7 +128,7 @@ export default function Register() {
       <div className="auth-card card">
         <div className="auth-header">
           <h2>Create Account</h2>
-          <p>Register now and start using the dashboard. Activate your account later to enable withdrawals.</p>
+          <p>Register now and start using the dashboard. Activate your account later via Pesapal to enable withdrawals.</p>
         </div>
 
         {error && <div className="error-message">{error}</div>}

@@ -98,22 +98,19 @@ export default function Header() {
               </>
             ) : (
               <>
-{!statusChecked ? (
-              <span className="nav-loading">Checking account status...</span>
-            ) : isPaid ? (
-                  <>
-                    <Link to="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
-                      Dashboard
-                    </Link>
-                    <Link to="/outlier-book" className={`nav-link ${isActive('/outlier-book') ? 'active' : ''}`}>
-                      Outlier Book
-                    </Link>
-                  </>
-                ) : (
+                <Link to="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
+                  Dashboard
+                </Link>
+                <Link to="/outlier-book" className={`nav-link ${isActive('/outlier-book') ? 'active' : ''}`}>
+                  Outlier Book
+                </Link>
+                {!statusChecked ? (
+                  <span className="nav-loading">Checking account status...</span>
+                ) : !isPaid ? (
                   <Link to="/payment" className={`nav-link ${isActive('/payment') ? 'active' : ''}`}>
-                    Complete Payment
+                    Activate account
                   </Link>
-                )}
+                ) : null}
 
                 <div className="user-section">
                   <div className="user-email">{user.email}</div>

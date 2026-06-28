@@ -474,7 +474,15 @@ async function processPendingPaymentHelper({ pendingKey, data, status }) {
       });
       console.log(`[processPendingPaymentHelper] Successfully updated pendingUsers/${pendingKey}`);
 
-      // For PayPal-based approvals, actual user activation must happen on admin approval.
+      if (data.type === 'USER' && data.uid) {
+        console.log(`[processPendingPaymentHelper] Activating user account ${data.uid}`);
+        await rdb.ref(`users/${data.uid}`).update({
+          isPaid: true,
+          paidAt: now,
+          updatedAt: now,
+        });
+      }
+
       console.log(`[processPendingPaymentHelper] Completed payment processing for pendingKey=${pendingKey}`);
       return;
     }
@@ -738,6 +746,11 @@ async function checkPaymentStatus(req, res) {
         status: mappedStatus,
         updatedAt: new Date().toISOString(),
       });
+
+      if (mappedStatus === 'COMPLETED') {
+        console.log(`[Pesapal] Activating user from status check for pendingId=${pendingId}`);
+        await processPendingPaymentHelper({ pendingKey: pendingId, data: pending, status: 'SUCCESS' });
+      }
     }
 
     return res.json({ ok: true, pendingId, status: mappedStatus, pesapalData: pesapalStatus });
