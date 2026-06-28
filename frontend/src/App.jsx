@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import AdminGate from './components/AdminGate.jsx';
-import PaidGate from './components/PaidGate.jsx';
+import AuthGate from './components/AuthGate.jsx';
 import { saveCurrentPage } from './utils/pagePersistence';
 
 const Home = lazy(() => import('./pages/Home.jsx'));
@@ -48,19 +48,19 @@ function AppRoutes() {
           <Route path="/payment-status/:pendingId" element={<PaymentStatus />} />
 
           <Route path="/dashboard" element={
-            <PaidGate>
+            <AuthGate>
               <Dashboard />
-            </PaidGate>
+            </AuthGate>
           } />
           <Route path="/task/:orderId" element={
-            <PaidGate>
+            <AuthGate>
               <Task />
-            </PaidGate>
+            </AuthGate>
           } />
           <Route path="/outlier-book" element={
-            <PaidGate>
+            <AuthGate>
               <OutlierBook />
-            </PaidGate>
+            </AuthGate>
           } />
           <Route path="/admin/dashboard" element={null} />
           <Route path="*" element={<Navigate to="/" replace />} />

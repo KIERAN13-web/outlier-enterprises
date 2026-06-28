@@ -48,6 +48,7 @@ async function getWallet(req, res) {
           email: userProfile.email || '',
           phoneNumber: userProfile.phoneNumber || '',
           referralCode: userProfile.referralCode || null,
+          isPaid: Boolean(userProfile.isPaid),
           notifications: notifications.filter((n) => n.read !== true),
         },
       });
@@ -87,6 +88,13 @@ async function withdraw(req, res) {
       return res.status(400).json({ ok: false, error: 'missing_required_fields' });
     }
 
+    const rdb = firebaseAdmin.database();
+    const userSnap = await rdb.ref(`users/${uid}`).get();
+    const userProfile = userSnap.exists() ? userSnap.val() : {};
+    if (!userProfile.isPaid) {
+      return res.status(403).json({ ok: false, error: 'PAYMENT_REQUIRED', message: 'Activate your account with KES 200 before making withdrawals.' });
+    }
+
     // Set minimum based on earning type
     const MIN_WITHDRAWAL = earningType === 'task' ? 5000 : 1;
     if (amount < MIN_WITHDRAWAL) {
@@ -97,7 +105,6 @@ async function withdraw(req, res) {
       });
     }
 
-    const rdb = firebaseAdmin.database();
 
     // Get current wallet
     const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();

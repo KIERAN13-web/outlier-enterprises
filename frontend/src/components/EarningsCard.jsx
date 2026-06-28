@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase/client';
 import walletApi from '../api/walletApi';
 import WithdrawalModal from './WithdrawalModal';
@@ -11,6 +12,7 @@ export default function EarningsCard() {
   const [error, setError] = useState('');
   const [showTaskWithdrawal, setShowTaskWithdrawal] = useState(false);
   const [showReferralWithdrawal, setShowReferralWithdrawal] = useState(false);
+  const navigate = useNavigate();
 
   const fetchWallet = async () => {
     try {
@@ -49,9 +51,10 @@ export default function EarningsCard() {
 
   const MIN_TASK_WITHDRAWAL = 1000;
   const MIN_REFERRAL_WITHDRAWAL = 1;
+  const isPaid = user?.isPaid === true;
   
-  const canWithdrawTask = taskBalance >= MIN_TASK_WITHDRAWAL;
-  const canWithdrawReferral = referralBalance >= MIN_REFERRAL_WITHDRAWAL;
+  const canWithdrawTask = isPaid && taskBalance >= MIN_TASK_WITHDRAWAL;
+  const canWithdrawReferral = isPaid && referralBalance >= MIN_REFERRAL_WITHDRAWAL;
 
   return (
     <>
@@ -109,6 +112,18 @@ export default function EarningsCard() {
               </div>
             </div>
           )}
+
+          {!isPaid && (
+            <div className="activation-banner">
+              <div>
+                <strong>Account activation required</strong>
+                <p>Activate your account with KES 200 to unlock withdrawals.</p>
+              </div>
+              <button className="btn btn-primary" onClick={() => navigate('/payment')}>
+                Activate account
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Task Earnings Card */}
@@ -151,8 +166,9 @@ export default function EarningsCard() {
               <button
                 onClick={() => setShowTaskWithdrawal(true)}
                 className="btn-withdraw"
+                disabled={!canWithdrawTask}
               >
-                Withdraw from Tasks
+                {isPaid ? 'Withdraw from Tasks' : 'Activate to withdraw'}
               </button>
             ) : (
               <p className="no-balance-text">Complete tasks to earn money</p>
@@ -178,7 +194,7 @@ export default function EarningsCard() {
                 disabled={!canWithdrawReferral}
                 className={`btn-withdraw ${!canWithdrawReferral ? 'disabled' : ''}`}
               >
-                {canWithdrawReferral ? 'Withdraw from Referrals' : 'Insufficient balance'}
+                {isPaid ? (canWithdrawReferral ? 'Withdraw from Referrals' : 'Insufficient balance') : 'Activate to withdraw'}
               </button>
             ) : (
               <p className="no-balance-text">Refer friends to earn money</p>
