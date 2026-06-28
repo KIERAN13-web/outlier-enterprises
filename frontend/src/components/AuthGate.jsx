@@ -5,12 +5,19 @@ import { auth } from '../firebase/client';
 
 export default function AuthGate({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // If Firebase env vars are missing/misconfigured, `auth` can be null.
-    if (!auth) return;
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
 
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
     return () => unsub();
   }, []);
 
@@ -19,6 +26,14 @@ export default function AuthGate({ children }) {
       <div className="config-error">
         <h2>Firebase is not configured</h2>
         <p>Set the required <code>VITE_FIREBASE_*</code> environment variables and redeploy.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="page-loading">
+        <p>Verifying login status...</p>
       </div>
     );
   }
