@@ -14,6 +14,7 @@ export default function EarningsCard() {
   const [error, setError] = useState('');
   const [showTaskWithdrawal, setShowTaskWithdrawal] = useState(false);
   const [showReferralWithdrawal, setShowReferralWithdrawal] = useState(false);
+  const [showActivationPrompt, setShowActivationPrompt] = useState(false);
   const navigate = useNavigate();
 
   const fetchPaidStatus = async (uid) => {
@@ -72,6 +73,21 @@ export default function EarningsCard() {
   const canWithdrawTask = isPaid && taskBalance >= MIN_TASK_WITHDRAWAL;
   const canWithdrawReferral = isPaid && referralBalance >= MIN_REFERRAL_WITHDRAWAL;
 
+  const handleWithdrawClick = (type) => {
+    if (isPaid) {
+      if (type === 'task') {
+        setShowTaskWithdrawal(true);
+      } else {
+        setShowReferralWithdrawal(true);
+      }
+      return;
+    }
+
+    setShowActivationPrompt(true);
+    setShowTaskWithdrawal(false);
+    setShowReferralWithdrawal(false);
+  };
+
   return (
     <>
       <div className="earnings-container">
@@ -129,23 +145,17 @@ export default function EarningsCard() {
             </div>
           )}
 
-          <div className={`activation-panel ${isPaid ? 'active' : 'pending'}`}>
-            <div>
-              <strong>{isPaid ? 'Your account is active' : 'Account activation required'}</strong>
-              <p>
-                {isPaid
-                  ? 'Withdrawals are enabled. No further activation payment is required.'
-                  : 'Activate your account with KES 200 to unlock withdrawals.'}
-              </p>
-            </div>
-            {isPaid ? (
-              <div className="btn-active-status">Your account is active</div>
-            ) : (
+          {!isPaid && showActivationPrompt && (
+            <div className="activation-panel pending">
+              <div>
+                <strong>Account activation required</strong>
+                <p>Activate your account with KES 200 to unlock withdrawals.</p>
+              </div>
               <button className="btn btn-activation" onClick={() => navigate('/payment')}>
                 Activate account
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Task Earnings Card */}
@@ -186,9 +196,9 @@ export default function EarningsCard() {
             </div>
             {taskBalance > 0 ? (
               <button
-                onClick={() => setShowTaskWithdrawal(true)}
+                onClick={() => handleWithdrawClick('task')}
                 className="btn-withdraw"
-                disabled={!canWithdrawTask}
+                disabled={isPaid ? !canWithdrawTask : false}
               >
                 {isPaid ? 'Withdraw from Tasks' : 'Activate to withdraw'}
               </button>
@@ -212,9 +222,9 @@ export default function EarningsCard() {
             <div className="min-withdrawal-note">Min withdrawal: KES {MIN_REFERRAL_WITHDRAWAL}</div>
             {referralBalance > 0 ? (
               <button
-                onClick={() => setShowReferralWithdrawal(true)}
-                disabled={!canWithdrawReferral}
-                className={`btn-withdraw ${!canWithdrawReferral ? 'disabled' : ''}`}
+                onClick={() => handleWithdrawClick('referral')}
+                disabled={isPaid ? !canWithdrawReferral : false}
+                className={`btn-withdraw ${isPaid && !canWithdrawReferral ? 'disabled' : ''}`}
               >
                 {isPaid ? (canWithdrawReferral ? 'Withdraw from Referrals' : 'Insufficient balance') : 'Activate to withdraw'}
               </button>
