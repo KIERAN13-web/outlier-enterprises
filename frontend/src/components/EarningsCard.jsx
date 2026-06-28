@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebase/client';
+import { auth, database } from '../firebase/client';
+import { get, ref } from 'firebase/database';
 import walletApi from '../api/walletApi';
 import WithdrawalModal from './WithdrawalModal';
 import './EarningsCard.css';
@@ -8,11 +9,24 @@ import './EarningsCard.css';
 export default function EarningsCard() {
   const [wallet, setWallet] = useState(null);
   const [user, setUser] = useState(null);
+  const [paidStatus, setPaidStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showTaskWithdrawal, setShowTaskWithdrawal] = useState(false);
   const [showReferralWithdrawal, setShowReferralWithdrawal] = useState(false);
   const navigate = useNavigate();
+
+  const fetchPaidStatus = async (uid) => {
+    if (!uid || !database) return false;
+
+    try {
+      const paidSnap = await get(ref(database, `users/${uid}/isPaid`));
+      return paidSnap.exists() && Boolean(paidSnap.val());
+    } catch (err) {
+      console.error('Failed to read paid status from RTDB', err);
+      return false;
+    }
+  };
 
   const fetchWallet = async () => {
     try {
@@ -21,9 +35,11 @@ export default function EarningsCard() {
 
       const token = await currentUser.getIdToken();
       const response = await walletApi.getWallet(token);
+      const activeStatus = await fetchPaidStatus(currentUser.uid);
 
       setWallet(response.wallet);
       setUser(response.user);
+      setPaidStatus(activeStatus);
       setError('');
     } catch (err) {
       console.error('Failed to fetch wallet:', err);
@@ -51,7 +67,7 @@ export default function EarningsCard() {
 
   const MIN_TASK_WITHDRAWAL = 1000;
   const MIN_REFERRAL_WITHDRAWAL = 1;
-  const isPaid = user?.isPaid === true;
+  const isPaid = paidStatus === true || user?.isPaid === true;
   
   const canWithdrawTask = isPaid && taskBalance >= MIN_TASK_WITHDRAWAL;
   const canWithdrawReferral = isPaid && referralBalance >= MIN_REFERRAL_WITHDRAWAL;
@@ -113,17 +129,23 @@ export default function EarningsCard() {
             </div>
           )}
 
-          {!isPaid && (
-            <div className="activation-banner">
-              <div>
-                <strong>Account activation required</strong>
-                <p>Activate your account with KES 200 to unlock withdrawals.</p>
-              </div>
-              <button className="btn btn-primary" onClick={() => navigate('/payment')}>
+          <div className={`activation-panel ${isPaid ? 'active' : 'pending'}`}>
+            <div>
+              <strong>{isPaid ? 'Your account is active' : 'Account activation required'}</strong>
+              <p>
+                {isPaid
+                  ? 'Withdrawals are enabled. No further activation payment is required.'
+                  : 'Activate your account with KES 200 to unlock withdrawals.'}
+              </p>
+            </div>
+            {isPaid ? (
+              <div className="btn-active-status">Your account is active</div>
+            ) : (
+              <button className="btn btn-activation" onClick={() => navigate('/payment')}>
                 Activate account
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Task Earnings Card */}

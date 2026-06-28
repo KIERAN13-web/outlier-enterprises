@@ -236,7 +236,6 @@ export default function Register() {
         </div>
 
         <div className="auth-links">
-          <Link to="/payment">Activate account</Link>
           <Link to="/">Back to Home</Link>
         </div>
       </div>

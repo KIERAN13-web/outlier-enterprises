@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth } from '../firebase/client';
+import { auth, database } from '../firebase/client';
+import { get, ref } from 'firebase/database';
 import paymentApi from '../api/paymentApi';
 import './Payment.css';
 
@@ -10,10 +11,35 @@ export default function Payment() {
   const [success, setSuccess] = useState(false);
   const [pendingId, setPendingId] = useState(null);
   const [checkoutUrl, setCheckoutUrl] = useState('');
+  const [isPaid, setIsPaid] = useState(false);
+  const [checkingPaid, setCheckingPaid] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function checkPaid() {
+      const user = auth.currentUser;
+      if (!user || !database) {
+        setCheckingPaid(false);
+        return;
+      }
+
+      try {
+        const paidSnap = await get(ref(database, `users/${user.uid}/isPaid`));
+        setIsPaid(paidSnap.exists() && Boolean(paidSnap.val()));
+      } catch (err) {
+        console.error('Failed to read paid status from RTDB', err);
+      } finally {
+        setCheckingPaid(false);
+      }
+    }
+
+    checkPaid();
+  }, []);
 
   async function onPay(e) {
     e.preventDefault();
+    if (isPaid) return;
+
     setBusy(true);
     setError('');
     setCheckoutUrl('');
@@ -84,7 +110,13 @@ export default function Payment() {
               </div>
             )}
 
-            {!success && (
+            {checkingPaid ? (
+              <div className="info-message">Checking activation status...</div>
+            ) : isPaid ? (
+              <div className="success-message">
+                <i className="ti ti-check"></i> Your account is active. No further activation payment is required.
+              </div>
+            ) : (
               <>
                 <div className="form-group">
                   <label>Payment Method</label>

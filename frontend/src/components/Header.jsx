@@ -104,13 +104,6 @@ export default function Header() {
                 <Link to="/outlier-book" className={`nav-link ${isActive('/outlier-book') ? 'active' : ''}`}>
                   Outlier Book
                 </Link>
-                {!statusChecked ? (
-                  <span className="nav-loading">Checking account status...</span>
-                ) : !isPaid ? (
-                  <Link to="/payment" className={`nav-link ${isActive('/payment') ? 'active' : ''}`}>
-                    Activate account
-                  </Link>
-                ) : null}
 
                 <div className="user-section">
                   <div className="user-email">{user.email}</div>

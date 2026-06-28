@@ -42,10 +42,18 @@ function AppRoutes() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/payment" element={<Payment />} />
+          <Route path="/payment" element={
+            <AuthGate>
+              <Payment />
+            </AuthGate>
+          } />
           <Route path="/register" element={<Register />} />
           <Route path="/change-password" element={<ChangePassword />} />
-          <Route path="/payment-status/:pendingId" element={<PaymentStatus />} />
+          <Route path="/payment-status/:pendingId" element={
+            <AuthGate>
+              <PaymentStatus />
+            </AuthGate>
+          } />
 
           <Route path="/dashboard" element={
             <AuthGate>
