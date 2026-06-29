@@ -35,6 +35,38 @@ async function generateUniqueReferralCode(rdb, length = 6, maxAttempts = 8) {
   return `R${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
+async function getReferralStats(rdb, referralCode) {
+  if (!referralCode) return { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+
+  try {
+    const snap = await rdb.ref('users').get();
+    const users = snap.exists() ? snap.val() : {};
+    const entries = Object.entries(users || {});
+
+    let totalReferred = 0;
+    let activeReferred = 0;
+
+    for (const [, user] of entries) {
+      const userReferralCode = user?.referredByCode || user?.referrerCode;
+      if (userReferralCode && String(userReferralCode) === String(referralCode)) {
+        totalReferred += 1;
+        if (Boolean(user?.isPaid)) {
+          activeReferred += 1;
+        }
+      }
+    }
+
+    return {
+      totalReferred,
+      activeReferred,
+      maxReferralWithdrawal: activeReferred * 50,
+    };
+  } catch (err) {
+    console.error('getReferralStats error', err);
+    return { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+  }
+}
+
 async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = undefined) {
   if (!referralCode) {
     console.warn('creditReferralBonus skipped: missing referralCode');
@@ -103,4 +135,4 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
   }
 }
 
-export default { generateUniqueReferralCode, creditReferralBonus, findUserByReferralCode };
+export default { generateUniqueReferralCode, creditReferralBonus, findUserByReferralCode, getReferralStats };

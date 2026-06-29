@@ -345,6 +345,7 @@ async function processPendingPayment({ pendingKey, data, status }) {
           isPaid: true,
           paidAt: new Date().toISOString(),
           referralCode: referralCodeForNewUser,
+          referredByCode: referrerCode || null,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -388,6 +389,7 @@ async function processPendingPayment({ pendingKey, data, status }) {
           isPaid: true,
           paidAt: new Date().toISOString(),
           referralCode: referralCodeForExisting,
+          referredByCode: referrerCode || null,
           updatedAt: new Date().toISOString(),
         });
         

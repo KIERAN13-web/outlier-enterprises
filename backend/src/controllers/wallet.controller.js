@@ -1,4 +1,5 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
+import referralService from '../services/referralService.js';
 
 // Get user's wallet/earnings
 async function getWallet(req, res) {
@@ -30,28 +31,32 @@ async function getWallet(req, res) {
     // Get user profile for display
     const userSnap = await rdb.ref(`users/${uid}`).get();
     const userProfile = userSnap.exists() ? userSnap.val() : {};
-      // fetch notifications (include unread only)
-      const notSnap = await rdb.ref(`users/${uid}/notifications`).get();
-      const notifications = notSnap.exists()
-        ? Object.entries(notSnap.val()).map(([nid, data]) => ({ id: nid, ...data }))
-        : [];
+    const referralStats = userProfile?.referralCode
+      ? await referralService.getReferralStats(rdb, userProfile.referralCode)
+      : { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+    // fetch notifications (include unread only)
+    const notSnap = await rdb.ref(`users/${uid}/notifications`).get();
+    const notifications = notSnap.exists()
+      ? Object.entries(notSnap.val()).map(([nid, data]) => ({ id: nid, ...data }))
+      : [];
 
-      return res.json({
-        ok: true,
-        wallet: {
-          ...wallet,
-          withdrawals: withdrawals.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)),
-          totalWithdrawn,
-        },
-        user: {
-          name: userProfile.fullName || userProfile.name || 'User',
-          email: userProfile.email || '',
-          phoneNumber: userProfile.phoneNumber || '',
-          referralCode: userProfile.referralCode || null,
-          isPaid: Boolean(userProfile.isPaid),
-          notifications: notifications.filter((n) => n.read !== true),
-        },
-      });
+    return res.json({
+      ok: true,
+      wallet: {
+        ...wallet,
+        withdrawals: withdrawals.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)),
+        totalWithdrawn,
+        referralStats,
+      },
+      user: {
+        name: userProfile.fullName || userProfile.name || 'User',
+        email: userProfile.email || '',
+        phoneNumber: userProfile.phoneNumber || '',
+        referralCode: userProfile.referralCode || null,
+        isPaid: Boolean(userProfile.isPaid),
+        notifications: notifications.filter((n) => n.read !== true),
+      },
+    });
   } catch (err) {
     console.error('getWallet error', err);
     return res.status(500).json({ ok: false, error: 'GET_WALLET_FAILED' });
@@ -96,7 +101,24 @@ async function withdraw(req, res) {
     }
 
     // Set minimum based on earning type
-    const MIN_WITHDRAWAL = earningType === 'task' ? 5000 : 1;
+    const referralStats = userProfile?.referralCode
+      ? await referralService.getReferralStats(rdb, userProfile.referralCode)
+      : { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+    const MIN_WITHDRAWAL = earningType === 'task' ? 1000 : 1;
+    if (earningType === 'task' && referralStats.activeReferred < 20) {
+      return res.status(400).json({
+        ok: false,
+        error: 'TASK_WITHDRAWAL_REQUIRES_ACTIVE_REFERRALS',
+        message: 'You need at least 20 active referrals before withdrawing task earnings.',
+      });
+    }
+    if (earningType === 'referral' && referralStats.maxReferralWithdrawal < amount) {
+      return res.status(400).json({
+        ok: false,
+        error: 'REFERRAL_WITHDRAWAL_LIMIT',
+        message: `You can withdraw at most KES ${referralStats.maxReferralWithdrawal} from referral earnings based on your active referrals.`,
+      });
+    }
     if (amount < MIN_WITHDRAWAL) {
       return res.status(400).json({
         ok: false,

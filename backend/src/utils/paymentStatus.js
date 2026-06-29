@@ -81,6 +81,7 @@ async function activatePendingRegistration({
     isPaid: true,
     paidAt: now,
     referralCode: referralCodeForNewUser,
+    referredByCode: referrerCode || existingUser.referredByCode || null,
     updatedAt: now,
   };
 
