@@ -3,6 +3,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate, Link } from 'react-router-dom';
 import { ref, set } from 'firebase/database';
 import { auth, database } from '../firebase/client';
+import authApi from '../api/authApi';
 import './Auth.css';
 
 const africanCountries = [
@@ -115,6 +116,15 @@ export default function Register() {
         availableBalance: 0,
         updatedAt: now,
       });
+
+      // Call syncUser to credit referral bonus if applicable
+      try {
+        const token = await credential.user.getIdToken();
+        await authApi.syncUser(token);
+        console.log('Referral bonus credited during sync');
+      } catch (syncErr) {
+        console.warn('syncUser call after registration failed:', syncErr);
+      }
 
       setSuccess(true);
       setMessage('Account created successfully. You can now use the dashboard. Activate your account to enable withdrawals.');

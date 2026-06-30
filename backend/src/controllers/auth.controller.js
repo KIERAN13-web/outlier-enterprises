@@ -21,8 +21,7 @@ async function syncUser(req, res) {
       updates.updatedAt = now;
       updates.isAdmin = req.user?.isAdmin === true;
       try {
-        const { default: referralService } = await import('../services/referralService.js');
-        updates.referralCode = await referralService.generateUniqueReferralCode(rdb);
+        updates.referralCode = await referralService.generateUniqueReferralCode(firebaseAdmin.database());
       } catch (e) {
         updates.referralCode = `R${uid.slice(0, 8)}`;
       }
@@ -49,8 +48,7 @@ async function syncUser(req, res) {
       // Generate referral code if missing
       if (!existing.referralCode) {
         try {
-          const { default: referralService } = await import('../services/referralService.js');
-          updates.referralCode = await referralService.generateUniqueReferralCode(rdb);
+          updates.referralCode = await referralService.generateUniqueReferralCode(firebaseAdmin.database());
         } catch (e) {
           updates.referralCode = `R${uid.slice(0, 8)}`;
         }
@@ -73,6 +71,24 @@ async function syncUser(req, res) {
       console.log(`[syncUser] Set custom claims for ${uid}: isAdmin=${Boolean(data?.isAdmin)}`);
     } catch (claimError) {
       console.warn('Unable to set admin custom claim during sync:', claimError);
+    }
+
+    // Credit referral bonus if user has a referredByCode and hasn't been credited yet
+    if (data?.referredByCode) {
+      try {
+        const walletSnap = await rdb.ref(`users/${uid}/wallet/transactions`).get();
+        const txs = walletSnap.exists() ? walletSnap.val() : {};
+        const alreadyCredited = Object.values(txs || {}).some(
+          t => t?.type === 'referral' && String(t.description || '').includes('referral')
+        );
+        
+        if (!alreadyCredited) {
+          await referralService.creditReferralBonus(rdb, data.referredByCode, email);
+          console.log(`[syncUser] Credited referral bonus for uid=${uid} from code=${data.referredByCode}`);
+        }
+      } catch (refErr) {
+        console.warn('[syncUser] Failed to credit referral bonus', refErr?.message || refErr);
+      }
     }
 
     return res.json({
