@@ -445,6 +445,19 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
   const allowManualOverride = Boolean(force || isManual || data.provider === 'pesapal');
   const now = new Date().toISOString();
   let paymentCompleted = paymentStatus === 'COMPLETED' || status === 'COMPLETED' || !!data.paymentCompletedAt;
+
+  console.log('[approvePendingUserRegistration] pendingData', {
+    pendingId,
+    email: data.email,
+    status,
+    paymentStatus,
+    provider: data.provider,
+    paymentMethod: data.paymentMethod,
+    orderTrackingId: data.orderTrackingId,
+    force,
+    allowManualOverride,
+  });
+
   if (force) {
     console.log(`[approvePendingUserRegistration] force approval enabled for pendingId=${pendingId} email=${data.email}`);
     paymentCompleted = true;
@@ -511,8 +524,18 @@ async function approvePendingUserRegistration(pendingId, { force = false } = {})
 
     return result;
   } catch (err) {
-    console.error('[approvePendingUserRegistration] error', err?.message || err);
-    throw err;
+    console.error('[approvePendingUserRegistration] activation error', {
+      pendingId,
+      email: data.email,
+      status: data.status,
+      paymentStatus: data.paymentStatus,
+      provider: data.provider,
+      orderTrackingId: data.orderTrackingId,
+      error: err?.stack || err,
+    });
+    const wrappedError = new Error(`ACTIVATION_FAILED: ${err?.message || String(err)}`);
+    wrappedError.stack = err?.stack || wrappedError.stack;
+    throw wrappedError;
   }
 }
 

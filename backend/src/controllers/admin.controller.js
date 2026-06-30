@@ -227,20 +227,23 @@ async function approvePendingRegistration(req, res) {
       const result = await paymentController.approvePendingUserRegistration(pendingId, { force: forceApproval });
       return res.json({ ok: true, pendingId, status: result.status, uid: result.uid || null });
     } catch (err) {
-      console.error(`[approvePendingRegistration] error approving pendingId=${pendingId}`, err?.message || err);
-      const msg = err?.message || '';
+      console.error(`[approvePendingRegistration] error approving pendingId=${pendingId}`, err?.stack || err);
+      const msg = err?.message || String(err);
       if (msg === 'PENDING_USER_NOT_FOUND') {
         return res.status(404).json({ ok: false, error: msg });
       }
       if (msg === 'pending_user_missing_email') {
         return res.status(400).json({ ok: false, error: msg, message: 'Pending registration missing email' });
       }
-      // Unknown error - include message for debugging but avoid stack traces in production
-      return res.status(500).json({ ok: false, error: 'APPROVAL_FAILED', message: msg || 'Approval process failed' });
+      const response = { ok: false, error: 'APPROVAL_FAILED', message: msg || 'Approval process failed' };
+      if (process.env.NODE_ENV !== 'production' && err?.stack) response.stack = err.stack;
+      return res.status(500).json(response);
     }
   } catch (err) {
-    console.error('approvePendingRegistration error', err);
-    return res.status(500).json({ ok: false, error: 'APPROVAL_FAILED', message: err.message });
+    console.error('approvePendingRegistration error', err?.stack || err);
+    const response = { ok: false, error: 'APPROVAL_FAILED', message: err.message || String(err) };
+    if (process.env.NODE_ENV !== 'production' && err?.stack) response.stack = err.stack;
+    return res.status(500).json(response);
   }
 }
 
@@ -263,24 +266,36 @@ async function forceApprovePendingRegistration(req, res) {
     }
 
     console.log(`[forceApprovePendingRegistration] admin=${req.adminUid || 'unknown'} pendingId=${pendingId} email=${pendingData.email}`);
+    console.log('[forceApprovePendingRegistration] pendingData snapshot', {
+      pendingId,
+      email: pendingData.email,
+      status: pendingData.status,
+      paymentMethod: pendingData.paymentMethod || pendingData.provider,
+      paymentStatus: pendingData.paymentStatus,
+      orderTrackingId: pendingData.orderTrackingId,
+    });
 
     try {
       const result = await paymentController.forceApprovePendingUserRegistration(pendingId);
       return res.json({ ok: true, pendingId, status: result.status, uid: result.uid || null });
     } catch (err) {
-      console.error(`[forceApprovePendingRegistration] error approving pendingId=${pendingId}`, err?.message || err);
-      const msg = err?.message || '';
+      console.error(`[forceApprovePendingRegistration] error approving pendingId=${pendingId}`, err?.stack || err);
+      const msg = err?.message || String(err);
       if (msg === 'PENDING_USER_NOT_FOUND') {
         return res.status(404).json({ ok: false, error: msg });
       }
       if (msg === 'pending_user_missing_email') {
         return res.status(400).json({ ok: false, error: msg, message: 'Pending registration missing email' });
       }
-      return res.status(500).json({ ok: false, error: 'FORCE_APPROVAL_FAILED', message: msg || 'Forced approval failed' });
+      const response = { ok: false, error: 'FORCE_APPROVAL_FAILED', message: msg || 'Forced approval failed' };
+      if (process.env.NODE_ENV !== 'production' && err?.stack) response.stack = err.stack;
+      return res.status(500).json(response);
     }
   } catch (err) {
-    console.error('forceApprovePendingRegistration error', err);
-    return res.status(500).json({ ok: false, error: 'FORCE_APPROVAL_FAILED', message: err.message });
+    console.error('forceApprovePendingRegistration error', err?.stack || err);
+    const response = { ok: false, error: 'FORCE_APPROVAL_FAILED', message: err.message || String(err) };
+    if (process.env.NODE_ENV !== 'production' && err?.stack) response.stack = err.stack;
+    return res.status(500).json(response);
   }
 }
 

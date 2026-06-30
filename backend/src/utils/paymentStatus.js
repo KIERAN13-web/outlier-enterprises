@@ -43,17 +43,23 @@ async function activatePendingRegistration({
     uid = userRecord.uid;
   } catch (err) {
     if (err.code === 'auth/email-already-exists') {
-      const existing = await firebaseAdmin.auth().getUserByEmail(email);
-      uid = existing.uid;
+      try {
+        const existing = await firebaseAdmin.auth().getUserByEmail(email);
+        uid = existing.uid;
+      } catch (lookupErr) {
+        console.error('[activatePendingRegistration] failed to lookup existing email after duplicate create error', lookupErr?.stack || lookupErr);
+        throw new Error('existing_user_lookup_failed');
+      }
 
       if (data.password) {
         try {
           await firebaseAdmin.auth().updateUser(uid, { password: data.password });
         } catch (pwErr) {
-          console.error('[activatePendingRegistration] failed to update password', pwErr);
+          console.error('[activatePendingRegistration] failed to update password', pwErr?.stack || pwErr);
         }
       }
     } else {
+      console.error('[activatePendingRegistration] createUser error', err?.stack || err);
       throw err;
     }
   }
