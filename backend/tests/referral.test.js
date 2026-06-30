@@ -41,6 +41,7 @@ test('creditReferralBonus credits wallet and creates notification', async () => 
   expect(res.refUid).toBe('referrer');
   const wallet = state.users.referrer.wallet;
   expect(wallet.referralBalance).toBe(50);
+  expect(wallet.availableBalance).toBe(50);
   expect(wallet.totalEarnings).toBe(50);
   expect(Object.keys(wallet.transactions || {}).length).toBe(1);
   expect(Object.keys(state.users.referrer.notifications || {}).length).toBe(1);

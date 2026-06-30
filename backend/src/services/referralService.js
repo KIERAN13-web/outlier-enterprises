@@ -122,10 +122,20 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
 
     const walletRef = rdb.ref(`users/${refUid}/wallet`);
     const walletSnap = await walletRef.get();
-    const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0, totalEarnings: 0 };
-    const newReferralBalance = (wallet.referralBalance || 0) + reward;
-    const newTotalEarnings = (wallet.totalEarnings || 0) + reward;
-    await walletRef.update({ referralBalance: newReferralBalance, totalEarnings: newTotalEarnings, updatedAt: new Date().toISOString() });
+    const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0, totalEarnings: 0, availableBalance: 0 };
+    const currentTaskBalance = Number(wallet.taskBalance || 0);
+    const currentReferralBalance = Number(wallet.referralBalance || 0);
+    const currentAvailableBalance = Number(wallet.availableBalance ?? currentTaskBalance + currentReferralBalance);
+    const newReferralBalance = currentReferralBalance + reward;
+    const newTotalEarnings = Number(wallet.totalEarnings || 0) + reward;
+    const newAvailableBalance = currentAvailableBalance + reward;
+    await walletRef.update({
+      taskBalance: currentTaskBalance,
+      referralBalance: newReferralBalance,
+      totalEarnings: newTotalEarnings,
+      availableBalance: newAvailableBalance,
+      updatedAt: new Date().toISOString(),
+    });
 
     const txRef = rdb.ref(`users/${refUid}/wallet/transactions`).push();
     await txRef.set({

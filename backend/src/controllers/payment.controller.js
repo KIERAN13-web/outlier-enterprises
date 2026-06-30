@@ -301,10 +301,16 @@ async function processPendingPayment({ pendingKey, data, status }) {
 
   if (status === 'SUCCESS') {
     if (data.type === 'USER' && data.uid) {
-      await rdb.ref(`users/${data.uid}`).update({
+      const userRef = rdb.ref(`users/${data.uid}`);
+      const userSnap = await userRef.get();
+      const existingUser = userSnap.exists() ? userSnap.val() : {};
+      const referralCodeToUse = data.referralCode || existingUser?.referredByCode || null;
+
+      await userRef.update({
         isPaid: true,
         paidAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        ...(referralCodeToUse ? { referredByCode: referralCodeToUse } : {}),
       });
 
       if (data.orderId) {
@@ -313,6 +319,14 @@ async function processPendingPayment({ pendingKey, data, status }) {
           verifiedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
+      }
+
+      if (referralCodeToUse) {
+        try {
+          await referralService.creditReferralBonus(rdb, referralCodeToUse, data.email || existingUser?.email || null);
+        } catch (err) {
+          console.error('Error crediting referrer for existing user payment:', err);
+        }
       }
 
       await docRef.remove();

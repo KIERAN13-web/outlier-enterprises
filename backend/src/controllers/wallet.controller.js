@@ -12,9 +12,14 @@ async function getWallet(req, res) {
       taskBalance: 0,
       referralBalance: 0,
       totalEarnings: 0,
+      availableBalance: 0,
       withdrawals: [],
       transactions: [],
     };
+    const taskBalance = Number(wallet.taskBalance || 0);
+    const referralBalance = Number(wallet.referralBalance || 0);
+    const totalEarnings = Number(wallet.totalEarnings || 0);
+    const availableBalance = Number(wallet.availableBalance ?? taskBalance + referralBalance);
 
     const withdrawalsSnap = await rdb.ref(`users/${uid}/wallet/withdrawals`).get();
     const withdrawals = withdrawalsSnap.exists()
@@ -44,6 +49,10 @@ async function getWallet(req, res) {
       ok: true,
       wallet: {
         ...wallet,
+        taskBalance,
+        referralBalance,
+        totalEarnings,
+        availableBalance,
         withdrawals: withdrawals.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)),
         totalWithdrawn,
         referralStats,
@@ -139,7 +148,7 @@ async function withdraw(req, res) {
     };
 
     const balanceField = earningType === 'task' ? 'taskBalance' : 'referralBalance';
-    const currentBalance = wallet[balanceField] || 0;
+    const currentBalance = Number(wallet[balanceField] || 0);
 
     // Check sufficient balance
     if (currentBalance < amount) {
@@ -170,6 +179,7 @@ async function withdraw(req, res) {
     // Update the appropriate balance
     const updateObj = {
       [balanceField]: currentBalance - amount,
+      availableBalance: Number(wallet.availableBalance ?? Number(wallet.taskBalance || 0) + Number(wallet.referralBalance || 0)) - amount,
       updatedAt: new Date().toISOString(),
     };
     await rdb.ref(`users/${uid}/wallet`).update(updateObj);
