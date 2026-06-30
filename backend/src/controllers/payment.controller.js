@@ -221,6 +221,14 @@ async function createStkPushGuest(req, res) {
       updatedAt: new Date().toISOString(),
     });
 
+    if (referralCode) {
+      try {
+        await referralService.creditReferralBonus(rdb, referralCode, email);
+      } catch (err) {
+        console.error('Error crediting referrer for pending guest signup:', err);
+      }
+    }
+
     return res.json({ ok: true, payment: result, pendingId });
   } catch (err) {
     console.error('createStkPushGuest error', err);
@@ -253,6 +261,14 @@ async function createManualGuest(req, res) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+
+    if (referralCode) {
+      try {
+        await referralService.creditReferralBonus(rdb, referralCode, email);
+      } catch (err) {
+        console.error('Error crediting referrer for pending manual signup:', err);
+      }
+    }
 
     return res.json({
       ok: true,

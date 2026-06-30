@@ -133,9 +133,12 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
     const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0, totalEarnings: 0, availableBalance: 0 };
     const currentTaskBalance = Number(wallet.taskBalance || 0);
     const currentReferralBalance = Number(wallet.referralBalance || 0);
-    const currentAvailableBalance = Number(wallet.availableBalance ?? currentTaskBalance + currentReferralBalance);
+    const currentAvailableBalance = wallet.availableBalance !== undefined && wallet.availableBalance !== null
+      ? Number(wallet.availableBalance)
+      : currentTaskBalance + currentReferralBalance;
+    const currentTotalEarnings = Number(wallet.totalEarnings || 0);
     const newReferralBalance = currentReferralBalance + reward;
-    const newTotalEarnings = Number(wallet.totalEarnings || 0) + reward;
+    const newTotalEarnings = currentTotalEarnings + reward;
     const newAvailableBalance = currentAvailableBalance + reward;
     await walletRef.update({
       taskBalance: currentTaskBalance,

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import firebaseAdmin from '../services/firebaseAdmin.js';
+import referralService from '../services/referralService.js';
 import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
 const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 1);
@@ -453,6 +454,14 @@ async function initPesapalGuest(req, res) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+
+    if (referralCode) {
+      try {
+        await referralService.creditReferralBonus(rdb, referralCode, email);
+      } catch (err) {
+        console.error('Error crediting referrer for pending Pesapal signup:', err);
+      }
+    }
 
     console.log(`[Pesapal] Guest payment initialized successfully. Pending ID: ${pendingId}`);
     return res.json({ ok: true, pendingId, iframeUrl: orderData.redirectUrl });

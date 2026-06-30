@@ -18,7 +18,9 @@ async function getWallet(req, res) {
     };
     const taskBalance = Number(wallet.taskBalance || 0);
     const referralBalance = Number(wallet.referralBalance || 0);
-    const totalEarnings = Number(wallet.totalEarnings || 0);
+    const totalEarnings = wallet.totalEarnings !== undefined && wallet.totalEarnings !== null
+      ? Number(wallet.totalEarnings)
+      : taskBalance + referralBalance;
     const availableBalance = Number(wallet.availableBalance ?? taskBalance + referralBalance);
 
     const withdrawalsSnap = await rdb.ref(`users/${uid}/wallet/withdrawals`).get();
@@ -34,10 +36,26 @@ async function getWallet(req, res) {
     }, 0);
 
     // Get user profile for display
-    const userSnap = await rdb.ref(`users/${uid}`).get();
+    const userRef = rdb.ref(`users/${uid}`);
+    const userSnap = await userRef.get();
     const userProfile = userSnap.exists() ? userSnap.val() : {};
-    const referralStats = userProfile?.referralCode
-      ? await referralService.getReferralStats(rdb, userProfile.referralCode)
+    let referralCode = userProfile?.referralCode || null;
+
+    if (!referralCode) {
+      try {
+        referralCode = await referralService.generateUniqueReferralCode(rdb);
+        await userRef.update({
+          referralCode,
+          updatedAt: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn('Unable to generate referral code for wallet request', err);
+        referralCode = null;
+      }
+    }
+
+    const referralStats = referralCode
+      ? await referralService.getReferralStats(rdb, referralCode)
       : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
     // fetch notifications (include unread only)
     const notSnap = await rdb.ref(`users/${uid}/notifications`).get();
@@ -61,7 +79,7 @@ async function getWallet(req, res) {
         name: userProfile.fullName || userProfile.name || 'User',
         email: userProfile.email || '',
         phoneNumber: userProfile.phoneNumber || '',
-        referralCode: userProfile.referralCode || null,
+        referralCode,
         isPaid: Boolean(userProfile.isPaid),
         notifications: notifications.filter((n) => n.read !== true),
       },
@@ -102,6 +120,15 @@ async function withdraw(req, res) {
       return res.status(400).json({ ok: false, error: 'missing_required_fields' });
     }
 
+    const parsedAmount = Number(amount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({
+        ok: false,
+        error: 'INVALID_WITHDRAWAL_AMOUNT',
+        message: 'Withdrawal amount must be a positive number.',
+      });
+    }
+
     const rdb = firebaseAdmin.database();
     const userSnap = await rdb.ref(`users/${uid}`).get();
     const userProfile = userSnap.exists() ? userSnap.val() : {};
@@ -121,14 +148,14 @@ async function withdraw(req, res) {
         message: 'You need at least 20 active referrals before withdrawing task earnings.',
       });
     }
-    if (earningType === 'referral' && referralStats.maxReferralWithdrawal < amount) {
+    if (earningType === 'referral' && referralStats.maxReferralWithdrawal < parsedAmount) {
       return res.status(400).json({
         ok: false,
         error: 'REFERRAL_WITHDRAWAL_LIMIT',
         message: `You can withdraw at most KES ${referralStats.maxReferralWithdrawal} from referral earnings based on your active referrals.`,
       });
     }
-    if (amount < MIN_WITHDRAWAL) {
+    if (parsedAmount < MIN_WITHDRAWAL) {
       return res.status(400).json({
         ok: false,
         error: 'MINIMUM_WITHDRAWAL',
@@ -151,10 +178,11 @@ async function withdraw(req, res) {
     const currentBalance = Number(wallet[balanceField] || 0);
 
     // Check sufficient balance
-    if (currentBalance < amount) {
+    if (currentBalance <= 0 || currentBalance < parsedAmount) {
       return res.status(400).json({
         ok: false,
         error: 'INSUFFICIENT_BALANCE',
+        message: 'Insufficient funds to withdraw.',
         availableBalance: currentBalance,
       });
     }
@@ -178,8 +206,8 @@ async function withdraw(req, res) {
 
     // Update the appropriate balance
     const updateObj = {
-      [balanceField]: currentBalance - amount,
-      availableBalance: Number(wallet.availableBalance ?? Number(wallet.taskBalance || 0) + Number(wallet.referralBalance || 0)) - amount,
+      [balanceField]: currentBalance - parsedAmount,
+      availableBalance: Number(wallet.availableBalance ?? Number(wallet.taskBalance || 0) + Number(wallet.referralBalance || 0)) - parsedAmount,
       updatedAt: new Date().toISOString(),
     };
     await rdb.ref(`users/${uid}/wallet`).update(updateObj);
