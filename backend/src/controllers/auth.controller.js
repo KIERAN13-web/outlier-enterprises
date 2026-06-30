@@ -21,7 +21,8 @@ async function syncUser(req, res) {
       updates.updatedAt = now;
       updates.isAdmin = req.user?.isAdmin === true;
       try {
-        updates.referralCode = await referralService.generateUniqueReferralCode(firebaseAdmin.database());
+        const { default: referralService } = await import('../services/referralService.js');
+        updates.referralCode = await referralService.generateUniqueReferralCode(rdb);
       } catch (e) {
         updates.referralCode = `R${uid.slice(0, 8)}`;
       }
@@ -48,7 +49,8 @@ async function syncUser(req, res) {
       // Generate referral code if missing
       if (!existing.referralCode) {
         try {
-          updates.referralCode = await referralService.generateUniqueReferralCode(firebaseAdmin.database());
+          const { default: referralService } = await import('../services/referralService.js');
+          updates.referralCode = await referralService.generateUniqueReferralCode(rdb);
         } catch (e) {
           updates.referralCode = `R${uid.slice(0, 8)}`;
         }

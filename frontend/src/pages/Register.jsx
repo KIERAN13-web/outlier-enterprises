@@ -117,7 +117,7 @@ export default function Register() {
       });
 
       setSuccess(true);
-      setMessage('Account created successfully. You can now use the dashboard and activate later.');
+      setMessage('Account created successfully. You can now use the dashboard. Activate your account to enable withdrawals.');
       setTimeout(() => navigate('/dashboard', { replace: true }), 1200);
     } catch (err) {
       console.error(err);

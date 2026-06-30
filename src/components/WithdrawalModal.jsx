@@ -14,7 +14,8 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
     setPhoneNumber(userPhone || '');
   }, [userPhone]);
 
-  const isValidAmount = amount && parseInt(amount) >= minWithdrawal && parseInt(amount) <= availableBalance;
+  const requestedAmount = Number(amount);
+  const isValidAmount = requestedAmount > 0 && requestedAmount >= minWithdrawal && requestedAmount <= availableBalance;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,12 +23,16 @@ export default function WithdrawalModal({ isOpen, onClose, availableBalance, use
     setLoading(true);
 
     try {
-      if (parseInt(amount) < MIN_WITHDRAWAL) {
+      if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
+        throw new Error('Withdrawal amount must be a positive number.');
+      }
+
+      if (requestedAmount < MIN_WITHDRAWAL) {
         throw new Error(`Minimum withdrawal is KES ${MIN_WITHDRAWAL}`);
       }
 
-      if (parseInt(amount) > availableBalance) {
-        throw new Error('Insufficient balance');
+      if (requestedAmount > availableBalance) {
+        throw new Error('Insufficient funds to withdraw.');
       }
 
       if (!phoneNumber) {

@@ -120,7 +120,7 @@ async function activatePendingRegistration({
       paymentStatus: 'COMPLETED',
       paymentCompletedAt: now,
       updatedAt: now,
-    }),
+    }).catch(() => {}), // Ignore if pendingPayments record doesn't exist
     rdb.ref(`pendingUsers/${pendingId}`).update({
       status: 'COMPLETED',
       paymentStatus: 'COMPLETED',

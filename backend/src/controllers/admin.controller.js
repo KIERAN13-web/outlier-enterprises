@@ -153,7 +153,7 @@ async function getPendingRegistrations(req, res) {
 
     const pendingRegistrations = await Promise.all(
       Object.entries(rawValue)
-        .filter(([, data]) => data && typeof data === 'object')
+        .filter(([, data]) => data && typeof data === 'object' && data.status !== 'COMPLETED' && data.status !== 'FAILED')
         .map(async ([pendingId, data]) => {
           let referrer = null;
           if (data.referralCode) {

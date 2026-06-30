@@ -65,6 +65,7 @@ export default function EarningsCard() {
   const taskBalance = wallet.taskBalance || 0;
   const referralBalance = wallet.referralBalance || 0;
   const totalBalance = taskBalance + referralBalance;
+  const totalEarnings = wallet.totalEarnings !== undefined ? Number(wallet.totalEarnings) : totalBalance;
   const referralStats = wallet.referralStats || { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
   const totalReferred = referralStats.totalReferred || 0;
   const pendingReferred = referralStats.pendingReferred || 0;
@@ -108,7 +109,7 @@ export default function EarningsCard() {
             </div>
             <div className="summary-stat">
               <span className="stat-label">Total Earned</span>
-              <span className="stat-amount">KES {(wallet.totalEarnings || 0).toLocaleString()}</span>
+              <span className="stat-amount">KES {totalEarnings.toLocaleString()}</span>
             </div>
             <div className="summary-stat">
               <span className="stat-label">Total Withdrawn</span>
