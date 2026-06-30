@@ -50,6 +50,17 @@ export default function Register() {
   const [message, setMessage] = useState('');
 
   const navigate = useNavigate();
+  let initialReferral = null;
+  try {
+    const hash = window.location.hash || '';
+    const qIndex = hash.indexOf('?');
+    if (qIndex !== -1) {
+      const params = new URLSearchParams(hash.slice(qIndex + 1));
+      initialReferral = params.get('ref');
+    }
+  } catch (e) {
+    initialReferral = null;
+  }
 
   async function onCreateAccount(e) {
     e.preventDefault();
@@ -80,13 +91,16 @@ export default function Register() {
       const uid = credential.user.uid;
       const now = new Date().toISOString();
 
+      const referralCode = `R${uid.slice(0, 8).toUpperCase()}`;
+
       await set(ref(database, `users/${uid}`), {
         email,
         fullName,
         country,
         idNumber,
         phoneNumber: phoneNumber || null,
-        referralCode: null,
+        referralCode,
+        referredByCode: initialReferral || null,
         isPaid: false,
         paidAt: null,
         isAdmin: false,
@@ -98,6 +112,7 @@ export default function Register() {
         taskBalance: 0,
         referralBalance: 0,
         totalEarnings: 0,
+        availableBalance: 0,
         updatedAt: now,
       });
 

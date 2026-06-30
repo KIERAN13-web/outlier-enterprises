@@ -68,3 +68,17 @@ test('getReferralStats counts total, pending, and active referrals from users an
   expect(stats.activeReferred).toBe(1);
   expect(stats.maxReferralWithdrawal).toBe(50);
 });
+
+test('getReferralStats matches referral codes case-insensitively', async () => {
+  const state = {
+    users: {
+      referrer: { referralCode: 'Ref123' },
+      one: { referredByCode: 'ref123', isPaid: true },
+    },
+  };
+  const rdb = new MockRdb(state);
+  const stats = await referralService.getReferralStats(rdb, 'REF123');
+  expect(stats.totalReferred).toBe(1);
+  expect(stats.activeReferred).toBe(1);
+  expect(stats.maxReferralWithdrawal).toBe(50);
+});

@@ -1,13 +1,19 @@
 import crypto from 'crypto';
 
+function normalizeReferralCode(code) {
+  return String(code || '').trim().toUpperCase();
+}
+
 async function codeExists(rdb, code) {
-  const snap = await rdb.ref('users').orderByChild('referralCode').equalTo(code).limitToFirst(1).get();
+  const normalized = normalizeReferralCode(code);
+  const snap = await rdb.ref('users').orderByChild('referralCode').equalTo(normalized).limitToFirst(1).get();
   return snap.exists();
 }
 
 async function findUserByReferralCode(rdb, code) {
-  if (!code) return null;
-  const snap = await rdb.ref('users').orderByChild('referralCode').equalTo(code).limitToFirst(1).get();
+  const normalized = normalizeReferralCode(code);
+  if (!normalized) return null;
+  const snap = await rdb.ref('users').orderByChild('referralCode').equalTo(normalized).limitToFirst(1).get();
   if (!snap.exists()) return null;
   const entries = Object.entries(snap.val());
   const [uid, user] = entries[0];
@@ -36,7 +42,8 @@ async function generateUniqueReferralCode(rdb, length = 6, maxAttempts = 8) {
 }
 
 async function getReferralStats(rdb, referralCode) {
-  if (!referralCode) return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+  const normalizedReferralCode = normalizeReferralCode(referralCode);
+  if (!normalizedReferralCode) return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
 
   try {
     const snap = await rdb.ref('users').get();
@@ -48,7 +55,7 @@ async function getReferralStats(rdb, referralCode) {
 
     for (const [, user] of Object.entries(users || {})) {
       const userReferralCode = user?.referredByCode || user?.referrerCode;
-      if (userReferralCode && String(userReferralCode) === String(referralCode)) {
+      if (userReferralCode && normalizeReferralCode(userReferralCode) === normalizedReferralCode) {
         totalReferred += 1;
         if (Boolean(user?.isPaid)) {
           activeReferred += 1;
@@ -64,7 +71,7 @@ async function getReferralStats(rdb, referralCode) {
     for (const pendingEntry of Object.values(pendingUsers || {})) {
       if (
         pendingEntry &&
-        String(pendingEntry.referralCode || '') === String(referralCode) &&
+        normalizeReferralCode(pendingEntry.referralCode) === normalizedReferralCode &&
         String(pendingEntry.status || '').toUpperCase() === 'PENDING'
       ) {
         pendingFromPendingUsers += 1;
@@ -87,7 +94,8 @@ async function getReferralStats(rdb, referralCode) {
 }
 
 async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = undefined) {
-  if (!referralCode) {
+  const normalizedReferralCode = normalizeReferralCode(referralCode);
+  if (!normalizedReferralCode) {
     console.warn('creditReferralBonus skipped: missing referralCode');
     return null;
   }
@@ -95,9 +103,9 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
   const reward = typeof bonus === 'number' ? bonus : configured;
 
   try {
-    const refSnap = await rdb.ref('users').orderByChild('referralCode').equalTo(referralCode).limitToFirst(1).get();
+    const refSnap = await rdb.ref('users').orderByChild('referralCode').equalTo(normalizedReferralCode).limitToFirst(1).get();
     if (!refSnap.exists()) {
-      console.warn(`creditReferralBonus skipped: no referrer found for code ${referralCode}`);
+      console.warn(`creditReferralBonus skipped: no referrer found for code ${normalizedReferralCode}`);
       return null;
     }
 
