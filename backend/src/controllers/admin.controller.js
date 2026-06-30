@@ -351,11 +351,29 @@ async function updateWithdrawal(req, res) {
     const withdrawal = withdrawalSnap.val();
 
     if (status === 'approved') {
+      // Calculate referrals used for this withdrawal
+      let referralsUsedForThisWithdrawal = 0;
+      if (withdrawal.earningType === 'task') {
+        referralsUsedForThisWithdrawal = 20;
+      } else if (withdrawal.earningType === 'referral') {
+        referralsUsedForThisWithdrawal = Math.ceil(Number(withdrawal.amount || 0) / 100) * 20;
+      }
+
       await withdrawalRef.update({
         status: 'approved',
         approvedAt: new Date().toISOString(),
       });
       await updateWithdrawalTransactionStatus(uid, withdrawalId, 'approved');
+
+      // Increment referralsUsedInWithdrawals in wallet
+      const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
+      const wallet = walletSnap.exists() ? walletSnap.val() : { referralsUsedInWithdrawals: 0 };
+      const currentUsedReferrals = Number(wallet.referralsUsedInWithdrawals || 0);
+      
+      await rdb.ref(`users/${uid}/wallet`).update({
+        referralsUsedInWithdrawals: currentUsedReferrals + referralsUsedForThisWithdrawal,
+        updatedAt: new Date().toISOString(),
+      });
     } else {
       await withdrawalRef.update({
         status: 'rejected',
@@ -404,14 +422,38 @@ async function approveWithdrawal(req, res) {
       return res.status(400).json({ ok: false, error: 'invalid_withdrawal_status' });
     }
 
+    // Calculate referrals used for this withdrawal
+    let referralsUsedForThisWithdrawal = 0;
+    if (withdrawal.earningType === 'task') {
+      referralsUsedForThisWithdrawal = 20; // 20 active referrals per task withdrawal
+    } else if (withdrawal.earningType === 'referral') {
+      referralsUsedForThisWithdrawal = Math.ceil(Number(withdrawal.amount || 0) / 100) * 20; // 20 active referrals per KES 100
+    }
+
+    // Update withdrawal status
     await withdrawalRef.update({
       status: 'approved',
       approvedAt: new Date().toISOString(),
     });
     await updateWithdrawalTransactionStatus(uid, withdrawalId, 'approved');
 
+    // Increment referralsUsedInWithdrawals in wallet
+    const walletSnap = await rdb.ref(`users/${uid}/wallet`).get();
+    const wallet = walletSnap.exists() ? walletSnap.val() : { referralsUsedInWithdrawals: 0 };
+    const currentUsedReferrals = Number(wallet.referralsUsedInWithdrawals || 0);
+    
+    await rdb.ref(`users/${uid}/wallet`).update({
+      referralsUsedInWithdrawals: currentUsedReferrals + referralsUsedForThisWithdrawal,
+      updatedAt: new Date().toISOString(),
+    });
+
     // Withdrawal has been approved. Actual payout should be completed manually by admin.
-    return res.json({ ok: true, status: 'approved' });
+    return res.json({ 
+      ok: true, 
+      status: 'approved',
+      referralsUsedForThisWithdrawal,
+      totalReferralsUsedAfterApproval: currentUsedReferrals + referralsUsedForThisWithdrawal,
+    });
   } catch (err) {
     console.error('approveWithdrawal error', err);
     return res.status(500).json({ ok: false, error: 'APPROVE_FAILED', message: err.message });

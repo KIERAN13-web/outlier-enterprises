@@ -41,9 +41,9 @@ async function generateUniqueReferralCode(rdb, length = 6, maxAttempts = 8) {
   return `R${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
-async function getReferralStats(rdb, referralCode) {
+async function getReferralStats(rdb, referralCode, referralsUsedInWithdrawals = 0) {
   const normalizedReferralCode = normalizeReferralCode(referralCode);
-  if (!normalizedReferralCode) return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+  if (!normalizedReferralCode) return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, availableReferrals: 0, maxReferralWithdrawal: 0 };
 
   try {
     const snap = await rdb.ref('users').get();
@@ -81,15 +81,20 @@ async function getReferralStats(rdb, referralCode) {
     totalReferred += pendingFromPendingUsers;
     pendingReferred += pendingFromPendingUsers;
 
+    // Calculate available referrals for withdrawals (every 20 active referrals = KES 100 withdrawal capacity)
+    const availableReferrals = Math.max(0, activeReferred - referralsUsedInWithdrawals);
+    const maxReferralWithdrawal = Math.floor(availableReferrals / 20) * 100;
+
     return {
       totalReferred,
       pendingReferred,
       activeReferred,
-      maxReferralWithdrawal: activeReferred * 50,
+      availableReferrals,
+      maxReferralWithdrawal,
     };
   } catch (err) {
     console.error('getReferralStats error', err);
-    return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+    return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, availableReferrals: 0, maxReferralWithdrawal: 0 };
   }
 }
 

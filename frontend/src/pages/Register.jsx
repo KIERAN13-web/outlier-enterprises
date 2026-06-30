@@ -114,6 +114,7 @@ export default function Register() {
         referralBalance: 0,
         totalEarnings: 0,
         availableBalance: 0,
+        referralsUsedInWithdrawals: 0,
         updatedAt: now,
       });
 

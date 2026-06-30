@@ -385,6 +385,8 @@ async function processPendingPayment({ pendingKey, data, status }) {
           taskBalance: 0,
           referralBalance: 0,
           totalEarnings: 0,
+          availableBalance: 0,
+          referralsUsedInWithdrawals: 0,
           updatedAt: new Date().toISOString(),
         });
 
@@ -430,6 +432,8 @@ async function processPendingPayment({ pendingKey, data, status }) {
             taskBalance: 0,
             referralBalance: 0,
             totalEarnings: 0,
+            availableBalance: 0,
+            referralsUsedInWithdrawals: 0,
             updatedAt: new Date().toISOString(),
           });
         }
