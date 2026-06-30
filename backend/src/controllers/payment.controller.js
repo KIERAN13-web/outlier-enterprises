@@ -4,7 +4,7 @@ import referralService from '../services/referralService.js';
 import { parseAmount, validateOrderAmount } from '../utils/orderValidation.js';
 import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
-const PAID_AMOUNT = 200;
+const PAID_AMOUNT = 1;
 const VERIFICATION_TIME = 2 * 60 * 1000; // 2 minutes in milliseconds
 const MAX_ORDERS_PER_WEEK = Number(process.env.MAX_ORDERS_PER_WEEK) || 5;
 const MAX_ORDERS_PER_DAY = Number(process.env.MAX_ORDERS_PER_DAY) || 1;
@@ -259,7 +259,7 @@ async function createManualGuest(req, res) {
       pendingId,
       paymentMethod: 'manual',
       tillNumber: '3124553',
-      message: 'Till payment request recorded. Pay KES 200 using till 3124553 and wait for admin approval.',
+      message: 'Till payment request recorded. Pay KES 1 using till 3124553 and wait for admin approval.',
     });
   } catch (err) {
     console.error('createManualGuest error', err);

@@ -215,7 +215,7 @@ export default function Register() {
             </div>
 
             <button disabled={busy || success} type="submit" className="btn btn-primary btn-full">
-              {busy ? (provider === 'mpesa' ? 'Processing...' : 'Initializing Pesapal...') : provider === 'mpesa' ? 'Pay KES 200' : 'Pay with Pesapal'}
+              {busy ? (provider === 'mpesa' ? 'Processing...' : 'Initializing Pesapal...') : provider === 'mpesa' ? 'Pay KES 1' : 'Pay with Pesapal'}
             </button>
 
             <div className="auth-footer">

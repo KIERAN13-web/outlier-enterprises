@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
-const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 200);
+const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 1);
 
 // Read from env at runtime (not at module load) so Railway env vars are picked up even if process is already running
 function getConsumerKey() {

@@ -176,7 +176,7 @@ export default function EarningsCard() {
             <div className="activation-panel pending">
               <div>
                 <strong>Account activation required</strong>
-                <p>Activate your account with KES 200 to unlock withdrawals.</p>
+                <p>Activate your account with KES 1 to unlock withdrawals.</p>
               </div>
               <button className="btn btn-activation" onClick={() => navigate('/payment')}>
                 Activate account

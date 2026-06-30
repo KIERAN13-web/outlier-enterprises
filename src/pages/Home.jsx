@@ -53,7 +53,7 @@ export default function Home() {
     {
       number: '02',
       title: 'Make Payment',
-      description: 'Pay 200 KES via M-Pesa to unlock full access.',
+      description: 'Pay 1 KES via M-Pesa to unlock full access.',
     },
     {
       number: '03',

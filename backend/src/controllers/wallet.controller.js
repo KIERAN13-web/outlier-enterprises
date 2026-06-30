@@ -97,7 +97,7 @@ async function withdraw(req, res) {
     const userSnap = await rdb.ref(`users/${uid}`).get();
     const userProfile = userSnap.exists() ? userSnap.val() : {};
     if (!userProfile.isPaid) {
-      return res.status(403).json({ ok: false, error: 'PAYMENT_REQUIRED', message: 'Activate your account with KES 200 before making withdrawals.' });
+      return res.status(403).json({ ok: false, error: 'PAYMENT_REQUIRED', message: 'Activate your account with KES 1 before making withdrawals.' });
     }
 
     // Set minimum based on earning type

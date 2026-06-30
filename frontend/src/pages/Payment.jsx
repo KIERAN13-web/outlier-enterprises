@@ -70,7 +70,7 @@ export default function Payment() {
     <div className="payment-container container">
       <div className="payment-header">
         <h1>Activate Your Account</h1>
-        <p>Pay KES 200 via Pesapal (PayPal) to unlock withdrawals and retain dashboard access.</p>
+        <p>Pay KES 1 via Pesapal (PayPal) to unlock withdrawals and retain dashboard access.</p>
       </div>
 
       <div className="pricing-grid">
@@ -79,7 +79,7 @@ export default function Payment() {
             <h3>Standard License</h3>
             <div className="price">
               <span className="currency">KES</span>
-              <span className="amount">200</span>
+              <span className="amount">1</span>
               <span className="period">/ lifetime</span>
             </div>
           </div>
