@@ -65,13 +65,17 @@ export default function EarningsCard() {
   const taskBalance = wallet.taskBalance || 0;
   const referralBalance = wallet.referralBalance || 0;
   const totalBalance = taskBalance + referralBalance;
+  const referralStats = wallet.referralStats || { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+  const totalReferred = referralStats.totalReferred || 0;
+  const activeReferred = referralStats.activeReferred || 0;
+  const maxReferralWithdrawal = referralStats.maxReferralWithdrawal || 0;
 
   const MIN_TASK_WITHDRAWAL = 1000;
   const MIN_REFERRAL_WITHDRAWAL = 1;
   const isPaid = paidStatus === true || user?.isPaid === true;
   
-  const canWithdrawTask = isPaid && taskBalance >= MIN_TASK_WITHDRAWAL;
-  const canWithdrawReferral = isPaid && referralBalance >= MIN_REFERRAL_WITHDRAWAL;
+  const canWithdrawTask = isPaid && taskBalance >= MIN_TASK_WITHDRAWAL && activeReferred >= 20;
+  const canWithdrawReferral = isPaid && referralBalance >= MIN_REFERRAL_WITHDRAWAL && maxReferralWithdrawal >= MIN_REFERRAL_WITHDRAWAL;
 
   const handleWithdrawClick = (type) => {
     if (isPaid) {
@@ -123,27 +127,50 @@ export default function EarningsCard() {
             </div>
           </div>
 
-          {user?.referralCode && (
-            <div className="referral-section">
-              <label>Your referral link</label>
-              <div className="referral-row">
-                <input
-                  readOnly
-                  value={`${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`}
-                  onFocus={(e) => e.target.select()}
-                />
-                <button
-                  onClick={() => {
-                    const text = `${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`;
-                    navigator.clipboard?.writeText(text).catch(() => {});
-                  }}
-                  className="btn-copy"
-                >
-                  Copy
-                </button>
+          <div className="referral-stats-card">
+            <div className="referral-stats-header">
+              <h4>👥 Referral Progress</h4>
+              <span className="earning-badge">Referrals</span>
+            </div>
+            <div className="referral-stats-grid">
+              <div className="referral-stat-box">
+                <span className="stat-label">Referred</span>
+                <span className="stat-amount">{totalReferred}</span>
+              </div>
+              <div className="referral-stat-box">
+                <span className="stat-label">Activated</span>
+                <span className="stat-amount">{activeReferred}</span>
+              </div>
+              <div className="referral-stat-box">
+                <span className="stat-label">Max referral cashout</span>
+                <span className="stat-amount">KES {maxReferralWithdrawal.toLocaleString()}</span>
               </div>
             </div>
-          )}
+            <p className="referral-stats-note">
+              Every active referral raises your referral withdrawal limit by KES 50. You need at least 20 active referrals before task earnings can be withdrawn.
+            </p>
+            {user?.referralCode && (
+              <div className="referral-section">
+                <label>Your referral link</label>
+                <div className="referral-row">
+                  <input
+                    readOnly
+                    value={`${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`}
+                    onFocus={(e) => e.target.select()}
+                  />
+                  <button
+                    onClick={() => {
+                      const text = `${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`;
+                      navigator.clipboard?.writeText(text).catch(() => {});
+                    }}
+                    className="btn-copy"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {!isPaid && showActivationPrompt && (
             <div className="activation-panel pending">
@@ -200,7 +227,7 @@ export default function EarningsCard() {
                 className="btn-withdraw"
                 disabled={isPaid ? !canWithdrawTask : false}
               >
-                {isPaid ? 'Withdraw from Tasks' : 'Activate to withdraw'}
+                {isPaid ? (canWithdrawTask ? 'Withdraw from Tasks' : 'Need 20 active referrals') : 'Activate to withdraw'}
               </button>
             ) : (
               <p className="no-balance-text">Complete tasks to earn money</p>
@@ -219,14 +246,14 @@ export default function EarningsCard() {
               <span className="label">Available Balance</span>
               <span className="amount">KES {referralBalance.toLocaleString()}</span>
             </div>
-            <div className="min-withdrawal-note">Min withdrawal: KES {MIN_REFERRAL_WITHDRAWAL}</div>
+            <div className="min-withdrawal-note">Min withdrawal: KES {MIN_REFERRAL_WITHDRAWAL} • Max now: KES {maxReferralWithdrawal.toLocaleString()}</div>
             {referralBalance > 0 ? (
               <button
                 onClick={() => handleWithdrawClick('referral')}
                 disabled={isPaid ? !canWithdrawReferral : false}
                 className={`btn-withdraw ${isPaid && !canWithdrawReferral ? 'disabled' : ''}`}
               >
-                {isPaid ? (canWithdrawReferral ? 'Withdraw from Referrals' : 'Insufficient balance') : 'Activate to withdraw'}
+                {isPaid ? (canWithdrawReferral ? 'Withdraw from Referrals' : 'Referral limit not reached') : 'Activate to withdraw'}
               </button>
             ) : (
               <p className="no-balance-text">Refer friends to earn money</p>
@@ -277,7 +304,7 @@ export default function EarningsCard() {
       <WithdrawalModal
         isOpen={showReferralWithdrawal}
         onClose={() => setShowReferralWithdrawal(false)}
-        availableBalance={referralBalance}
+        availableBalance={Math.min(referralBalance, maxReferralWithdrawal)}
         userPhone={user?.phoneNumber || ''}
         minWithdrawal={MIN_REFERRAL_WITHDRAWAL}
         earningType="referral"

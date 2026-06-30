@@ -44,6 +44,10 @@ export default function EarningsCard() {
 
   const MIN_WITHDRAWAL = 1000;
   const canWithdraw = wallet.availableBalance >= MIN_WITHDRAWAL;
+  const referralStats = wallet.referralStats || { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+  const totalReferred = referralStats.totalReferred || 0;
+  const activeReferred = referralStats.activeReferred || 0;
+  const maxReferralWithdrawal = referralStats.maxReferralWithdrawal || 0;
 
   return (
     <>
@@ -109,29 +113,52 @@ export default function EarningsCard() {
             </div>
           </div>
 
-          {user?.referralCode && (
-            <div className="referral-section">
-              <label>Your referral link</label>
-              <div className="referral-row">
-                <input
-                  readOnly
-                  value={`${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`}
-                  onFocus={(e) => e.target.select()}
-                />
-                <button
-                  onClick={() => {
-                    const text = `${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`;
-                    navigator.clipboard?.writeText(text).then(() => {
-                      // silent success
-                    }).catch(() => {});
-                  }}
-                  className="btn-copy"
-                >
-                  Copy
-                </button>
+          <div className="referral-stats-card">
+            <div className="referral-stats-header">
+              <h4>👥 Referral Progress</h4>
+              <span className="earnings-badge small">Ref</span>
+            </div>
+            <div className="referral-stats-grid">
+              <div className="referral-stat-box">
+                <span className="label">Referred</span>
+                <span className="amount">{totalReferred}</span>
+              </div>
+              <div className="referral-stat-box">
+                <span className="label">Activated</span>
+                <span className="amount">{activeReferred}</span>
+              </div>
+              <div className="referral-stat-box">
+                <span className="label">Max Cashout</span>
+                <span className="amount">KES {maxReferralWithdrawal.toLocaleString()}</span>
               </div>
             </div>
-          )}
+            <p className="referral-stats-note">
+              Every active referral increases your referral cash-out limit by KES 50. Task withdrawals need 20 active referrals.
+            </p>
+            {user?.referralCode && (
+              <div className="referral-section">
+                <label>Your referral link</label>
+                <div className="referral-row">
+                  <input
+                    readOnly
+                    value={`${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`}
+                    onFocus={(e) => e.target.select()}
+                  />
+                  <button
+                    onClick={() => {
+                      const text = `${window.location.origin}${window.location.pathname}#/register?ref=${user.referralCode}`;
+                      navigator.clipboard?.writeText(text).then(() => {
+                        // silent success
+                      }).catch(() => {});
+                    }}
+                    className="btn-copy"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Withdrawal Section */}
           {wallet.availableBalance > 0 ? (
