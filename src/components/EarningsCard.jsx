@@ -44,8 +44,9 @@ export default function EarningsCard() {
 
   const MIN_WITHDRAWAL = 1000;
   const canWithdraw = wallet.availableBalance >= MIN_WITHDRAWAL;
-  const referralStats = wallet.referralStats || { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+  const referralStats = wallet.referralStats || { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
   const totalReferred = referralStats.totalReferred || 0;
+  const pendingReferred = referralStats.pendingReferred || 0;
   const activeReferred = referralStats.activeReferred || 0;
   const maxReferralWithdrawal = referralStats.maxReferralWithdrawal || 0;
 
@@ -120,8 +121,8 @@ export default function EarningsCard() {
             </div>
             <div className="referral-stats-grid">
               <div className="referral-stat-box">
-                <span className="label">Referred</span>
-                <span className="amount">{totalReferred}</span>
+                <span className="label">Pending referrals</span>
+                <span className="amount">{pendingReferred}</span>
               </div>
               <div className="referral-stat-box">
                 <span className="label">Activated</span>

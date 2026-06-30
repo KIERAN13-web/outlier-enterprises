@@ -46,7 +46,7 @@ test('creditReferralBonus credits wallet and creates notification', async () => 
   expect(Object.keys(state.users.referrer.notifications || {}).length).toBe(1);
 });
 
-test('getReferralStats counts total and active referrals', async () => {
+test('getReferralStats counts total, pending, and active referrals from users and pendingUsers', async () => {
   const state = {
     users: {
       referrer: { referralCode: 'REF123' },
@@ -54,10 +54,16 @@ test('getReferralStats counts total and active referrals', async () => {
       two: { referredByCode: 'REF123', isPaid: true },
       three: { referredByCode: 'OTHER', isPaid: true },
     },
+    pendingUsers: {
+      p1: { referralCode: 'REF123', status: 'PENDING' },
+      p2: { referralCode: 'REF123', status: 'COMPLETED' },
+      p3: { referralCode: 'OTHER', status: 'PENDING' },
+    },
   };
   const rdb = new MockRdb(state);
   const stats = await referralService.getReferralStats(rdb, 'REF123');
-  expect(stats.totalReferred).toBe(2);
+  expect(stats.totalReferred).toBe(3);
+  expect(stats.pendingReferred).toBe(2);
   expect(stats.activeReferred).toBe(1);
   expect(stats.maxReferralWithdrawal).toBe(50);
 });

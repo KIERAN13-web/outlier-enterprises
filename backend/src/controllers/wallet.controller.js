@@ -33,7 +33,7 @@ async function getWallet(req, res) {
     const userProfile = userSnap.exists() ? userSnap.val() : {};
     const referralStats = userProfile?.referralCode
       ? await referralService.getReferralStats(rdb, userProfile.referralCode)
-      : { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+      : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
     // fetch notifications (include unread only)
     const notSnap = await rdb.ref(`users/${uid}/notifications`).get();
     const notifications = notSnap.exists()
@@ -103,7 +103,7 @@ async function withdraw(req, res) {
     // Set minimum based on earning type
     const referralStats = userProfile?.referralCode
       ? await referralService.getReferralStats(rdb, userProfile.referralCode)
-      : { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+      : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
     const MIN_WITHDRAWAL = earningType === 'task' ? 1000 : 1;
     if (earningType === 'task' && referralStats.activeReferred < 20) {
       return res.status(400).json({

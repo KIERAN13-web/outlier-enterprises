@@ -36,34 +36,53 @@ async function generateUniqueReferralCode(rdb, length = 6, maxAttempts = 8) {
 }
 
 async function getReferralStats(rdb, referralCode) {
-  if (!referralCode) return { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+  if (!referralCode) return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
 
   try {
     const snap = await rdb.ref('users').get();
     const users = snap.exists() ? snap.val() : {};
-    const entries = Object.entries(users || {});
 
     let totalReferred = 0;
+    let pendingReferred = 0;
     let activeReferred = 0;
 
-    for (const [, user] of entries) {
+    for (const [, user] of Object.entries(users || {})) {
       const userReferralCode = user?.referredByCode || user?.referrerCode;
       if (userReferralCode && String(userReferralCode) === String(referralCode)) {
         totalReferred += 1;
         if (Boolean(user?.isPaid)) {
           activeReferred += 1;
+        } else {
+          pendingReferred += 1;
         }
       }
     }
 
+    const pendingSnap = await rdb.ref('pendingUsers').get();
+    const pendingUsers = pendingSnap.exists() ? pendingSnap.val() : {};
+    let pendingFromPendingUsers = 0;
+    for (const pendingEntry of Object.values(pendingUsers || {})) {
+      if (
+        pendingEntry &&
+        String(pendingEntry.referralCode || '') === String(referralCode) &&
+        String(pendingEntry.status || '').toUpperCase() === 'PENDING'
+      ) {
+        pendingFromPendingUsers += 1;
+      }
+    }
+
+    totalReferred += pendingFromPendingUsers;
+    pendingReferred += pendingFromPendingUsers;
+
     return {
       totalReferred,
+      pendingReferred,
       activeReferred,
       maxReferralWithdrawal: activeReferred * 50,
     };
   } catch (err) {
     console.error('getReferralStats error', err);
-    return { totalReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
+    return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, maxReferralWithdrawal: 0 };
   }
 }
 

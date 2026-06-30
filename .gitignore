@@ -23,3 +23,5 @@ backend/serviceAccountKey.json
 *.njsproj
 *.sln
 *.sw?
+
+database.rules.json
