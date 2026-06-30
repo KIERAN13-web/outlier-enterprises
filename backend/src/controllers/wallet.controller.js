@@ -15,7 +15,7 @@ async function getWallet(req, res) {
       availableBalance: 0,
       withdrawals: [],
       transactions: [],
-      referralsUsedInWithdrawals: 0,
+      activeReferralsAtLastWithdrawal: 0,
     };
     const taskBalance = Number(wallet.taskBalance || 0);
     const referralBalance = Number(wallet.referralBalance || 0);
@@ -55,10 +55,10 @@ async function getWallet(req, res) {
       }
     }
 
-    const referralsUsedInWithdrawals = Number(wallet.referralsUsedInWithdrawals || 0);
+    const activeReferralsAtLastWithdrawal = Number(wallet.activeReferralsAtLastWithdrawal || 0);
     const referralStats = referralCode
-      ? await referralService.getReferralStats(rdb, referralCode, referralsUsedInWithdrawals)
-      : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, availableReferrals: 0, maxReferralWithdrawal: 0 };
+      ? await referralService.getReferralStats(rdb, referralCode, activeReferralsAtLastWithdrawal)
+      : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, newActiveReferrals: 0, maxReferralWithdrawal: 0 };
     // fetch notifications (include unread only)
     const notSnap = await rdb.ref(`users/${uid}/notifications`).get();
     const notifications = notSnap.exists()
@@ -76,7 +76,7 @@ async function getWallet(req, res) {
         withdrawals: withdrawals.sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt)),
         totalWithdrawn,
         referralStats,
-        referralsUsedInWithdrawals,
+        activeReferralsAtLastWithdrawal,
       },
       user: {
         name: userProfile.fullName || userProfile.name || 'User',
@@ -147,36 +147,32 @@ async function withdraw(req, res) {
       totalEarnings: 0,
       withdrawals: [],
       transactions: [],
-      referralsUsedInWithdrawals: 0,
+      activeReferralsAtLastWithdrawal: 0,
     };
 
-    const referralsUsedInWithdrawals = Number(wallet.referralsUsedInWithdrawals || 0);
+    const activeReferralsAtLastWithdrawal = Number(wallet.activeReferralsAtLastWithdrawal || 0);
     const referralStats = userProfile?.referralCode
-      ? await referralService.getReferralStats(rdb, userProfile.referralCode, referralsUsedInWithdrawals)
-      : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, availableReferrals: 0, maxReferralWithdrawal: 0 };
+      ? await referralService.getReferralStats(rdb, userProfile.referralCode, activeReferralsAtLastWithdrawal)
+      : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, newActiveReferrals: 0, maxReferralWithdrawal: 0 };
 
     const MIN_WITHDRAWAL = earningType === 'task' ? 1000 : 1;
     
-    // For task withdrawals: need 20 active referrals per 1000 (or per withdrawal)
-    const referralsNeededForTask = 20;
-    if (earningType === 'task' && referralStats.availableReferrals < referralsNeededForTask) {
+    // For task withdrawals: need 20 active referrals (unchanged)
+    if (earningType === 'task' && referralStats.activeReferred < 20) {
       return res.status(400).json({
         ok: false,
         error: 'TASK_WITHDRAWAL_REQUIRES_ACTIVE_REFERRALS',
-        message: `You need at least ${referralsNeededForTask} active referrals available for task withdrawal. You have ${referralStats.availableReferrals} available.`,
+        message: `You need at least 20 active referrals for task withdrawal. You have ${referralStats.activeReferred} active.`,
       });
     }
     
-    // For referral withdrawals: 20 active referrals = KES 100
-    if (earningType === 'referral') {
-      const referralsNeededForReferral = Math.ceil(parsedAmount / 100) * 20;
-      if (referralStats.availableReferrals < referralsNeededForReferral) {
-        return res.status(400).json({
-          ok: false,
-          error: 'REFERRAL_WITHDRAWAL_LIMIT',
-          message: `You need ${referralsNeededForReferral} active referrals to withdraw KES ${parsedAmount}. You have ${referralStats.availableReferrals} available. (20 active referrals = KES 100)`,
-        });
-      }
+    // For referral withdrawals: validate against max based on NEW referrals since last withdrawal
+    if (earningType === 'referral' && referralStats.maxReferralWithdrawal < parsedAmount) {
+      return res.status(400).json({
+        ok: false,
+        error: 'REFERRAL_WITHDRAWAL_LIMIT',
+        message: `You can withdraw at most KES ${referralStats.maxReferralWithdrawal} from referral earnings. (${referralStats.newActiveReferrals} new active referrals × KES 50)`,
+      });
     }
     
     if (parsedAmount < MIN_WITHDRAWAL) {

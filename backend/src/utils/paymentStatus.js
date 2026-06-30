@@ -103,7 +103,7 @@ async function activatePendingRegistration({
       referralBalance: 0,
       totalEarnings: 0,
       availableBalance: 0,
-      referralsUsedInWithdrawals: 0,
+      activeReferralsAtLastWithdrawal: 0,
       updatedAt: now,
     });
   }

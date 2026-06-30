@@ -41,9 +41,9 @@ async function generateUniqueReferralCode(rdb, length = 6, maxAttempts = 8) {
   return `R${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
-async function getReferralStats(rdb, referralCode, referralsUsedInWithdrawals = 0) {
+async function getReferralStats(rdb, referralCode, activeReferralsAtLastWithdrawal = 0) {
   const normalizedReferralCode = normalizeReferralCode(referralCode);
-  if (!normalizedReferralCode) return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, availableReferrals: 0, maxReferralWithdrawal: 0 };
+  if (!normalizedReferralCode) return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, newActiveReferrals: 0, maxReferralWithdrawal: 0 };
 
   try {
     const snap = await rdb.ref('users').get();
@@ -81,20 +81,21 @@ async function getReferralStats(rdb, referralCode, referralsUsedInWithdrawals = 
     totalReferred += pendingFromPendingUsers;
     pendingReferred += pendingFromPendingUsers;
 
-    // Calculate available referrals for withdrawals (every 20 active referrals = KES 100 withdrawal capacity)
-    const availableReferrals = Math.max(0, activeReferred - referralsUsedInWithdrawals);
-    const maxReferralWithdrawal = Math.floor(availableReferrals / 20) * 100;
+    // For referral withdrawals: only count referrals gained AFTER last withdrawal
+    // Example: had 2 active, withdrew max. Now have 4 active. Only 2 new = max KES 100
+    const newActiveReferrals = Math.max(0, activeReferred - activeReferralsAtLastWithdrawal);
+    const maxReferralWithdrawal = newActiveReferrals * 50;
 
     return {
       totalReferred,
       pendingReferred,
       activeReferred,
-      availableReferrals,
+      newActiveReferrals,
       maxReferralWithdrawal,
     };
   } catch (err) {
     console.error('getReferralStats error', err);
-    return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, availableReferrals: 0, maxReferralWithdrawal: 0 };
+    return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, newActiveReferrals: 0, maxReferralWithdrawal: 0 };
   }
 }
 
