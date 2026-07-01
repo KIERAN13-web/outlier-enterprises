@@ -1,5 +1,6 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import referralService from '../services/referralService.js';
+import { getActivationFeeForCountry, getCurrencyCodeForCountry, getReferralBonusForCountry, getTaskMinWithdrawalForCountry } from '../utils/countryAmounts.js';
 
 // Get user's wallet/earnings
 async function getWallet(req, res) {
@@ -40,6 +41,11 @@ async function getWallet(req, res) {
     const userRef = rdb.ref(`users/${uid}`);
     const userSnap = await userRef.get();
     const userProfile = userSnap.exists() ? userSnap.val() : {};
+    const userCountry = String(userProfile?.country || '').trim().toLowerCase();
+    const currencyCode = getCurrencyCodeForCountry(userCountry);
+    const activationFee = getActivationFeeForCountry(userCountry);
+    const taskMinWithdrawal = getTaskMinWithdrawalForCountry(userCountry);
+    const referralBonus = getReferralBonusForCountry(userCountry);
     let referralCode = userProfile?.referralCode || null;
 
     if (!referralCode) {
@@ -82,9 +88,16 @@ async function getWallet(req, res) {
         name: userProfile.fullName || userProfile.name || 'User',
         email: userProfile.email || '',
         phoneNumber: userProfile.phoneNumber || '',
+        country: userProfile.country || null,
         referralCode,
         isPaid: Boolean(userProfile.isPaid),
         notifications: notifications.filter((n) => n.read !== true),
+        currencyCode,
+        taskMinWithdrawal,
+        activationFeeAmount: activationFee.amount,
+        activationFeeCurrency: activationFee.currency,
+        referralBonusAmount: referralBonus.amount,
+        referralBonusCurrency: referralBonus.currency,
       },
     });
   } catch (err) {
@@ -135,8 +148,12 @@ async function withdraw(req, res) {
     const rdb = firebaseAdmin.database();
     const userSnap = await rdb.ref(`users/${uid}`).get();
     const userProfile = userSnap.exists() ? userSnap.val() : {};
+    const userCountry = String(userProfile?.country || '').trim().toLowerCase();
+    const activationFee = getActivationFeeForCountry(userCountry);
+    const currencyCode = getCurrencyCodeForCountry(userCountry);
+    const taskMinWithdrawal = getTaskMinWithdrawalForCountry(userCountry);
     if (!userProfile.isPaid) {
-      return res.status(403).json({ ok: false, error: 'PAYMENT_REQUIRED', message: 'Activate your account with KES 1 before making withdrawals.' });
+      return res.status(403).json({ ok: false, error: 'PAYMENT_REQUIRED', message: `Activate your account with ${currencyCode} ${activationFee.amount} before making withdrawals.` });
     }
 
     // Set minimum based on earning type
@@ -155,10 +172,8 @@ async function withdraw(req, res) {
       ? await referralService.getReferralStats(rdb, userProfile.referralCode, activeReferralsAtLastWithdrawal)
       : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, newActiveReferrals: 0, maxReferralWithdrawal: 0 };
 
-    const userCountry = String(userProfile?.country || '').trim().toLowerCase();
-    const taskMinWithdrawalZmw = Number(process.env.ZAMBIA_TASK_MIN_WITHDRAWAL_ZMW) || 980;
     const MIN_WITHDRAWAL = earningType === 'task'
-      ? (userCountry === 'zambia' ? taskMinWithdrawalZmw : 1000)
+      ? taskMinWithdrawal
       : 1;
     
     
@@ -176,7 +191,7 @@ async function withdraw(req, res) {
       return res.status(400).json({
         ok: false,
         error: 'REFERRAL_WITHDRAWAL_LIMIT',
-        message: `You can withdraw at most KES ${referralStats.maxReferralWithdrawal} from referral earnings. (${referralStats.newActiveReferrals} new active referrals × KES 50)`,
+        message: `You can withdraw at most ${currencyCode} ${referralStats.maxReferralWithdrawal} from referral earnings. (${referralStats.newActiveReferrals} new active referrals × ${currencyCode} ${referralStats.maxReferralWithdrawal || 0})`,
       });
     }
     
@@ -184,7 +199,7 @@ async function withdraw(req, res) {
       return res.status(400).json({
         ok: false,
         error: 'MINIMUM_WITHDRAWAL',
-        message: `Minimum withdrawal is KES ${MIN_WITHDRAWAL}`,
+        message: `Minimum withdrawal is ${currencyCode} ${MIN_WITHDRAWAL}`,
       });
     }
 

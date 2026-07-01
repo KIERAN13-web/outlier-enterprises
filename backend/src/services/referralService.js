@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { getReferralBonusKESForCountry } from '../utils/countryAmounts.js';
+import { getCurrencyCodeForCountry, getReferralBonusForCountry } from '../utils/countryAmounts.js';
 
 function normalizeReferralCode(code) {
   return String(code || '').trim().toUpperCase();
@@ -62,7 +62,7 @@ async function getReferrerBonusKES(rdb, referralCode) {
   const [, refUser] = entries[0];
 
   const country = refUser?.country || 'Kenya';
-  return getReferralBonusKESForCountry(country);
+  return getReferralBonusForCountry(country).amount;
 }
 
 async function getReferralStats(rdb, referralCode, activeReferralsAtLastWithdrawal = 0) {
@@ -217,11 +217,12 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
 
     const notifRef = rdb.ref(`users/${refUid}/notifications`).push();
     const notifId = notifRef.key;
+    const currencyCode = getCurrencyCodeForCountry(refUser?.country || 'Kenya');
     await notifRef.set({
       id: notifId,
       type: 'referral',
       amount: rewardKES,
-      message: `You've earned KES ${rewardKES} from a referral.`,
+      message: `You've earned ${currencyCode} ${rewardKES} from a referral.`,
       read: false,
       createdAt: new Date().toISOString(),
     });

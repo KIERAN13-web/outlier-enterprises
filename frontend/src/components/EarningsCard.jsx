@@ -72,11 +72,13 @@ export default function EarningsCard() {
   const activeReferred = referralStats.activeReferred || 0;
   const maxReferralWithdrawal = referralStats.maxReferralWithdrawal || 0;
 
-  const MIN_TASK_WITHDRAWAL = 1000;
+  const currencyCode = user?.currencyCode || ((user?.country || '').toLowerCase() === 'zambia' ? 'ZMW' : 'KES');
+  const taskMinWithdrawal = user?.taskMinWithdrawal ?? ((user?.country || '').toLowerCase() === 'zambia' ? 980 : 1000);
+  const referralBonusAmount = user?.referralBonusAmount ?? ((user?.country || '').toLowerCase() === 'zambia' ? 25 : 50);
   const MIN_REFERRAL_WITHDRAWAL = 1;
   const isPaid = paidStatus === true || user?.isPaid === true;
   
-  const canWithdrawTask = isPaid && taskBalance >= MIN_TASK_WITHDRAWAL && activeReferred >= 20;
+  const canWithdrawTask = isPaid && taskBalance >= taskMinWithdrawal && activeReferred >= 20;
   const canWithdrawReferral = isPaid && referralBalance >= MIN_REFERRAL_WITHDRAWAL && maxReferralWithdrawal >= MIN_REFERRAL_WITHDRAWAL;
 
   const handleWithdrawClick = (type) => {
@@ -105,15 +107,15 @@ export default function EarningsCard() {
           <div className="summary-stats">
             <div className="summary-stat">
               <span className="stat-label">Total Balance</span>
-              <span className="stat-amount">KES {totalBalance.toLocaleString()}</span>
+              <span className="stat-amount">{currencyCode} {totalBalance.toLocaleString()}</span>
             </div>
             <div className="summary-stat">
               <span className="stat-label">Total Earned</span>
-              <span className="stat-amount">KES {totalEarnings.toLocaleString()}</span>
+              <span className="stat-amount">{currencyCode} {totalEarnings.toLocaleString()}</span>
             </div>
             <div className="summary-stat">
               <span className="stat-label">Total Withdrawn</span>
-              <span className="stat-amount">KES {(wallet.totalWithdrawn || 0).toLocaleString()}</span>
+              <span className="stat-amount">{currencyCode} {(wallet.totalWithdrawn || 0).toLocaleString()}</span>
             </div>
           </div>
 
@@ -145,11 +147,11 @@ export default function EarningsCard() {
               </div>
               <div className="referral-stat-box">
                 <span className="stat-label">Max referral cashout</span>
-                <span className="stat-amount">KES {maxReferralWithdrawal.toLocaleString()}</span>
+                <span className="stat-amount">{currencyCode} {maxReferralWithdrawal.toLocaleString()}</span>
               </div>
             </div>
             <p className="referral-stats-note">
-              Every active referral raises your referral withdrawal limit by KES 50. You need at least 20 active referrals before task earnings can be withdrawn.
+              Every active referral raises your referral withdrawal limit by {currencyCode} {referralBonusAmount}. You need at least 20 active referrals before task earnings can be withdrawn.
             </p>
             {user?.referralCode && (
               <div className="referral-section">
@@ -178,7 +180,7 @@ export default function EarningsCard() {
             <div className="activation-panel pending">
               <div>
                 <strong>Account activation required</strong>
-                <p>Activate your account with KES 1 to unlock withdrawals.</p>
+                <p>Activate your account with {user?.activationFeeCurrency || currencyCode} {user?.activationFeeAmount || 1} to unlock withdrawals.</p>
               </div>
               <button className="btn btn-activation" onClick={() => navigate('/payment')}>
                 Activate account
@@ -221,7 +223,7 @@ export default function EarningsCard() {
           <div className="earnings-content">
             <div className="balance-display">
               <span className="label">Available Balance</span>
-              <span className="amount">KES {taskBalance.toLocaleString()}</span>
+              <span className="amount">{currencyCode} {taskBalance.toLocaleString()}</span>
             </div>
             {taskBalance > 0 ? (
               <button
@@ -246,9 +248,9 @@ export default function EarningsCard() {
           <div className="earnings-content">
             <div className="balance-display">
               <span className="label">Available Balance</span>
-              <span className="amount">KES {referralBalance.toLocaleString()}</span>
+              <span className="amount">{currencyCode} {referralBalance.toLocaleString()}</span>
             </div>
-            <div className="min-withdrawal-note">Min withdrawal: KES {MIN_REFERRAL_WITHDRAWAL} • Max now: KES {maxReferralWithdrawal.toLocaleString()}</div>
+            <div className="min-withdrawal-note">Min withdrawal: {currencyCode} {MIN_REFERRAL_WITHDRAWAL} • Max now: {currencyCode} {maxReferralWithdrawal.toLocaleString()}</div>
             {referralBalance > 0 ? (
               <button
                 onClick={() => handleWithdrawClick('referral')}
@@ -281,7 +283,7 @@ export default function EarningsCard() {
                   <tr key={item.id}>
                     <td>{new Date(item.requestedAt).toLocaleDateString()}</td>
                     <td>{item.earningType || 'N/A'}</td>
-                    <td>KES {item.amount.toLocaleString()}</td>
+                    <td>{currencyCode} {item.amount.toLocaleString()}</td>
                     <td><span className={`status-badge status-${item.status}`}>{item.status}</span></td>
                   </tr>
                 ))}
@@ -298,8 +300,9 @@ export default function EarningsCard() {
         onClose={() => setShowTaskWithdrawal(false)}
         availableBalance={taskBalance}
         userPhone={user?.phoneNumber || ''}
-        minWithdrawal={MIN_TASK_WITHDRAWAL}
+        minWithdrawal={taskMinWithdrawal}
         earningType="task"
+        currency={currencyCode}
         onWithdrawSuccess={fetchWallet}
       />
 
@@ -310,6 +313,7 @@ export default function EarningsCard() {
         userPhone={user?.phoneNumber || ''}
         minWithdrawal={MIN_REFERRAL_WITHDRAWAL}
         earningType="referral"
+        currency={currencyCode}
         onWithdrawSuccess={fetchWallet}
       />
     </>

@@ -10,6 +10,7 @@ export default function WithdrawalModal({
   userPhone, 
   minWithdrawal = 1,
   earningType = 'general',
+  currency = 'KES',
   onWithdrawSuccess 
 }) {
   const [amount, setAmount] = useState('');
@@ -22,7 +23,9 @@ export default function WithdrawalModal({
     setPhoneNumber(userPhone || '');
   }, [userPhone]);
 
-  const isValidAmount = amount && parseInt(amount) >= minWithdrawal && parseInt(amount) <= availableBalance;
+const isValidAmount = amount && parseInt(amount) >= minWithdrawal && parseInt(amount) <= availableBalance;
+
+  const currencyLabel = currency;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +34,7 @@ export default function WithdrawalModal({
 
     try {
       if (parseInt(amount) < minWithdrawal) {
-        throw new Error(`Minimum withdrawal is KES ${minWithdrawal}`);
+        throw new Error(`Minimum withdrawal is ${currency} ${minWithdrawal}`);
       }
 
       if (parseInt(amount) > availableBalance) {
@@ -73,9 +76,9 @@ export default function WithdrawalModal({
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <div className="success-message">
+      <div className="success-message">
             <h2>✓ Withdrawal Requested!</h2>
-            <p>Your withdrawal of KES {amount} has been requested.</p>
+            <p>Your withdrawal of {currency} {amount} has been requested.</p>
             <p>You will receive the funds within 24 hours.</p>
           </div>
         </div>
@@ -96,7 +99,7 @@ export default function WithdrawalModal({
 
           <div className="form-group">
             <label>Available Balance</label>
-            <div className="balance-display">KES {availableBalance.toLocaleString()}</div>
+            <div className="balance-display">{currency} {availableBalance.toLocaleString()}</div>
           </div>
 
           <div className="form-group">
@@ -106,12 +109,12 @@ export default function WithdrawalModal({
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder={`Min: KES ${minWithdrawal}`}
+              placeholder={`Min: ${currency} ${minWithdrawal}`}
               min={minWithdrawal}
               max={availableBalance}
               required
             />
-            <small>Minimum withdrawal: KES {minWithdrawal}</small>
+            <small>Minimum withdrawal: {currency} {minWithdrawal}</small>
           </div>
 
           <div className="form-group">
@@ -129,8 +132,8 @@ export default function WithdrawalModal({
 
           {amount && (
             <div className="withdrawal-info">
-              <p><strong>You will receive:</strong> KES {parseInt(amount || 0).toLocaleString()}</p>
-              <p><strong>Remaining balance:</strong> KES {(availableBalance - parseInt(amount || 0)).toLocaleString()}</p>
+              <p><strong>You will receive:</strong> {currency} {parseInt(amount || 0).toLocaleString()}</p>
+              <p><strong>Remaining balance:</strong> {currency} {(availableBalance - parseInt(amount || 0)).toLocaleString()}</p>
             </div>
           )}
 

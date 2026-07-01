@@ -2,7 +2,7 @@ import firebaseAdmin from '../services/firebaseAdmin.js';
 
 import paymentProvider from '../services/paymentProvider.js';
 import referralService from '../services/referralService.js';
-import { getActivationFeeKESForCountry } from '../utils/countryAmounts.js';
+import { getActivationFeeForCountry } from '../utils/countryAmounts.js';
 import { parseAmount, validateOrderAmount } from '../utils/orderValidation.js';
 import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
@@ -144,16 +144,16 @@ async function createStkPush(req, res) {
 
     const userSnapForCountry = await firebaseAdmin.database().ref(`users/${uid}`).get();
     const userCountry = userSnapForCountry.exists() ? userSnapForCountry.val()?.country : null;
-    const activationFeeKES = getActivationFeeKESForCountry(userCountry);
+    const activationFee = getActivationFeeForCountry(userCountry);
 
     const result = await paymentProvider.createStkPush({
       uid,
       email,
       phoneNumber,
-      amount: activationFeeKES,
+      amount: activationFee.amount,
     });
 
-    const order = await createOrder(uid, phoneNumber, email, activationFeeKES, {
+    const order = await createOrder(uid, phoneNumber, email, activationFee.amount, {
       autoVerify: false,
       checkoutRequestId: result.checkoutRequestId,
     });
@@ -166,7 +166,8 @@ async function createStkPush(req, res) {
       uid,
       email,
       phoneNumber: result.phoneNumber,
-      amount: activationFeeKES,
+      amount: activationFee.amount,
+      currency: activationFee.currency,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId,
       orderId: order.orderId,
@@ -190,9 +191,9 @@ async function createStkPushGuest(req, res) {
       return res.status(400).json({ ok: false, error: 'email_password_phone_required' });
     }
 
-    const activationFeeKES = getActivationFeeKESForCountry(country);
+    const activationFee = getActivationFeeForCountry(country);
 
-    const result = await paymentProvider.createStkPush({ uid: null, email, phoneNumber, amount: activationFeeKES });
+    const result = await paymentProvider.createStkPush({ uid: null, email, phoneNumber, amount: activationFee.amount });
 
     const rdb = firebaseAdmin.database();
     const pendingRef = rdb.ref('pendingPayments').push();
@@ -205,7 +206,8 @@ async function createStkPushGuest(req, res) {
       name: name || null,
       country: country || null,
       idNumber: idNumber || null,
-      amount: activationFeeKES,
+      amount: activationFee.amount,
+      currency: activationFee.currency,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
       type: 'GUEST',
@@ -221,6 +223,8 @@ async function createStkPushGuest(req, res) {
       name: name || null,
       country: country || null,
       idNumber: idNumber || null,
+      amount: activationFee.amount,
+      currency: activationFee.currency,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
       type: 'GUEST',
@@ -249,6 +253,8 @@ async function createManualGuest(req, res) {
   try {
     const { email, password, phoneNumber, name, country, idNumber, referralCode, paymentCode } = req.body;
 
+    const activationFee = getActivationFeeForCountry(country);
+
     const rdb = firebaseAdmin.database();
     const pendingRef = rdb.ref('pendingUsers').push();
     const pendingId = pendingRef.key;
@@ -267,6 +273,8 @@ async function createManualGuest(req, res) {
       tillNumber: '3124553',
       paymentCode: paymentCode || null,
       referralCode: referralCode || null,
+      amount: activationFee.amount,
+      currency: activationFee.currency,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -284,7 +292,7 @@ async function createManualGuest(req, res) {
       pendingId,
       paymentMethod: 'manual',
       tillNumber: '3124553',
-      message: 'Till payment request recorded. Pay KES 1 using till 3124553 and wait for admin approval.',
+      message: `Till payment request recorded. Pay ${activationFee.currency} ${activationFee.amount} using till 3124553 and wait for admin approval.`,
     });
   } catch (err) {
     console.error('createManualGuest error', err);
