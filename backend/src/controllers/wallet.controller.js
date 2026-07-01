@@ -155,7 +155,12 @@ async function withdraw(req, res) {
       ? await referralService.getReferralStats(rdb, userProfile.referralCode, activeReferralsAtLastWithdrawal)
       : { totalReferred: 0, pendingReferred: 0, activeReferred: 0, newActiveReferrals: 0, maxReferralWithdrawal: 0 };
 
-    const MIN_WITHDRAWAL = earningType === 'task' ? 1000 : 1;
+    const userCountry = String(userProfile?.country || '').trim().toLowerCase();
+    const taskMinWithdrawalZmw = Number(process.env.ZAMBIA_TASK_MIN_WITHDRAWAL_ZMW) || 980;
+    const MIN_WITHDRAWAL = earningType === 'task'
+      ? (userCountry === 'zambia' ? taskMinWithdrawalZmw : 1000)
+      : 1;
+    
     
     // For task withdrawals: need 20 active referrals (unchanged)
     if (earningType === 'task' && referralStats.activeReferred < 20) {

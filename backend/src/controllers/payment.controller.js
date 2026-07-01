@@ -1,6 +1,8 @@
 import firebaseAdmin from '../services/firebaseAdmin.js';
+
 import paymentProvider from '../services/paymentProvider.js';
 import referralService from '../services/referralService.js';
+import { getActivationFeeKESForCountry } from '../utils/countryAmounts.js';
 import { parseAmount, validateOrderAmount } from '../utils/orderValidation.js';
 import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
@@ -140,14 +142,18 @@ async function createStkPush(req, res) {
       return res.status(400).json({ ok: false, error: limitCheck.error, message: limitCheck.message });
     }
 
+    const userSnapForCountry = await firebaseAdmin.database().ref(`users/${uid}`).get();
+    const userCountry = userSnapForCountry.exists() ? userSnapForCountry.val()?.country : null;
+    const activationFeeKES = getActivationFeeKESForCountry(userCountry);
+
     const result = await paymentProvider.createStkPush({
       uid,
       email,
       phoneNumber,
-      amount: PAID_AMOUNT,
+      amount: activationFeeKES,
     });
 
-    const order = await createOrder(uid, phoneNumber, email, PAID_AMOUNT, {
+    const order = await createOrder(uid, phoneNumber, email, activationFeeKES, {
       autoVerify: false,
       checkoutRequestId: result.checkoutRequestId,
     });
@@ -160,7 +166,7 @@ async function createStkPush(req, res) {
       uid,
       email,
       phoneNumber: result.phoneNumber,
-      amount: PAID_AMOUNT,
+      amount: activationFeeKES,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId,
       orderId: order.orderId,
@@ -184,7 +190,9 @@ async function createStkPushGuest(req, res) {
       return res.status(400).json({ ok: false, error: 'email_password_phone_required' });
     }
 
-    const result = await paymentProvider.createStkPush({ uid: null, email, phoneNumber, amount: PAID_AMOUNT });
+    const activationFeeKES = getActivationFeeKESForCountry(country);
+
+    const result = await paymentProvider.createStkPush({ uid: null, email, phoneNumber, amount: activationFeeKES });
 
     const rdb = firebaseAdmin.database();
     const pendingRef = rdb.ref('pendingPayments').push();
@@ -197,6 +205,7 @@ async function createStkPushGuest(req, res) {
       name: name || null,
       country: country || null,
       idNumber: idNumber || null,
+      amount: activationFeeKES,
       status: 'PENDING',
       checkoutRequestId: result.checkoutRequestId || null,
       type: 'GUEST',

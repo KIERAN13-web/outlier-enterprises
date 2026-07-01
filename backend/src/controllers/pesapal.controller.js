@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import referralService from '../services/referralService.js';
+import { getActivationFeeKESForCountry } from '../utils/countryAmounts.js';
 import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
 const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 1);
@@ -345,14 +346,17 @@ async function initPesapal(req, res) {
     // Submit order to Pesapal
     const callbackUrl = getPesapalCallbackUrl(req);
     console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
+
+    const activationFeeKES = getActivationFeeKESForCountry(profileCountry);
     const orderData = await submitPesapalOrder({
-      amount: PAID_AMOUNT,
+      amount: activationFeeKES,
       reference: pendingId,
       email,
       firstName: 'Customer',
       lastName: '',
       callbackUrl,
     });
+
 
     await pendingRef.set({
       uid,
@@ -361,7 +365,7 @@ async function initPesapal(req, res) {
       name: profileName,
       country: profileCountry,
       idNumber: profileIdNumber,
-      amount: PAID_AMOUNT,
+      amount: activationFeeKES,
       provider: 'pesapal',
       status: 'PENDING',
       type: 'USER',
@@ -414,8 +418,11 @@ async function initPesapalGuest(req, res) {
 
     const callbackUrl = getPesapalCallbackUrl(req);
     console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
+    const activationFeeKES = getActivationFeeKESForCountry(country);
+
     const orderData = await submitPesapalOrder({
-      amount: PAID_AMOUNT,
+      amount: activationFeeKES,
+
       reference: pendingId,
       email,
       firstName,
@@ -431,7 +438,7 @@ async function initPesapalGuest(req, res) {
       country: country || null,
       idNumber: idNumber || null,
       referralCode: referralCode || null,
-      amount: PAID_AMOUNT,
+      amount: activationFeeKES,
       provider: 'pesapal',
       status: 'PENDING',
       type: 'GUEST',

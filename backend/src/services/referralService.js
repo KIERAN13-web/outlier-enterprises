@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { getReferralBonusKESForCountry } from '../utils/countryAmounts.js';
 
 function normalizeReferralCode(code) {
   return String(code || '').trim().toUpperCase();
@@ -33,19 +34,47 @@ async function generateUniqueReferralCode(rdb, length = 6, maxAttempts = 8) {
     try {
       const exists = await codeExists(rdb, candidate);
       if (!exists) return candidate;
-    } catch (e) {
-      // if db query fails, fall back to another candidate
+    } catch {
+      // ignore and try again
     }
   }
-  // fallback: use short hash
+  // fallback: use short hash/random
   return `R${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+}
+
+async function getReferrerBonusKES(rdb, referralCode) {
+  const normalized = normalizeReferralCode(referralCode);
+  if (!normalized) return 0;
+
+  const refSnap = await rdb
+    .ref('users')
+    .orderByChild('referralCode')
+    .equalTo(normalized)
+    .limitToFirst(1)
+    .get();
+
+  if (!refSnap.exists()) {
+    // keep behavior safe; caller will likely skip crediting
+    return 0;
+  }
+
+  const entries = Object.entries(refSnap.val() || {});
+  const [, refUser] = entries[0];
+
+  const country = refUser?.country || 'Kenya';
+  return getReferralBonusKESForCountry(country);
 }
 
 async function getReferralStats(rdb, referralCode, activeReferralsAtLastWithdrawal = 0) {
   const normalizedReferralCode = normalizeReferralCode(referralCode);
-  if (!normalizedReferralCode) return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, newActiveReferrals: 0, maxReferralWithdrawal: 0 };
+  if (!normalizedReferralCode) {
+    return { totalReferred: 0, pendingReferred: 0, activeReferred: 0, newActiveReferrals: 0, maxReferralWithdrawal: 0 };
+  }
 
   try {
+    // Find referrer's country to compute max withdrawal based on that country's referral bonus
+    const bonusKESForReferrer = await getReferrerBonusKES(rdb, normalizedReferralCode);
+
     const snap = await rdb.ref('users').get();
     const users = snap.exists() ? snap.val() : {};
 
@@ -67,6 +96,7 @@ async function getReferralStats(rdb, referralCode, activeReferralsAtLastWithdraw
 
     const pendingSnap = await rdb.ref('pendingUsers').get();
     const pendingUsers = pendingSnap.exists() ? pendingSnap.val() : {};
+
     let pendingFromPendingUsers = 0;
     for (const pendingEntry of Object.values(pendingUsers || {})) {
       if (
@@ -82,9 +112,8 @@ async function getReferralStats(rdb, referralCode, activeReferralsAtLastWithdraw
     pendingReferred += pendingFromPendingUsers;
 
     // For referral withdrawals: only count referrals gained AFTER last withdrawal
-    // Example: had 2 active, withdrew max. Now have 4 active. Only 2 new = max KES 100
     const newActiveReferrals = Math.max(0, activeReferred - activeReferralsAtLastWithdrawal);
-    const maxReferralWithdrawal = newActiveReferrals * 50;
+    const maxReferralWithdrawal = newActiveReferrals * bonusKESForReferrer;
 
     return {
       totalReferred,
@@ -105,17 +134,35 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
     console.warn('creditReferralBonus skipped: missing referralCode');
     return null;
   }
-  const configured = Number(process.env.REFERRAL_BONUS) || 50;
-  const reward = typeof bonus === 'number' ? bonus : configured;
+
+  // Reward depends on referrer's country unless explicit bonus is provided.
+  let rewardKES;
+  try {
+    rewardKES = typeof bonus === 'number' ? bonus : await getReferrerBonusKES(rdb, normalizedReferralCode);
+  } catch {
+    rewardKES = typeof bonus === 'number' ? bonus : 0;
+  }
+
+  if (!rewardKES) {
+    // no country mapping or referrer not found
+    console.warn(`creditReferralBonus skipped: rewardKES is 0 for code ${normalizedReferralCode}`);
+    return null;
+  }
 
   try {
-    const refSnap = await rdb.ref('users').orderByChild('referralCode').equalTo(normalizedReferralCode).limitToFirst(1).get();
+    const refSnap = await rdb
+      .ref('users')
+      .orderByChild('referralCode')
+      .equalTo(normalizedReferralCode)
+      .limitToFirst(1)
+      .get();
+
     if (!refSnap.exists()) {
       console.warn(`creditReferralBonus skipped: no referrer found for code ${normalizedReferralCode}`);
       return null;
     }
 
-    const entries = Object.entries(refSnap.val());
+    const entries = Object.entries(refSnap.val() || {});
     const [refUid, refUser] = entries[0];
 
     // Prevent self-referral
@@ -124,7 +171,7 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
       return null;
     }
 
-    // Check if this referredEmail was already used to credit this referrer
+    // Prevent duplicate crediting for the same referredEmail
     const txSnap = await rdb.ref(`users/${refUid}/wallet/transactions`).get();
     const txs = txSnap.exists() ? txSnap.val() : {};
     for (const t of Object.values(txs || {})) {
@@ -136,16 +183,21 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
 
     const walletRef = rdb.ref(`users/${refUid}/wallet`);
     const walletSnap = await walletRef.get();
-    const wallet = walletSnap.exists() ? walletSnap.val() : { taskBalance: 0, referralBalance: 0, totalEarnings: 0, availableBalance: 0 };
+    const wallet = walletSnap.exists()
+      ? walletSnap.val()
+      : { taskBalance: 0, referralBalance: 0, totalEarnings: 0, availableBalance: 0 };
+
     const currentTaskBalance = Number(wallet.taskBalance || 0);
     const currentReferralBalance = Number(wallet.referralBalance || 0);
     const currentAvailableBalance = wallet.availableBalance !== undefined && wallet.availableBalance !== null
       ? Number(wallet.availableBalance)
       : currentTaskBalance + currentReferralBalance;
     const currentTotalEarnings = Number(wallet.totalEarnings || 0);
-    const newReferralBalance = currentReferralBalance + reward;
-    const newTotalEarnings = currentTotalEarnings + reward;
-    const newAvailableBalance = currentAvailableBalance + reward;
+
+    const newReferralBalance = currentReferralBalance + rewardKES;
+    const newTotalEarnings = currentTotalEarnings + rewardKES;
+    const newAvailableBalance = currentAvailableBalance + rewardKES;
+
     await walletRef.update({
       taskBalance: currentTaskBalance,
       referralBalance: newReferralBalance,
@@ -157,7 +209,7 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
     const txRef = rdb.ref(`users/${refUid}/wallet/transactions`).push();
     await txRef.set({
       type: 'referral',
-      amount: reward,
+      amount: rewardKES,
       description: `Referral bonus for inviting ${referredEmail || 'a user'}`,
       status: 'credited',
       createdAt: new Date().toISOString(),
@@ -168,13 +220,13 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
     await notifRef.set({
       id: notifId,
       type: 'referral',
-      amount: reward,
-      message: `You've earned KES ${reward} from a referral.`,
+      amount: rewardKES,
+      message: `You've earned KES ${rewardKES} from a referral.`,
       read: false,
       createdAt: new Date().toISOString(),
     });
 
-    return { refUid, bonus: reward };
+    return { refUid, bonus: rewardKES };
   } catch (err) {
     console.error('creditReferralBonus error', err);
     return null;
@@ -182,3 +234,4 @@ async function creditReferralBonus(rdb, referralCode, referredEmail, bonus = und
 }
 
 export default { generateUniqueReferralCode, creditReferralBonus, findUserByReferralCode, getReferralStats };
+
