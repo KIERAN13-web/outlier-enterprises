@@ -14,7 +14,6 @@ describe('country currency helpers', () => {
     process.env.KENYA_REFERRAL_BONUS_KES = '50';
     process.env.ZAMBIA_ACTIVATION_FEE_ZMW = '100';
     process.env.ZAMBIA_REFERRAL_BONUS_ZMW = '25';
-    process.env.ZMW_TO_KES_RATE = '2';
   });
 
   afterAll(() => {
@@ -29,7 +28,7 @@ describe('country currency helpers', () => {
     expect(getTaskMinWithdrawalForCountry('Kenya')).toBe(1000);
   });
 
-  it('uses ZMW pricing for Zambia', () => {
+  it('keeps Zambia pricing in ZMW while using the country-specific currency code', () => {
     expect(getActivationFeeForCountry('Zambia')).toEqual({ amount: 100, currency: 'ZMW' });
     expect(getReferralBonusForCountry('Zambia')).toEqual({ amount: 25, currency: 'ZMW' });
     expect(getCurrencyCodeForCountry('Zambia')).toBe('ZMW');
