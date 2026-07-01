@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import firebaseAdmin from '../services/firebaseAdmin.js';
 import referralService from '../services/referralService.js';
 import { getActivationFeeForCountry } from '../utils/countryAmounts.js';
+import { buildPesapalBillingAddress } from '../utils/pesapalBilling.js';
 import { activatePendingRegistration } from '../utils/paymentStatus.js';
 
 const PAID_AMOUNT = Number(process.env.PAID_AMOUNT || 1);
@@ -189,6 +190,7 @@ async function submitPesapalOrder({
   firstName,
   lastName,
   callbackUrl,
+  billingAddress,
 }) {
   const token = await getPesapalToken();
   const ipnId = ensurePesapalIpnId();
@@ -213,7 +215,7 @@ async function submitPesapalOrder({
             description: 'Payment for account creation',
             callback_url: callbackUrl,
             notification_id: ipnId,
-            billing_address: {
+            billing_address: billingAddress || {
               email_address: email || 'customer@pesapal.com',
               phone_number: '',
               country_code: 'KE',
@@ -349,6 +351,7 @@ async function initPesapal(req, res) {
     console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
 
     const activationFee = getActivationFeeForCountry(profileCountry);
+    const billingAddress = buildPesapalBillingAddress(profileCountry, profilePhone, 'Customer', '', email);
     const orderData = await submitPesapalOrder({
       amount: activationFee.amount,
       currency: activationFee.currency,
@@ -357,6 +360,7 @@ async function initPesapal(req, res) {
       firstName: 'Customer',
       lastName: '',
       callbackUrl,
+      billingAddress,
     });
 
 
@@ -422,6 +426,7 @@ async function initPesapalGuest(req, res) {
     const callbackUrl = getPesapalCallbackUrl(req);
     console.log(`[Pesapal] Callback URL for order: ${callbackUrl}`);
     const activationFee = getActivationFeeForCountry(country);
+    const billingAddress = buildPesapalBillingAddress(country, phoneNumber, firstName, lastName, email);
 
     const orderData = await submitPesapalOrder({
       amount: activationFee.amount,
@@ -432,6 +437,7 @@ async function initPesapalGuest(req, res) {
       firstName,
       lastName,
       callbackUrl,
+      billingAddress,
     });
 
     await pendingRef.set({
